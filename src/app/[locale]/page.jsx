@@ -16,7 +16,16 @@ export default async function LocaleHomePage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
   const snapshot = await getHomeSnapshot();
-  const featuredLeagues = snapshot.leagues.slice(0, 3);
+  const quickLinks = [
+    { href: `/${locale}/live`, label: dictionary.liveNow, value: snapshot.liveFixtures.length },
+    {
+      href: `/${locale}/fixtures`,
+      label: dictionary.upcoming,
+      value: snapshot.upcomingFixtures.length,
+    },
+    { href: `/${locale}/results`, label: dictionary.recent, value: snapshot.recentResults.length },
+    { href: `/${locale}/tables`, label: dictionary.standings, value: snapshot.leagues.length },
+  ];
 
   return (
     <>
@@ -24,80 +33,34 @@ export default async function LocaleHomePage({ params }) {
         <div className={styles.heroGrid}>
           <div className={styles.heroMain}>
             <p className={styles.heroEyebrow}>{dictionary.seoSuffix}</p>
-            <h1 className={styles.heroTitle}>{dictionary.heroTitle}</h1>
-            <p className={styles.heroBody}>{dictionary.heroBody}</p>
-            <div className={styles.heroActions}>
-              <Link href={`/${locale}/live`} className={styles.actionLink}>
-                {dictionary.liveNow}
-              </Link>
-              <Link href={`/${locale}/fixtures`} className={styles.secondaryAction}>
-                {dictionary.upcoming}
-              </Link>
+            <h1 className={styles.heroTitle}>Matchday</h1>
+            <div className={styles.heroPills}>
+              <span className={styles.badge}>{snapshot.liveFixtures.length} live</span>
+              <span className={styles.badge}>{snapshot.upcomingFixtures.length} next</span>
+              <span className={styles.badge}>{snapshot.leagues.length} leagues</span>
             </div>
           </div>
 
-          <aside className={styles.heroAside}>
-            <article className={styles.heroPanel}>
-              <p className={styles.eyebrow}>Coverage map</p>
-              <h2 className={styles.heroPanelTitle}>Built for quick scanning and deeper drill-downs.</h2>
-              <div className={styles.heroMiniList}>
-                {featuredLeagues.length ? (
-                  featuredLeagues.map((league) => (
-                    <Link
-                      key={league.id}
-                      href={`/${locale}/leagues/${league.code}`}
-                      className={styles.heroMiniItem}
-                    >
-                      <span>{league.name}</span>
-                      <small>{league.country || "International"}</small>
-                    </Link>
-                  ))
-                ) : (
-                  <>
-                    <div className={styles.heroMiniItem}>
-                      <span>Live score desk</span>
-                      <small>Rapid match monitoring</small>
-                    </div>
-                    <div className={styles.heroMiniItem}>
-                      <span>Fixture calendar</span>
-                      <small>Clean scheduling overview</small>
-                    </div>
-                    <div className={styles.heroMiniItem}>
-                      <span>League tables</span>
-                      <small>Current standing snapshots</small>
-                    </div>
-                  </>
-                )}
-              </div>
-            </article>
-
-            <div className={styles.heroStats}>
-              <div className={styles.statCard}>
-                <strong>{snapshot.liveFixtures.length}</strong>
-                <span>{dictionary.liveNow}</span>
-              </div>
-              <div className={styles.statCard}>
-                <strong>{snapshot.upcomingFixtures.length}</strong>
-                <span>{dictionary.upcoming}</span>
-              </div>
-              <div className={styles.statCard}>
-                <strong>{snapshot.leagues.length}</strong>
-                <span>{dictionary.leagues}</span>
-              </div>
-            </div>
-          </aside>
+          <div className={styles.heroActionGrid}>
+            {quickLinks.map((item) => (
+              <Link key={item.href} href={item.href} className={styles.heroActionCard}>
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <div>
-            <p className={styles.eyebrow}>{dictionary.watchlist}</p>
-            <h2 className={styles.sectionTitle}>{dictionary.liveNow}</h2>
+          <h2 className={styles.sectionTitle}>{dictionary.liveNow}</h2>
+          <div className={styles.sectionTools}>
+            <span className={styles.badge}>{snapshot.liveFixtures.length}</span>
+            <Link href={`/${locale}/live`} className={styles.sectionAction}>
+              {dictionary.browseAll}
+            </Link>
           </div>
-          <Link href={`/${locale}/live`} className={styles.sectionAction}>
-            {dictionary.browseAll}
-          </Link>
         </div>
         {snapshot.liveFixtures.length ? (
           <div className={styles.fixtureGrid}>
@@ -112,13 +75,13 @@ export default async function LocaleHomePage({ params }) {
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <div>
-            <p className={styles.eyebrow}>{dictionary.overview}</p>
-            <h2 className={styles.sectionTitle}>{dictionary.upcoming}</h2>
+          <h2 className={styles.sectionTitle}>{dictionary.upcoming}</h2>
+          <div className={styles.sectionTools}>
+            <span className={styles.badge}>{snapshot.upcomingFixtures.length}</span>
+            <Link href={`/${locale}/fixtures`} className={styles.sectionAction}>
+              {dictionary.browseAll}
+            </Link>
           </div>
-          <Link href={`/${locale}/fixtures`} className={styles.sectionAction}>
-            {dictionary.browseAll}
-          </Link>
         </div>
         {snapshot.upcomingFixtures.length ? (
           <div className={styles.fixtureGrid}>
@@ -133,13 +96,13 @@ export default async function LocaleHomePage({ params }) {
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <div>
-            <p className={styles.eyebrow}>{dictionary.leagues}</p>
-            <h2 className={styles.sectionTitle}>{dictionary.standings}</h2>
+          <h2 className={styles.sectionTitle}>{dictionary.standings}</h2>
+          <div className={styles.sectionTools}>
+            <span className={styles.badge}>{snapshot.leagues.length}</span>
+            <Link href={`/${locale}/leagues`} className={styles.sectionAction}>
+              {dictionary.browseAll}
+            </Link>
           </div>
-          <Link href={`/${locale}/leagues`} className={styles.sectionAction}>
-            {dictionary.browseAll}
-          </Link>
         </div>
         {snapshot.leagues.length ? (
           <div className={styles.leagueGrid}>
@@ -152,11 +115,11 @@ export default async function LocaleHomePage({ params }) {
                       <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                     </h3>
                   </div>
-                  <span className={styles.badge}>{league.teams.length} teams</span>
+                  <span className={styles.badge}>{league.teams.length}</span>
                 </div>
                 <p className={styles.muted}>
                   {league.seasons[0]?.standings.length
-                    ? `Current top side: ${league.seasons[0].standings[0].team.name}`
+                    ? league.seasons[0].standings[0].team.name
                     : dictionary.noData}
                 </p>
               </article>

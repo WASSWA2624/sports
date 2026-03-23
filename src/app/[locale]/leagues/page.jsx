@@ -22,10 +22,9 @@ export default async function LeaguesPage({ params }) {
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.leagues}</p>
-          <h1 className={styles.pageTitle}>{dictionary.leagues}</h1>
-          <p className={styles.pageLead}>Competition landing pages ready for public browsing, metadata, and search indexing.</p>
+        <h1 className={styles.pageTitle}>{dictionary.leagues}</h1>
+        <div className={styles.sectionTools}>
+          <span className={styles.badge}>{leagues.length}</span>
         </div>
       </header>
       {leagues.length ? (
@@ -39,10 +38,10 @@ export default async function LeaguesPage({ params }) {
                     <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                   </h2>
                 </div>
-                <span className={styles.badge}>{league.teams.length} teams</span>
+                <span className={styles.badge}>{league.teams.length}</span>
               </div>
               <p className={styles.metaRow}>
-                Next status: {league.fixtures[0]?.status || "Awaiting fixtures"}
+                {league.fixtures[0]?.status || dictionary.noData}
               </p>
             </article>
           ))}

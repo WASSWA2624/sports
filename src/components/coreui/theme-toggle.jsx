@@ -6,15 +6,15 @@ import styles from "./styles.module.css";
 const options = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
+  { value: "system", label: "Auto" },
 ];
 
 export function ThemeToggle({ label }) {
   const { theme, setTheme } = usePreferences();
 
   return (
-    <div className={styles.preferenceBlock}>
-      <span className={styles.preferenceLabel}>{label}</span>
+    <div className={styles.preferenceBlock} role="group" aria-label={label}>
+      <span className={styles.srOnly}>{label}</span>
       <div className={styles.segmentedControl}>
         {options.map((option) => (
           <button

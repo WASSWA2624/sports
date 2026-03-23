@@ -22,10 +22,9 @@ export default async function ResultsPage({ params }) {
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.recent}</p>
-          <h1 className={styles.pageTitle}>{dictionary.recent}</h1>
-          <p className={styles.pageLead}>Recent results, score summaries, and match detail links for post-match browsing.</p>
+        <h1 className={styles.pageTitle}>{dictionary.recent}</h1>
+        <div className={styles.sectionTools}>
+          <span className={styles.badge}>{fixtures.length}</span>
         </div>
       </header>
       {fixtures.length ? (

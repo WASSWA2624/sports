@@ -22,14 +22,10 @@ export default async function LivePage({ params }) {
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.liveNow}</p>
-          <h1 className={styles.pageTitle}>{dictionary.liveNow}</h1>
-          <p className={styles.pageLead}>
-            Server-rendered live fixtures with watchlist actions and direct match pages.
-          </p>
+        <h1 className={styles.pageTitle}>{dictionary.liveNow}</h1>
+        <div className={styles.sectionTools}>
+          <span className={styles.liveBadge}>{fixtures.length}</span>
         </div>
-        <span className={styles.liveBadge}>{fixtures.length} active</span>
       </header>
       {fixtures.length ? (
         <div className={styles.fixtureGrid}>

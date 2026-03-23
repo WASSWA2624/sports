@@ -25,8 +25,13 @@ export function LocaleSwitcher({ locale, label }) {
 
   return (
     <label className={styles.inlineControl}>
-      <span>{label}</span>
-      <select className={styles.selectControl} value={locale} onChange={handleChange}>
+      <span className={styles.srOnly}>{label}</span>
+      <select
+        aria-label={label}
+        className={styles.selectControl}
+        value={locale}
+        onChange={handleChange}
+      >
         {SUPPORTED_LOCALES.map((item) => (
           <option key={item} value={item}>
             {LOCALE_LABELS[item]}

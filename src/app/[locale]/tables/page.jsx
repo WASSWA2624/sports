@@ -22,10 +22,9 @@ export default async function TablesPage({ params }) {
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.standings}</p>
-          <h1 className={styles.pageTitle}>{dictionary.standings}</h1>
-          <p className={styles.pageLead}>League tables are server-rendered from current season standings for search-friendly coverage pages.</p>
+        <h1 className={styles.pageTitle}>{dictionary.standings}</h1>
+        <div className={styles.sectionTools}>
+          <span className={styles.badge}>{leagues.length}</span>
         </div>
       </header>
       {leagues.length ? (

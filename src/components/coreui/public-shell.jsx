@@ -17,12 +17,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems }) {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.headerBrand}>
-            <p className={styles.brandKicker}>Matchday Desk</p>
             <div className={styles.brandBlock}>
               <Link href={`/${locale}`} className={styles.brand}>
                 {dictionary.brand}
               </Link>
-              <p className={styles.brandTag}>Scores, fixtures, tables, and teams.</p>
+              <p className={styles.brandTag}>Live, fixtures, tables.</p>
             </div>
           </div>
           <nav className={styles.nav}>
@@ -44,7 +43,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems }) {
             <LocaleSwitcher locale={locale} label={dictionary.locale} />
             <ThemeToggle label={dictionary.theme} />
             <div className={styles.watchPill}>
-              {dictionary.watchlist}: {watchlistCount || watchlistItems.length}
+              {dictionary.watchlist} {watchlistCount || watchlistItems.length}
             </div>
           </div>
         </div>
@@ -52,8 +51,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems }) {
       <main className={styles.main}>{children}</main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <p>Public sitemap: home, live, fixtures, results, tables, leagues, teams, and match detail.</p>
-          <p>Preference cookies keep locale, theme, and watchlist choices across visits.</p>
+          <p>Live, fixtures, results, tables, leagues, teams.</p>
         </div>
       </footer>
     </div>

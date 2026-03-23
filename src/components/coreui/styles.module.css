@@ -35,9 +35,9 @@
 .headerInner {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 1rem;
+  gap: 0.75rem;
   align-items: center;
-  padding: 0.95rem 1.1rem;
+  padding: 0.8rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 1.4rem;
   background:
@@ -48,7 +48,7 @@
 
 .headerBrand {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.08rem;
   min-width: 0;
 }
 
@@ -62,12 +62,12 @@
 
 .brandBlock {
   display: grid;
-  gap: 0.2rem;
-  max-width: 20rem;
+  gap: 0.12rem;
+  max-width: 12rem;
 }
 
 .brand {
-  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+  font-size: clamp(1.05rem, 1.4vw, 1.28rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -75,26 +75,38 @@
 
 .brandTag {
   color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.35;
+  font-size: 0.76rem;
+  line-height: 1.2;
 }
 
 .headerControls {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.45rem;
   align-items: center;
   justify-content: flex-end;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .nav {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.3rem;
+  gap: 0.22rem;
   align-items: center;
   min-width: 0;
   overflow-x: auto;
-  padding: 0.3rem;
+  padding: 0.22rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
@@ -111,7 +123,7 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  padding: 0.66rem 0.9rem;
+  padding: 0.52rem 0.78rem;
   border-radius: 999px;
   border: 1px solid transparent;
   color: var(--text-muted);
@@ -136,29 +148,28 @@
 .watchPill {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  min-height: 2.65rem;
-  padding: 0.3rem 0.45rem 0.3rem 0.72rem;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.2rem 0.32rem 0.2rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-strong);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.inlineControl span,
-.preferenceLabel,
 .watchPill {
   color: var(--text-muted);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
 }
 
 .selectControl {
-  min-width: 5.8rem;
+  min-width: 4.9rem;
   border: 0;
   background: transparent;
   color: var(--text);
   font-weight: 600;
   outline: none;
+  font-size: 0.82rem;
 }
 
 .segmentedControl {
@@ -170,13 +181,14 @@
 
 .segment,
 .segmentActive {
-  padding: 0.48rem 0.74rem;
+  padding: 0.38rem 0.62rem;
   border: 0;
   border-radius: 999px;
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
   transition: 150ms ease;
+  font-size: 0.8rem;
 }
 
 .segmentActive {
@@ -187,16 +199,16 @@
 
 .main {
   display: grid;
-  gap: 2rem;
-  padding: 1rem 0 4rem;
+  gap: 1.35rem;
+  padding: 0.8rem 0 3rem;
 }
 
 .hero {
   position: relative;
   overflow: hidden;
-  padding: clamp(1.4rem, 3vw, 2rem);
+  padding: 1rem 1.1rem;
   border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 2.25rem;
+  border-radius: 1.6rem;
   background:
     radial-gradient(circle at top left, rgba(73, 130, 255, 0.26), transparent 32%),
     linear-gradient(135deg, rgba(8, 22, 48, 0.96), rgba(16, 31, 58, 0.92));
@@ -218,12 +230,12 @@
 .heroGrid {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.9fr);
-  gap: 1.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
 }
 
-.heroMain,
-.heroAside {
+.heroMain {
   position: relative;
   z-index: 1;
 }
@@ -231,8 +243,8 @@
 .heroMain {
   display: grid;
   align-content: start;
-  gap: 1.2rem;
-  padding: 0.8rem 0.4rem 0.6rem;
+  gap: 0.7rem;
+  padding: 0.15rem 0;
 }
 
 .heroEyebrow,
@@ -249,16 +261,16 @@
 }
 
 .heroTitle {
-  max-width: 9.2ch;
-  font-size: clamp(3.2rem, 9vw, 6.5rem);
-  line-height: 0.92;
+  max-width: none;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 0.95;
   letter-spacing: -0.06em;
 }
 
 .pageTitle {
-  max-width: 12ch;
-  font-size: clamp(2.2rem, 4.8vw, 3.6rem);
-  line-height: 0.96;
+  max-width: none;
+  font-size: clamp(1.45rem, 3.2vw, 2.15rem);
+  line-height: 1;
 }
 
 .heroBody,
@@ -273,20 +285,18 @@
   color: var(--text-muted);
 }
 
-.heroActions {
+.heroPills {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.85rem;
-  margin-top: 0.35rem;
+  gap: 0.45rem;
 }
 
-.heroAside {
+.heroActionGrid {
   display: grid;
-  gap: 1rem;
-  align-content: start;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
-.heroPanel,
 .statCard,
 .panel,
 .fixtureCard,
@@ -301,74 +311,31 @@
   box-shadow: var(--shadow-card);
 }
 
-.heroPanel {
-  padding: 1.2rem;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.09);
-  box-shadow: none;
-}
-
-.heroPanelTitle {
-  margin-top: 0.45rem;
-  max-width: 18ch;
-  font-size: 1.45rem;
-  line-height: 1.1;
-}
-
-.heroMiniList {
+.heroActionCard {
   display: grid;
-  gap: 0.7rem;
-  margin-top: 1rem;
-}
-
-.heroMiniItem {
-  display: grid;
-  gap: 0.18rem;
+  gap: 0.1rem;
+  min-height: 100%;
   padding: 0.85rem 0.95rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.15rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #eff5ff;
 }
 
-.heroMiniItem span {
-  font-weight: 600;
-}
-
-.heroMiniItem small {
-  color: rgba(232, 240, 255, 0.72);
-}
-
-.heroStats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
-}
-
-.heroStats .statCard:last-child {
-  grid-column: 1 / -1;
-}
-
-.statCard {
-  padding: 1rem 1.1rem;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: none;
-}
-
-.statCard strong {
-  display: block;
-  font-size: 2rem;
+.heroActionCard strong {
+  font-size: 1.45rem;
   line-height: 1;
-  margin-bottom: 0.4rem;
 }
 
-.statCard span {
-  color: rgba(232, 240, 255, 0.76);
+.heroActionCard span {
+  color: rgba(232, 240, 255, 0.8);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .section {
   display: grid;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .pageHeader,
@@ -382,7 +349,8 @@
 }
 
 .pageHeader {
-  padding: 1.45rem 1.55rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
     var(--surface);
@@ -391,7 +359,7 @@
 .sectionTitle,
 .cardTitle,
 .fixtureTitle {
-  font-size: 1.18rem;
+  font-size: 1.02rem;
   line-height: 1.15;
 }
 
@@ -400,19 +368,27 @@
 .metaRow,
 .fixtureSummary {
   color: var(--text-muted);
-  line-height: 1.65;
+  line-height: 1.45;
+  font-size: 0.88rem;
+}
+
+.sectionTools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .sectionAction {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.72rem 1rem;
+  padding: 0.48rem 0.72rem;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface-strong);
   color: var(--text);
   font-weight: 600;
+  font-size: 0.82rem;
 }
 
 .grid,
@@ -430,7 +406,7 @@
 .leagueGrid,
 .teamGrid,
 .tableGrid {
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .detailGrid {
@@ -443,7 +419,7 @@
 .teamCard,
 .tableCard,
 .detailCard {
-  padding: 1.1rem;
+  padding: 0.9rem;
 }
 
 .fixtureCard,
@@ -476,9 +452,9 @@
 .detailMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.4rem;
   color: var(--text-muted);
-  font-size: 0.92rem;
+  font-size: 0.82rem;
 }
 
 .badge,
@@ -486,10 +462,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.32rem;
-  padding: 0.42rem 0.72rem;
+  padding: 0.3rem 0.56rem;
   border-radius: 999px;
   background: var(--surface-muted);
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   font-weight: 600;
 }
 
@@ -500,16 +476,16 @@
 
 .scoreLine {
   display: grid;
-  gap: 0.7rem;
-  margin: 1rem 0;
+  gap: 0.45rem;
+  margin: 0.75rem 0;
 }
 
 .scoreLine > div {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.92rem 1rem;
-  border-radius: 1rem;
+  padding: 0.72rem 0.8rem;
+  border-radius: 0.9rem;
   background: var(--surface-muted);
 }
 
@@ -521,11 +497,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  padding: 0.78rem 1.05rem;
+  padding: 0.5rem 0.72rem;
   border-radius: 999px;
   border: 1px solid var(--border);
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.8rem;
 }
 
 .favoriteButton,
@@ -568,11 +545,12 @@
 }
 
 .emptyState {
-  padding: 1.3rem;
+  padding: 0.9rem 1rem;
   border: 1px dashed var(--border);
-  border-radius: 1.35rem;
+  border-radius: 1rem;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
   color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 .footer {
@@ -581,13 +559,14 @@
 
 .footerInner {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  padding: 1.15rem 1.35rem;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 1.7rem;
+  border-radius: 1.2rem;
   background: var(--surface);
   color: var(--text-muted);
+  font-size: 0.82rem;
 }
 
 @media (max-width: 1120px) {
@@ -603,6 +582,10 @@
   .heroGrid,
   .detailGrid {
     grid-template-columns: 1fr;
+  }
+
+  .heroActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -626,12 +609,11 @@
   }
 
   .heroTitle {
-    max-width: 10ch;
-    font-size: clamp(2.8rem, 13vw, 4.5rem);
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
   }
 
   .pageHeader {
-    padding: 1.2rem;
+    padding: 0.85rem 0.9rem;
   }
 }
 
@@ -646,13 +628,12 @@
     padding-inline: 0.8rem;
   }
 
-  .heroStats,
-  .footerInner {
-    grid-template-columns: 1fr;
+  .heroActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .heroStats .statCard:last-child {
-    grid-column: auto;
+  .footerInner {
+    grid-template-columns: 1fr;
   }
 
   .pageHeader,
@@ -669,6 +650,7 @@
     border-radius: 1.2rem;
   }
 
+  .brandKicker,
   .brandTag {
     display: none;
   }
@@ -696,8 +678,8 @@
   }
 
   .main {
-    gap: 1.5rem;
-    padding-bottom: 3rem;
+    gap: 1.1rem;
+    padding-bottom: 2.2rem;
   }
 
   .hero,
@@ -706,14 +688,17 @@
   .leagueCard,
   .teamCard,
   .tableCard,
-  .detailCard,
-  .heroPanel {
-    border-radius: 1.3rem;
+  .detailCard {
+    border-radius: 1rem;
   }
 
   .actionLink,
   .secondaryAction,
   .sectionAction {
     width: 100%;
+  }
+
+  .heroActionGrid {
+    grid-template-columns: 1fr;
   }
 }

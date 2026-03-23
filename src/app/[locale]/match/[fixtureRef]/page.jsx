@@ -38,7 +38,6 @@ export default async function MatchDetailPage({ params }) {
           <h1 className={styles.pageTitle}>
             {fixture.homeTeam.name} vs {fixture.awayTeam.name}
           </h1>
-          <p className={styles.pageLead}>Kickoff, status, result snapshot, and available odds market coverage.</p>
         </div>
         <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} />
       </header>
@@ -63,9 +62,9 @@ export default async function MatchDetailPage({ params }) {
           </div>
           <div className={styles.detailMeta}>
             <span>{formatKickoff(fixture.startsAt, locale)}</span>
-            <span>{fixture.venue || "Venue pending"}</span>
-            <span>{fixture.round || "Round pending"}</span>
-            <span>{fixture.resultSnapshot?.statusText || "Awaiting full result summary"}</span>
+            {fixture.venue ? <span>{fixture.venue}</span> : null}
+            {fixture.round ? <span>{fixture.round}</span> : null}
+            {fixture.resultSnapshot?.statusText ? <span>{fixture.resultSnapshot.statusText}</span> : null}
           </div>
         </article>
 

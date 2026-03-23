@@ -22,10 +22,9 @@ export default async function TeamsPage({ params }) {
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.teams}</p>
-          <h1 className={styles.pageTitle}>{dictionary.teams}</h1>
-          <p className={styles.pageLead}>Team landing pages anchored to league context and recent fixture activity.</p>
+        <h1 className={styles.pageTitle}>{dictionary.teams}</h1>
+        <div className={styles.sectionTools}>
+          <span className={styles.badge}>{teams.length}</span>
         </div>
       </header>
       {teams.length ? (
@@ -46,7 +45,7 @@ export default async function TeamsPage({ params }) {
                 ) : null}
               </div>
               <p className={styles.metaRow}>
-                Latest state: {team.homeFor[0]?.status || "Awaiting fixtures"}
+                {team.homeFor[0]?.status || dictionary.noData}
               </p>
             </article>
           ))}

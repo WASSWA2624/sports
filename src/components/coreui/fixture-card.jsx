@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FavoriteToggle } from "./favorite-toggle";
 import styles from "./styles.module.css";
-import { formatFixtureStatus, formatKickoff, formatScore } from "../../lib/coreui/format";
+import { formatFixtureStatus, formatKickoff } from "../../lib/coreui/format";
 
 export function FixtureCard({ fixture, locale }) {
   const href = `/${locale}/match/${fixture.externalRef || fixture.id}`;
@@ -24,7 +24,7 @@ export function FixtureCard({ fixture, locale }) {
           {formatFixtureStatus(fixture.status, locale)}
         </span>
         <span>{formatKickoff(fixture.startsAt, locale)}</span>
-        <span>{fixture.venue || fixture.round || "Matchday"}</span>
+        {(fixture.venue || fixture.round) ? <span>{fixture.venue || fixture.round}</span> : null}
       </div>
       <div className={styles.scoreLine}>
         <div>
@@ -36,9 +36,9 @@ export function FixtureCard({ fixture, locale }) {
           <strong>{fixture.resultSnapshot?.awayScore ?? "-"}</strong>
         </div>
       </div>
-      <p className={styles.fixtureSummary}>
-        {fixture.resultSnapshot?.statusText || `Scoreline ${formatScore(fixture.resultSnapshot)}`}
-      </p>
+      {fixture.resultSnapshot?.statusText ? (
+        <p className={styles.fixtureSummary}>{fixture.resultSnapshot.statusText}</p>
+      ) : null}
     </article>
   );
 }

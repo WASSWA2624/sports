@@ -39,9 +39,6 @@ export default async function LeagueDetailPage({ params }) {
         <div>
           <p className={styles.eyebrow}>{league.country || "International"}</p>
           <h1 className={styles.pageTitle}>{league.name}</h1>
-          <p className={styles.pageLead}>
-            Competition overview with current standings, featured teams, and latest fixtures.
-          </p>
         </div>
         <Link href={`/${locale}/tables`} className={styles.actionLink}>
           {dictionary.standings}

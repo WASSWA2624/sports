@@ -37,7 +37,6 @@ export default async function TeamDetailPage({ params }) {
         <div>
           <p className={styles.eyebrow}>{team.league?.name || dictionary.teams}</p>
           <h1 className={styles.pageTitle}>{team.name}</h1>
-          <p className={styles.pageLead}>Team profile with league context, position snapshots, and recent fixtures.</p>
         </div>
         {team.league ? (
           <Link href={`/${locale}/leagues/${team.league.code}`} className={styles.actionLink}>

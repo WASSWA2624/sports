@@ -22,10 +22,9 @@ export default async function FixturesPage({ params }) {
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.upcoming}</p>
-          <h1 className={styles.pageTitle}>{dictionary.upcoming}</h1>
-          <p className={styles.pageLead}>Future kickoffs ordered chronologically for quick browsing and SEO indexing.</p>
+        <h1 className={styles.pageTitle}>{dictionary.upcoming}</h1>
+        <div className={styles.sectionTools}>
+          <span className={styles.badge}>{fixtures.length}</span>
         </div>
       </header>
       {fixtures.length ? (
