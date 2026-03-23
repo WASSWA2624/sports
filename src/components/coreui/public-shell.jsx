@@ -7,6 +7,7 @@ import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
 import { PreferencesProvider, usePreferences } from "./preferences-provider";
 import { ShellSearch } from "./shell-search";
+import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 import { SCORES_NAV, SPORTS_STRIP, TOP_LEVEL_NAV } from "../../lib/coreui/config";
 
@@ -80,7 +81,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                     href={href}
                     className={active ? styles.topModeLinkActive : styles.topModeLink}
                   >
-                    {item.key === "scores" ? dictionary.scores : dictionary.news}
+                    <span className={styles.modeLinkContent}>
+                      <ShellIcon name={item.key} className={styles.modeIcon} />
+                      <span>{item.key === "scores" ? dictionary.scores : dictionary.news}</span>
+                    </span>
                   </Link>
                 );
               })}
@@ -111,14 +115,23 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
           <div className={styles.headerControls}>
             <ShellSearch dictionary={dictionary} locale={locale} shortcuts={shellData?.searchShortcuts || []} />
-            <Link href="/profile" className={styles.sectionAction}>
-              {sessionUser ? dictionary.profile : dictionary.login}
+            <Link
+              href="/profile"
+              aria-label={sessionUser ? dictionary.profile : dictionary.login}
+              className={`${styles.sectionAction} ${styles.headerAction}`}
+            >
+              <ShellIcon name="profile" className={styles.controlIcon} />
+              <span className={styles.headerActionLabel}>
+                {sessionUser ? dictionary.profile : dictionary.login}
+              </span>
             </Link>
             <div className={styles.desktopMetaControls}>
               <LocaleSwitcher locale={locale} label={dictionary.locale} />
               <ThemeToggle label={dictionary.theme} />
-              <div className={styles.watchPill}>
-                {dictionary.watchlist} {watchCount}
+              <div className={`${styles.watchPill} ${styles.headerWatchPill}`}>
+                <ShellIcon name="favorites" className={styles.controlIcon} />
+                <span>{dictionary.watchlist}</span>
+                <strong className={styles.watchValue}>{watchCount}</strong>
               </div>
             </div>
             <button
@@ -126,9 +139,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
               className={styles.mobileMenuButton}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-shell-menu"
+              aria-label="Menu"
               onClick={() => setMobileMenuOpen((current) => !current)}
             >
-              Menu
+              <ShellIcon name="menu" className={styles.controlIcon} />
+              <span className={styles.mobileMenuButtonLabel}>Menu</span>
             </button>
           </div>
         </div>
@@ -138,7 +153,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             if (sport.key === "favorites") {
               return (
                 <button key={sport.key} type="button" className={styles.sportsChipDisabled}>
-                  <span>{sport.label}</span>
+                  <span className={styles.sportLinkContent}>
+                    <ShellIcon name={sport.key} className={styles.sportIcon} />
+                    <span>{sport.label}</span>
+                  </span>
                   <span className={styles.sportsCount}>{watchCount}</span>
                 </button>
               );
@@ -151,14 +169,20 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                   href={`/${locale}${sport.href}`}
                   className={sport.key === "football" && !isNewsMode ? styles.sportsChipActive : styles.sportsChip}
                 >
-                  {sport.label}
+                  <span className={styles.sportLinkContent}>
+                    <ShellIcon name={sport.key} className={styles.sportIcon} />
+                    <span>{sport.label}</span>
+                  </span>
                 </Link>
               );
             }
 
             return (
               <button key={sport.key} type="button" className={styles.sportsChipDisabled}>
-                {sport.label}
+                <span className={styles.sportLinkContent}>
+                  <ShellIcon name={sport.key} className={styles.sportIcon} />
+                  <span>{sport.label}</span>
+                </span>
               </button>
             );
           })}
@@ -179,7 +203,8 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 className={styles.mobileMenuClose}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Close
+                <ShellIcon name="close" className={styles.controlIcon} />
+                <span>Close</span>
               </button>
             </div>
 
@@ -265,8 +290,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 <div className={styles.mobileMenuPreferences}>
                   <LocaleSwitcher locale={locale} label={dictionary.locale} />
                   <ThemeToggle label={dictionary.theme} />
-                  <div className={styles.watchPill}>
-                    {dictionary.watchlist} {watchCount}
+                  <div className={`${styles.watchPill} ${styles.headerWatchPill}`}>
+                    <ShellIcon name="favorites" className={styles.controlIcon} />
+                    <span>{dictionary.watchlist}</span>
+                    <strong className={styles.watchValue}>{watchCount}</strong>
                   </div>
                 </div>
               </section>

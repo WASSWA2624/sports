@@ -5,6 +5,7 @@ import Link from "next/link";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { closeSearch, openSearch } from "../../lib/store";
+import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 
 const Overlay = styled.div`
@@ -65,8 +66,14 @@ export function ShellSearch({ dictionary, locale, shortcuts }) {
 
   return (
     <>
-      <button type="button" className={styles.sectionAction} onClick={() => dispatch(openSearch())}>
-        {dictionary.search}
+      <button
+        type="button"
+        aria-label={dictionary.search}
+        className={`${styles.sectionAction} ${styles.headerAction}`}
+        onClick={() => dispatch(openSearch())}
+      >
+        <ShellIcon name="search" className={styles.controlIcon} />
+        <span className={styles.headerActionLabel}>{dictionary.search}</span>
       </button>
 
       {searchOpen ? (

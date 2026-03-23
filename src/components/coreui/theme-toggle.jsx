@@ -1,6 +1,7 @@
 "use client";
 
 import { usePreferences } from "./preferences-provider";
+import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 
 const options = [
@@ -13,7 +14,10 @@ export function ThemeToggle({ label }) {
   const { theme, setTheme } = usePreferences();
 
   return (
-    <div className={styles.preferenceBlock} role="group" aria-label={label}>
+    <div className={`${styles.preferenceBlock} ${styles.headerPreferenceBlock}`} role="group" aria-label={label}>
+      <span className={styles.preferenceIcon}>
+        <ShellIcon name="theme" className={styles.controlIcon} />
+      </span>
       <span className={styles.srOnly}>{label}</span>
       <div className={styles.segmentedControl}>
         {options.map((option) => (

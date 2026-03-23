@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { LOCALE_LABELS } from "../../lib/coreui/config";
 import { LOCALE_COOKIE_NAME, SUPPORTED_LOCALES } from "../../lib/coreui/preferences";
+import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 
 export function LocaleSwitcher({ locale, label }) {
@@ -24,7 +25,10 @@ export function LocaleSwitcher({ locale, label }) {
   }
 
   return (
-    <label className={styles.inlineControl}>
+    <label className={`${styles.inlineControl} ${styles.headerSelect}`}>
+      <span className={styles.selectAdornment}>
+        <ShellIcon name="locale" className={styles.controlIcon} />
+      </span>
       <span className={styles.srOnly}>{label}</span>
       <select
         aria-label={label}
@@ -38,6 +42,9 @@ export function LocaleSwitcher({ locale, label }) {
           </option>
         ))}
       </select>
+      <span className={styles.selectChevron}>
+        <ShellIcon name="chevron-down" className={styles.chevronIcon} />
+      </span>
     </label>
   );
 }
