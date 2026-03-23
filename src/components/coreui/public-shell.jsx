@@ -47,7 +47,13 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
     savedCompetitions.length > 0
       ? savedCompetitions
       : (shellData?.featuredCompetitions || []).slice(0, 6);
-  const compactVisibleSports = new Set(["football", "more"]);
+  const favoriteSport = SPORTS_STRIP.find((sport) => sport.key === "favorites");
+  const moreSport = SPORTS_STRIP.find((sport) => sport.key === "more");
+  const rankedSports = SPORTS_STRIP.filter(
+    (sport) => sport.key !== "favorites" && sport.key !== "more"
+  );
+  const primarySports = rankedSports.slice(0, 3);
+  const overflowSports = rankedSports.slice(3);
   const visibleScoreViews = SCORES_NAV.filter((item) => {
     const active =
       item.href === ""
@@ -75,6 +81,29 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 </div>
               </div>
             </div>
+
+            <nav className={styles.topModeNav} aria-label="Browse">
+              {TOP_LEVEL_NAV.map((item) => {
+                const href = `/${locale}${item.href}`;
+                const active =
+                  item.key === "news"
+                    ? isNewsMode
+                    : !isNewsMode && (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
+
+                return (
+                  <Link
+                    key={item.key}
+                    href={href}
+                    className={active ? styles.topModeLinkActive : styles.topModeLink}
+                  >
+                    <span className={styles.modeLinkContent}>
+                      <ShellIcon name={item.key} className={styles.modeIcon} />
+                      <span>{item.key === "scores" ? dictionary.scores : dictionary.news}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
 
             <div className={styles.headerControls}>
               <ShellSearch dictionary={dictionary} locale={locale} shortcuts={shellData?.searchShortcuts || []} />
@@ -104,30 +133,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
           {!isNewsMode ? (
             <div className={styles.headerNavRail}>
-              <nav className={styles.topModeNav}>
-                {TOP_LEVEL_NAV.map((item) => {
-                  const href = `/${locale}${item.href}`;
-                  const active =
-                    item.key === "news"
-                      ? isNewsMode
-                      : !isNewsMode && (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
-
-                  return (
-                    <Link
-                      key={item.key}
-                      href={href}
-                      className={active ? styles.topModeLinkActive : styles.topModeLink}
-                    >
-                      <span className={styles.modeLinkContent}>
-                        <ShellIcon name={item.key} className={styles.modeIcon} />
-                        <span>{item.key === "scores" ? dictionary.scores : dictionary.news}</span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </nav>
-
-              <nav className={styles.nav}>
+              <nav className={styles.nav} aria-label={dictionary.scoreViews}>
                 {visibleScoreViews.map((item) => {
                   const href = `/${locale}${item.href}`;
                   const active =
@@ -147,33 +153,24 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 })}
               </nav>
 
-              <div className={styles.sportsStrip}>
-                {SPORTS_STRIP.map((sport) => {
-                  const compactHidden = !compactVisibleSports.has(sport.key);
-                  const visibilityClass = compactHidden ? styles.sportCompactHidden : "";
+              <nav className={styles.sportsStrip} aria-label="Sports">
+                {favoriteSport ? (
+                  <button key={favoriteSport.key} type="button" className={styles.sportsChipDisabled}>
+                    <span className={styles.sportLinkContent}>
+                      <ShellIcon name={favoriteSport.key} className={styles.sportIcon} />
+                      <span>{favoriteSport.label}</span>
+                    </span>
+                    <span className={styles.sportsCount}>{watchCount}</span>
+                  </button>
+                ) : null}
 
-                  if (sport.key === "favorites") {
-                    return (
-                      <button
-                        key={sport.key}
-                        type="button"
-                        className={`${styles.sportsChipDisabled} ${visibilityClass}`}
-                      >
-                        <span className={styles.sportLinkContent}>
-                          <ShellIcon name={sport.key} className={styles.sportIcon} />
-                          <span>{sport.label}</span>
-                        </span>
-                        <span className={styles.sportsCount}>{watchCount}</span>
-                      </button>
-                    );
-                  }
-
+                {primarySports.map((sport) => {
                   if (sport.enabled) {
                     return (
                       <Link
                         key={sport.key}
                         href={`/${locale}${sport.href}`}
-                        className={`${sport.key === "football" && !isNewsMode ? styles.sportsChipActive : styles.sportsChip} ${visibilityClass}`}
+                        className={sport.key === "football" && !isNewsMode ? styles.sportsChipActive : styles.sportsChip}
                       >
                         <span className={styles.sportLinkContent}>
                           <ShellIcon name={sport.key} className={styles.sportIcon} />
@@ -184,11 +181,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                   }
 
                   return (
-                    <button
-                      key={sport.key}
-                      type="button"
-                      className={`${styles.sportsChipDisabled} ${visibilityClass}`}
-                    >
+                    <button key={sport.key} type="button" className={styles.sportsChipDisabled}>
                       <span className={styles.sportLinkContent}>
                         <ShellIcon name={sport.key} className={styles.sportIcon} />
                         <span>{sport.label}</span>
@@ -196,7 +189,51 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                     </button>
                   );
                 })}
-              </div>
+
+                {overflowSports.length && moreSport ? (
+                  <details className={styles.sportsMoreMenu}>
+                    <summary className={styles.sportsMoreSummary}>
+                      <span className={styles.sportLinkContent}>
+                        <ShellIcon name={moreSport.key} className={styles.sportIcon} />
+                        <span>{moreSport.label}</span>
+                      </span>
+                    </summary>
+
+                    <div className={styles.sportsMorePanel}>
+                      {overflowSports.map((sport) => {
+                        const content = (
+                          <span className={styles.sportLinkContent}>
+                            <ShellIcon name={sport.key} className={styles.sportIcon} />
+                            <span>{sport.label}</span>
+                          </span>
+                        );
+
+                        if (sport.enabled) {
+                          return (
+                            <Link
+                              key={sport.key}
+                              href={`/${locale}${sport.href}`}
+                              className={styles.sportsMoreItem}
+                            >
+                              {content}
+                            </Link>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={sport.key}
+                            type="button"
+                            className={`${styles.sportsMoreItem} ${styles.sportsMoreItemMuted}`}
+                          >
+                            {content}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </details>
+                ) : null}
+              </nav>
             </div>
           ) : null}
         </div>
@@ -338,7 +375,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
               <section className={styles.mobileMenuSection}>
                 <h2 className={styles.mobileMenuSectionTitle}>Sports</h2>
                 <div className={styles.mobileMenuList}>
-                  {SPORTS_STRIP.map((sport) => {
+                  {SPORTS_STRIP.filter((sport) => sport.key !== "more").map((sport) => {
                     const content = (
                       <span className={styles.mobileMenuSportContent}>
                         <ShellIcon name={sport.key} className={styles.sportIcon} />
