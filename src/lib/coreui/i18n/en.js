@@ -48,6 +48,11 @@ const en = {
   statusCancelled: "Cancelled",
   watch: "Save",
   watching: "Saved",
+  alertsManage: "Alerts",
+  alertsManageCount: "Alerts {count}",
+  alertsSyncAccount: "Alert choices sync to your account.",
+  alertsSyncGuest: "Alert choices stay on this device until you sign in.",
+  alertsUnavailable: "Alert subscriptions are not available for this item yet.",
   seoSuffix: "Sports coverage",
   home: "Home",
   live: "Live",
@@ -331,6 +336,7 @@ const en = {
   profileAlertGoals: "Goals",
   profileAlertCards: "Cards",
   profileAlertKickoff: "Kickoff",
+  profileAlertPeriodChange: "Period change",
   profileAlertFinalResult: "Final result",
   profileSave: "Save preferences",
   profileLoading: "Loading profile...",
@@ -364,6 +370,16 @@ const en = {
   incidentYellows: "{count} yellows",
   incidentReds: "{count} reds",
   incidentVar: "{count} VAR",
+  favoritesTitle: "Favorites and alerts",
+  favoritesLead:
+    "Track saved competitions, teams, and matches from one page, then turn alerts on where you want faster follow-up.",
+  favoritesEmpty: "Save a competition, team, or match to start building your favorites page.",
+  favoritesCompetitions: "Saved competitions",
+  favoritesTeams: "Saved teams",
+  favoritesMatches: "Saved matches",
+  metaFavoritesTitle: "Favorites",
+  metaFavoritesDescription:
+    "Your saved competitions, teams, matches, and alert shortcuts in one personalized hub.",
 };
 
 export default en;

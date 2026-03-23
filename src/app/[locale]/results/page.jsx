@@ -7,7 +7,13 @@ import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getResultsFeed } from "../../../lib/coreui/live-read";
 import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
 import { NewsModule } from "../../../components/coreui/news-module";
+import { PersonalizationUsageTracker } from "../../../components/coreui/personalization-usage-tracker";
 import styles from "../../../components/coreui/styles.module.css";
+import {
+  getPersonalizationSnapshot,
+  getPersonalizationUsage,
+  sortFixturesByPersonalization,
+} from "../../../lib/personalization";
 
 function buildResultsHref(locale, status, league) {
   const params = new URLSearchParams();
@@ -55,7 +61,7 @@ export default async function ResultsPage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const [feed, latestNews, flags] = await Promise.all([
+  const [feed, latestNews, flags, personalization] = await Promise.all([
     getResultsFeed({
       locale,
       status: filters?.status,
@@ -63,11 +69,26 @@ export default async function ResultsPage({ params, searchParams }) {
     }),
     getLatestNewsModule(),
     getPublicSurfaceFlags(),
+    getPersonalizationSnapshot(),
   ]);
-  const sections = groupFixturesByDay(feed.fixtures, locale);
+  const usage = getPersonalizationUsage(personalization);
+  const sections = groupFixturesByDay(feed.fixtures, locale).map((section) => ({
+    ...section,
+    fixtures: sortFixturesByPersonalization(
+      section.fixtures,
+      personalization,
+      (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+    ),
+  }));
 
   return (
     <section className={styles.section}>
+      <PersonalizationUsageTracker
+        active={usage.hasFavorites || usage.hasRecentViews}
+        surface="results-board"
+        metadata={usage}
+      />
+
       <header className={styles.pageHeader}>
         <div>
           <p className={styles.eyebrow}>{dictionary.resultsEyebrow}</p>

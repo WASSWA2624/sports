@@ -14,10 +14,11 @@ import { getScoreViewLabel, getSportLabel } from "../../lib/coreui/dictionaries"
 
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData }) {
   const pathname = usePathname();
-  const { sessionUser, watchlist, watchlistCount } = usePreferences();
+  const { sessionUser, watchlist, watchlistCount, recentViews } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isFavoritesPage = pathname === `/${locale}/favorites` || pathname.startsWith(`/${locale}/favorites/`);
   const watchCount = watchlistCount || watchlistItems.length;
   const allCompetitions = [
     ...(shellData?.featuredCompetitions || []),
@@ -29,17 +30,21 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
     )),
   ];
 
-  const savedCompetitions = watchlist
-    .filter((itemId) => itemId.startsWith("competition:"))
-    .map((itemId) => itemId.split(":")[1])
+  const savedCompetitions = [...new Set(
+    [...watchlist, ...recentViews]
+      .filter((itemId) => itemId.startsWith("competition:"))
+      .map((itemId) => itemId.split(":")[1])
+  )]
     .map((competitionCode) =>
       allCompetitions.find((competition) => competition.code === competitionCode)
     )
     .filter(Boolean);
 
-  const savedTeams = watchlist
-    .filter((itemId) => itemId.startsWith("team:"))
-    .map((itemId) => itemId.split(":")[1])
+  const savedTeams = [...new Set(
+    [...watchlist, ...recentViews]
+      .filter((itemId) => itemId.startsWith("team:"))
+      .map((itemId) => itemId.split(":")[1])
+  )]
     .map((teamId) =>
       (shellData?.teamDirectory || []).find((team) => team.id === teamId || team.code === teamId)
     )
@@ -171,14 +176,18 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
             {!isNewsMode ? (
               <nav className={styles.sportsStrip} aria-label={dictionary.sports}>
-                {favoriteSport ? (
-                  <button key={favoriteSport.key} type="button" className={styles.sportsChipDisabled}>
+                {favoriteSport?.href ? (
+                  <Link
+                    key={favoriteSport.key}
+                    href={`/${locale}${favoriteSport.href}`}
+                    className={isFavoritesPage ? styles.sportsChipActive : styles.sportsChip}
+                  >
                     <span className={styles.sportLinkContent}>
                       <ShellIcon name={favoriteSport.key} className={styles.sportIcon} />
                       <span>{getSportLabel(favoriteSport.key, dictionary)}</span>
                     </span>
                     <span className={styles.sportsCount}>{watchCount}</span>
-                  </button>
+                  </Link>
                 ) : null}
 
                 {primarySports.map((sport) => {
@@ -395,7 +404,20 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                       );
 
                       if (sport.key === "favorites") {
-                        return (
+                        return sport.href ? (
+                          <Link
+                            key={sport.key}
+                            href={`/${locale}${sport.href}`}
+                            className={isFavoritesPage ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <span className={styles.mobileMenuItemContent}>
+                              <ShellIcon name={sport.key} className={styles.sportIcon} />
+                              <span>{getSportLabel(sport.key, dictionary)}</span>
+                            </span>
+                            <span className={styles.badge}>{watchCount}</span>
+                          </Link>
+                        ) : (
                           <div key={sport.key} className={styles.mobileMenuSportRow}>
                             {content}
                             <span className={styles.badge}>{watchCount}</span>
@@ -654,6 +676,8 @@ export function PublicShell({
   dictionary,
   initialTheme,
   initialWatchlist,
+  initialAlertSettings,
+  initialRecentViews,
   shellData,
 }) {
   return (
@@ -661,6 +685,8 @@ export function PublicShell({
       initialLocale={locale}
       initialTheme={initialTheme}
       initialWatchlist={initialWatchlist}
+      initialAlertSettings={initialAlertSettings}
+      initialRecentViews={initialRecentViews}
     >
       <ShellFrame
         locale={locale}

@@ -18,6 +18,7 @@ import { buildCompetitionHref, buildMatchHref } from "../../lib/coreui/routes";
 export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = true }) {
   const href = buildMatchHref(locale, fixture);
   const dictionary = getDictionary(locale);
+  const fixtureLabel = `${fixture.homeTeam?.name} vs ${fixture.awayTeam?.name}`;
   const minuteLabel = fixture.status === "LIVE" ? getFixtureMinute(fixture) : null;
   const refreshProfile = buildFixtureRefreshProfile(fixture, locale);
   const isFrozen = isTerminalStatus(fixture.status) && fixture.resultSnapshot?.capturedAt;
@@ -82,7 +83,16 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
       </div>
 
       <div className={styles.fixtureFeedActions}>
-        <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} compact />
+        <FavoriteToggle
+          itemId={`fixture:${fixture.id}`}
+          locale={locale}
+          compact
+          label={fixtureLabel}
+          metadata={{
+            leagueCode: fixture.league?.code || null,
+          }}
+          surface={`fixture-feed-${mode}`}
+        />
         <Link href={href} className={styles.actionLink}>
           {dictionary.match}
         </Link>

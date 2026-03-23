@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { AlertSubscriptionControl } from "../../../../components/coreui/alert-subscription-control";
 import { CompetitionOddsTabs } from "../../../../components/coreui/competition-odds-tabs";
+import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
 import { NewsModule } from "../../../../components/coreui/news-module";
+import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
 import styles from "../../../../components/coreui/styles.module.css";
 import {
@@ -17,6 +20,11 @@ import { buildPageMetadata } from "../../../../lib/coreui/metadata";
 import { getCompetitionNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import { getLeagueDetail } from "../../../../lib/coreui/read";
+import {
+  getPersonalizationSnapshot,
+  sortFixturesByPersonalization,
+  sortTeamsByPersonalization,
+} from "../../../../lib/personalization";
 import {
   buildCountryHref,
   buildSportHref,
@@ -178,7 +186,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     territory: filters?.territory,
     headers: await headers(),
   });
-  const [league, flags] = await Promise.all([
+  const [league, flags, personalization] = await Promise.all([
     getLeagueDetail(leagueCode, {
       locale,
       viewerTerritory,
@@ -186,6 +194,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
       standingsView: selectedStandingView,
     }),
     getPublicSurfaceFlags(),
+    getPersonalizationSnapshot(),
   ]);
 
   if (!league) {
@@ -203,6 +212,21 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     league.selectedSeason?.externalRef || league.selectedSeason?.id || league.selectedSeason?.name;
   const oddsSurface = league.competitionOdds;
   const shouldGateOdds = oddsSurface.enabled && oddsSurface.tabs.length > 0;
+  const prioritizedTeams = sortTeamsByPersonalization(
+    league.teams,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
+  const prioritizedUpcomingFixtures = sortFixturesByPersonalization(
+    league.upcomingFixtures,
+    personalization,
+    (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+  );
+  const prioritizedRecentResults = sortFixturesByPersonalization(
+    league.recentResults,
+    personalization,
+    (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+  );
 
   const oddsContent = (
     <div className={styles.surfaceStack}>
@@ -238,6 +262,15 @@ export default async function LeagueDetailPage({ params, searchParams }) {
 
   return (
     <section className={styles.section}>
+      <RecentViewTracker
+        itemId={`competition:${league.code}`}
+        label={league.name}
+        metadata={{
+          sport: sport?.name || null,
+          country: league.country || null,
+        }}
+      />
+
       <header className={styles.pageHeader}>
         <div>
           <div className={styles.linkList}>
@@ -262,6 +295,25 @@ export default async function LeagueDetailPage({ params, searchParams }) {
         </div>
         <div className={styles.sectionTools}>
           <span className={styles.badge}>{league.teams.length}</span>
+          <FavoriteToggle
+            itemId={`competition:${league.code}`}
+            locale={locale}
+            label={league.name}
+            metadata={{
+              country: league.country || null,
+            }}
+            surface="league-detail"
+          />
+          <AlertSubscriptionControl
+            itemId={`competition:${league.code}`}
+            locale={locale}
+            supportedTypes={["KICKOFF", "FINAL_RESULT"]}
+            label={league.name}
+            metadata={{
+              country: league.country || null,
+            }}
+            surface="league-detail"
+          />
           <Link
             href={buildLeagueHref(locale, league.code, {
               tab: "standings",
@@ -348,13 +400,32 @@ export default async function LeagueDetailPage({ params, searchParams }) {
                 <h2 className={styles.cardTitle}>{dictionary.teams}</h2>
                 <span className={styles.badge}>{league.teams.length}</span>
               </div>
-              {league.teams.length ? (
+              {prioritizedTeams.length ? (
                 <div className={styles.teamGrid}>
-                  {league.teams.map((team) => (
-                    <Link key={team.id} href={buildTeamHref(locale, team)} className={styles.teamCard}>
-                      <p className={styles.cardTitle}>{team.name}</p>
-                      <p className={styles.muted}>{team.shortName || team.code || league.name}</p>
-                    </Link>
+                  {prioritizedTeams.map((team) => (
+                    <article key={team.id} className={styles.teamCard}>
+                      <div className={styles.cardHeader}>
+                        <div>
+                          <p className={styles.cardTitle}>
+                            <Link href={buildTeamHref(locale, team)}>{team.name}</Link>
+                          </p>
+                          <p className={styles.muted}>{team.shortName || team.code || league.name}</p>
+                        </div>
+                        <FavoriteToggle
+                          itemId={`team:${team.id}`}
+                          locale={locale}
+                          compact
+                          label={team.name}
+                          metadata={{
+                            leagueCode: league.code,
+                          }}
+                          surface="league-detail"
+                        />
+                      </div>
+                      <Link href={buildTeamHref(locale, team)} className={styles.sectionAction}>
+                        {dictionary.teamProfile}
+                      </Link>
+                    </article>
                   ))}
                 </div>
               ) : (
@@ -380,9 +451,9 @@ export default async function LeagueDetailPage({ params, searchParams }) {
                 {dictionary.browseAll}
               </Link>
             </div>
-            {league.upcomingFixtures.length ? (
+            {prioritizedUpcomingFixtures.length ? (
               <div className={styles.fixtureGrid}>
-                {league.upcomingFixtures.slice(0, 6).map((fixture) => (
+                {prioritizedUpcomingFixtures.slice(0, 6).map((fixture) => (
                   <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
                 ))}
               </div>
@@ -408,9 +479,9 @@ export default async function LeagueDetailPage({ params, searchParams }) {
                 {dictionary.browseAll}
               </Link>
             </div>
-            {league.recentResults.length ? (
+            {prioritizedRecentResults.length ? (
               <div className={styles.fixtureGrid}>
-                {league.recentResults.slice(0, 6).map((fixture) => (
+                {prioritizedRecentResults.slice(0, 6).map((fixture) => (
                   <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
                 ))}
               </div>
@@ -499,11 +570,11 @@ export default async function LeagueDetailPage({ params, searchParams }) {
               <p className={styles.eyebrow}>{dictionary.results}</p>
               <h2 className={styles.sectionTitle}>{dictionary.results}</h2>
             </div>
-            <span className={styles.badge}>{league.recentResults.length}</span>
+            <span className={styles.badge}>{prioritizedRecentResults.length}</span>
           </div>
-          {league.recentResults.length ? (
+          {prioritizedRecentResults.length ? (
             <div className={styles.fixtureGrid}>
-              {league.recentResults.map((fixture) => (
+              {prioritizedRecentResults.map((fixture) => (
                 <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
               ))}
             </div>
@@ -520,11 +591,11 @@ export default async function LeagueDetailPage({ params, searchParams }) {
               <p className={styles.eyebrow}>{dictionary.fixtures}</p>
               <h2 className={styles.sectionTitle}>{dictionary.fixtures}</h2>
             </div>
-            <span className={styles.badge}>{league.upcomingFixtures.length}</span>
+            <span className={styles.badge}>{prioritizedUpcomingFixtures.length}</span>
           </div>
-          {league.upcomingFixtures.length ? (
+          {prioritizedUpcomingFixtures.length ? (
             <div className={styles.fixtureGrid}>
-              {league.upcomingFixtures.map((fixture) => (
+              {prioritizedUpcomingFixtures.map((fixture) => (
                 <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
               ))}
             </div>

@@ -3,8 +3,14 @@ import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
 import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getUpcomingFixtures } from "../../../lib/coreui/read";
+import {
+  getPersonalizationSnapshot,
+  getPersonalizationUsage,
+  sortFixturesByPersonalization,
+} from "../../../lib/personalization";
 import { FixtureCard } from "../../../components/coreui/fixture-card";
 import { NewsModule } from "../../../components/coreui/news-module";
+import { PersonalizationUsageTracker } from "../../../components/coreui/personalization-usage-tracker";
 import styles from "../../../components/coreui/styles.module.css";
 
 export async function generateMetadata({ params }) {
@@ -20,23 +26,36 @@ export async function generateMetadata({ params }) {
 export default async function FixturesPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const [fixtures, latestNews, flags] = await Promise.all([
+  const [fixtures, latestNews, flags, personalization] = await Promise.all([
     getUpcomingFixtures(),
     getLatestNewsModule(),
     getPublicSurfaceFlags(),
+    getPersonalizationSnapshot(),
   ]);
+  const usage = getPersonalizationUsage(personalization);
+  const prioritizedFixtures = sortFixturesByPersonalization(
+    fixtures,
+    personalization,
+    (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+  );
 
   return (
     <section className={styles.section}>
+      <PersonalizationUsageTracker
+        active={usage.hasFavorites || usage.hasRecentViews}
+        surface="fixtures-board"
+        metadata={usage}
+      />
+
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{dictionary.upcoming}</h1>
         <div className={styles.sectionTools}>
-          <span className={styles.badge}>{fixtures.length}</span>
+          <span className={styles.badge}>{prioritizedFixtures.length}</span>
         </div>
       </header>
-      {fixtures.length ? (
+      {prioritizedFixtures.length ? (
         <div className={styles.fixtureGrid}>
-          {fixtures.map((fixture) => (
+          {prioritizedFixtures.map((fixture) => (
             <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
           ))}
         </div>

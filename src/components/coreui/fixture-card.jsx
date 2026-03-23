@@ -1,14 +1,22 @@
 import Link from "next/link";
+import { AlertSubscriptionControl } from "./alert-subscription-control";
 import { FavoriteToggle } from "./favorite-toggle";
 import styles from "./styles.module.css";
 import { formatFixtureStatus, formatKickoff } from "../../lib/coreui/format";
 import { getDictionary } from "../../lib/coreui/dictionaries";
 import { buildCompetitionHref, buildMatchHref } from "../../lib/coreui/routes";
 
-export function FixtureCard({ fixture, locale }) {
+export function FixtureCard({
+  fixture,
+  locale,
+  showAlerts = false,
+  alertSupportedTypes,
+  surface = "app",
+}) {
   const href = buildMatchHref(locale, fixture);
   const dictionary = getDictionary(locale);
   const competitionHref = fixture.league?.code ? buildCompetitionHref(locale, fixture.league) : null;
+  const fixtureLabel = `${fixture.homeTeam?.name} vs ${fixture.awayTeam?.name}`;
 
   return (
     <article className={styles.fixtureCard}>
@@ -23,11 +31,19 @@ export function FixtureCard({ fixture, locale }) {
           </p>
           <h3 className={styles.fixtureTitle}>
             <Link href={href}>
-              {fixture.homeTeam?.name} vs {fixture.awayTeam?.name}
+              {fixtureLabel}
             </Link>
           </h3>
         </div>
-        <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} />
+        <FavoriteToggle
+          itemId={`fixture:${fixture.id}`}
+          locale={locale}
+          label={fixtureLabel}
+          metadata={{
+            leagueCode: fixture.league?.code || null,
+          }}
+          surface={surface}
+        />
       </div>
       <div className={styles.fixtureMeta}>
         <span className={fixture.status === "LIVE" ? styles.liveBadge : styles.badge}>
@@ -48,6 +64,23 @@ export function FixtureCard({ fixture, locale }) {
       </div>
       {fixture.resultSnapshot?.statusText ? (
         <p className={styles.fixtureSummary}>{fixture.resultSnapshot.statusText}</p>
+      ) : null}
+      {showAlerts ? (
+        <div className={styles.fixtureActionRow}>
+          <AlertSubscriptionControl
+            itemId={`fixture:${fixture.id}`}
+            locale={locale}
+            supportedTypes={alertSupportedTypes}
+            label={fixtureLabel}
+            metadata={{
+              leagueCode: fixture.league?.code || null,
+            }}
+            surface={surface}
+          />
+          <Link href={href} className={styles.sectionAction}>
+            {dictionary.match}
+          </Link>
+        </div>
       ) : null}
     </article>
   );

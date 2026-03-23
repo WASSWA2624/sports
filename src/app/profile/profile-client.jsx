@@ -14,6 +14,7 @@ const defaultPreferences = {
     goals: true,
     cards: false,
     kickoff: true,
+    periodChange: false,
     finalResult: true,
   },
 };
@@ -52,6 +53,7 @@ export default function ProfileClient({ dictionary, locale }) {
                 goals: true,
                 cards: false,
                 kickoff: true,
+                periodChange: false,
                 finalResult: true,
               },
           });
@@ -95,6 +97,7 @@ export default function ProfileClient({ dictionary, locale }) {
     ["goals", dictionary.profileAlertGoals],
     ["cards", dictionary.profileAlertCards],
     ["kickoff", dictionary.profileAlertKickoff],
+    ["periodChange", dictionary.profileAlertPeriodChange],
     ["finalResult", dictionary.profileAlertFinalResult],
   ];
 

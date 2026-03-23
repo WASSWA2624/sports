@@ -48,6 +48,11 @@ const sw = {
   statusCancelled: "Imefutwa",
   watch: "Hifadhi",
   watching: "Imehifadhiwa",
+  alertsManage: "Arifa",
+  alertsManageCount: "Arifa {count}",
+  alertsSyncAccount: "Chaguo za arifa zitasawazishwa kwenye akaunti yako.",
+  alertsSyncGuest: "Chaguo za arifa zitabaki kwenye kifaa hiki hadi uingie.",
+  alertsUnavailable: "Usajili wa arifa bado haupatikani kwa kipengee hiki.",
   seoSuffix: "Ukurasa wa michezo",
   home: "Nyumbani",
   live: "Moja kwa moja",
@@ -334,6 +339,7 @@ const sw = {
   profileAlertGoals: "Mabao",
   profileAlertCards: "Kadi",
   profileAlertKickoff: "Mwanzo wa mechi",
+  profileAlertPeriodChange: "Mabadiliko ya kipindi",
   profileAlertFinalResult: "Matokeo ya mwisho",
   profileSave: "Hifadhi mapendeleo",
   profileLoading: "Inapakia wasifu...",
@@ -369,6 +375,16 @@ const sw = {
   incidentYellows: "Njano {count}",
   incidentReds: "Nyekundu {count}",
   incidentVar: "VAR {count}",
+  favoritesTitle: "Vipendwa na arifa",
+  favoritesLead:
+    "Fuatilia mashindano, timu na mechi ulizohifadhi kwenye ukurasa mmoja kisha washa arifa unazohitaji.",
+  favoritesEmpty: "Hifadhi shindano, timu au mechi ili kuanza ukurasa wako wa vipendwa.",
+  favoritesCompetitions: "Mashindano yaliyohifadhiwa",
+  favoritesTeams: "Timu zilizohifadhiwa",
+  favoritesMatches: "Mechi zilizohifadhiwa",
+  metaFavoritesTitle: "Vipendwa",
+  metaFavoritesDescription:
+    "Mashindano, timu, mechi ulizohifadhi na njia za mkato za arifa ndani ya kituo kimoja cha binafsi.",
 };
 
 export default sw;

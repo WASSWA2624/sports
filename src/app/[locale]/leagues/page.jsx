@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getLeagueDirectory } from "../../../lib/coreui/read";
+import { getPersonalizationSnapshot, sortCompetitionsByPersonalization } from "../../../lib/personalization";
 import styles from "../../../components/coreui/styles.module.css";
 
 export async function generateMetadata({ params }) {
@@ -18,19 +20,27 @@ export async function generateMetadata({ params }) {
 export default async function LeaguesPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const leagues = await getLeagueDirectory();
+  const [leagues, personalization] = await Promise.all([
+    getLeagueDirectory(),
+    getPersonalizationSnapshot(),
+  ]);
+  const prioritizedLeagues = sortCompetitionsByPersonalization(
+    leagues,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
 
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{dictionary.leagues}</h1>
         <div className={styles.sectionTools}>
-          <span className={styles.badge}>{leagues.length}</span>
+          <span className={styles.badge}>{prioritizedLeagues.length}</span>
         </div>
       </header>
-      {leagues.length ? (
+      {prioritizedLeagues.length ? (
         <div className={styles.leagueGrid}>
-          {leagues.map((league) => (
+          {prioritizedLeagues.map((league) => (
             <article key={league.id} className={styles.leagueCard}>
               <div className={styles.cardHeader}>
                 <div>
@@ -39,7 +49,19 @@ export default async function LeaguesPage({ params }) {
                     <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                   </h2>
                 </div>
-                <span className={styles.badge}>{league.teams.length}</span>
+                <div className={styles.inlineBadgeRow}>
+                  <span className={styles.badge}>{league.teams.length}</span>
+                  <FavoriteToggle
+                    itemId={`competition:${league.code}`}
+                    locale={locale}
+                    compact
+                    label={league.name}
+                    metadata={{
+                      country: league.country || null,
+                    }}
+                    surface="leagues-directory"
+                  />
+                </div>
               </div>
               <p className={styles.metaRow}>
                 {league.fixtures[0]?.status

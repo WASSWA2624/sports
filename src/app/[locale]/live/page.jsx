@@ -10,7 +10,14 @@ import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
 import { LiveRefresh } from "../../../components/coreui/live-refresh";
 import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { NewsModule } from "../../../components/coreui/news-module";
+import { PersonalizationUsageTracker } from "../../../components/coreui/personalization-usage-tracker";
 import styles from "../../../components/coreui/styles.module.css";
+import {
+  getPersonalizationSnapshot,
+  getPersonalizationUsage,
+  sortCompetitionsByPersonalization,
+  sortFixturesByPersonalization,
+} from "../../../lib/personalization";
 
 function buildLiveHref(locale, status, league, date) {
   const params = new URLSearchParams();
@@ -50,7 +57,7 @@ export default async function LivePage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const [feed, latestNews, flags] = await Promise.all([
+  const [feed, latestNews, flags, personalization] = await Promise.all([
     getLiveMatchdayFeed({
       locale,
       status: filters?.status,
@@ -59,13 +66,33 @@ export default async function LivePage({ params, searchParams }) {
     }),
     getLatestNewsModule(),
     getPublicSurfaceFlags(),
+    getPersonalizationSnapshot(),
   ]);
+  const usage = getPersonalizationUsage(personalization);
+  const prioritizedGroups = sortCompetitionsByPersonalization(
+    feed.groups.map((group) => ({
+      ...group,
+      fixtures: sortFixturesByPersonalization(
+        group.fixtures,
+        personalization,
+        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+      ),
+    })),
+    personalization,
+    (left, right) => (left.leagueName || "").localeCompare(right.leagueName || "")
+  );
   const selectedDateLabel = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
   }).format(new Date(feed.selectedDate));
 
   return (
     <section className={styles.section}>
+      <PersonalizationUsageTracker
+        active={usage.hasFavorites || usage.hasRecentViews}
+        surface="live-board"
+        metadata={usage}
+      />
+
       <LiveRefresh
         enabled={feed.refresh.enabled}
         intervalMs={feed.refresh.intervalMs}
@@ -186,9 +213,9 @@ export default async function LivePage({ params, searchParams }) {
         </div>
       </div>
 
-      {feed.groups.length ? (
+      {prioritizedGroups.length ? (
         <div className={styles.section}>
-          {feed.groups.map((group) => (
+          {prioritizedGroups.map((group) => (
             <details key={group.key} open className={styles.boardGroup}>
               <summary className={styles.boardGroupSummary}>
                 <div>
@@ -205,7 +232,17 @@ export default async function LivePage({ params, searchParams }) {
                 </div>
                 <div className={styles.inlineBadgeRow}>
                   <span className={styles.badge}>{group.fixtures.length}</span>
-                  <FavoriteToggle itemId={`competition:${group.leagueCode}`} locale={locale} />
+                  {group.leagueCode ? (
+                    <FavoriteToggle
+                      itemId={`competition:${group.leagueCode}`}
+                      locale={locale}
+                      label={group.leagueName || dictionary.competition}
+                      metadata={{
+                        country: group.country || null,
+                      }}
+                      surface="live-board"
+                    />
+                  ) : null}
                 </div>
               </summary>
 

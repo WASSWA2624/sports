@@ -1,19 +1,48 @@
 "use client";
 
 import { createContext, useContext, useMemo, useEffect, useState, useCallback } from "react";
+import { mergeAlertSettings } from "../../lib/alerts";
 import {
+  ALERT_SETTINGS_COOKIE_NAME,
   DEFAULT_THEME,
   LOCALE_COOKIE_NAME,
+  RECENT_VIEWS_COOKIE_NAME,
   THEME_COOKIE_NAME,
   WATCHLIST_COOKIE_NAME,
+  WATCHLIST_LIMIT,
+  writeAlertSettings,
+  writeRecentViews,
   normalizeTheme,
   writeWatchlist,
 } from "../../lib/coreui/preferences";
+import { trackPersonalizationEvent } from "../../lib/personalization-analytics";
 
 const PreferencesContext = createContext(null);
 
 function setCookie(name, value) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+}
+
+function prependUniqueItem(items, itemId, limit = WATCHLIST_LIMIT) {
+  return [itemId, ...items.filter((entry) => entry !== itemId)].slice(0, limit);
+}
+
+function toggleAlertSetting(current, itemId, notificationType, enabled) {
+  const existing = current[itemId] || [];
+  const next = enabled
+    ? [...new Set([...existing, notificationType])]
+    : existing.filter((entry) => entry !== notificationType);
+
+  if (!next.length) {
+    const rest = { ...current };
+    delete rest[itemId];
+    return rest;
+  }
+
+  return {
+    ...current,
+    [itemId]: next,
+  };
 }
 
 function resolveTheme(theme) {
@@ -24,9 +53,18 @@ function resolveTheme(theme) {
   return theme;
 }
 
-export function PreferencesProvider({ children, initialLocale, initialTheme, initialWatchlist }) {
+export function PreferencesProvider({
+  children,
+  initialLocale,
+  initialTheme,
+  initialWatchlist,
+  initialAlertSettings,
+  initialRecentViews,
+}) {
   const [theme, setThemeState] = useState(normalizeTheme(initialTheme));
   const [watchlist, setWatchlist] = useState(initialWatchlist || []);
+  const [alertSettings, setAlertSettings] = useState(initialAlertSettings || {});
+  const [recentViews, setRecentViews] = useState(initialRecentViews || []);
   const [sessionUser, setSessionUser] = useState(null);
   const [favoritesHydrated, setFavoritesHydrated] = useState(false);
 
@@ -47,6 +85,18 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
     window.localStorage.setItem(WATCHLIST_COOKIE_NAME, serialized);
     setCookie(WATCHLIST_COOKIE_NAME, serialized);
   }, [watchlist]);
+
+  useEffect(() => {
+    const serialized = writeAlertSettings(alertSettings);
+    window.localStorage.setItem(ALERT_SETTINGS_COOKIE_NAME, serialized);
+    setCookie(ALERT_SETTINGS_COOKIE_NAME, serialized);
+  }, [alertSettings]);
+
+  useEffect(() => {
+    const serialized = writeRecentViews(recentViews);
+    window.localStorage.setItem(RECENT_VIEWS_COOKIE_NAME, serialized);
+    setCookie(RECENT_VIEWS_COOKIE_NAME, serialized);
+  }, [recentViews]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -77,9 +127,15 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
 
         setSessionUser(meJson.user);
 
-        const favoritesResponse = await fetch("/api/favorites", {
-          credentials: "same-origin",
-        });
+        const [favoritesResponse, alertsResponse] = await Promise.all([
+          fetch("/api/favorites", {
+            credentials: "same-origin",
+          }),
+          fetch("/api/alerts", {
+            credentials: "same-origin",
+          }),
+        ]);
+
         if (!favoritesResponse.ok) {
           return;
         }
@@ -88,9 +144,7 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
         const remoteWatchlist = (favoritesJson.items || [])
           .map((item) => item.itemId)
           .filter(Boolean);
-        const localOnly = (initialWatchlist || []).filter(
-          (itemId) => !remoteWatchlist.includes(itemId)
-        );
+        const localOnly = (initialWatchlist || []).filter((itemId) => !remoteWatchlist.includes(itemId));
 
         if (localOnly.length) {
           await fetch("/api/favorites", {
@@ -101,11 +155,31 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
           });
         }
 
+        const remoteAlertSettings = alertsResponse.ok
+          ? (await alertsResponse.json()).settings || {}
+          : {};
+        const localAlertItems = Object.entries(initialAlertSettings || {}).map(
+          ([itemId, notificationTypes]) => ({
+            itemId,
+            notificationTypes,
+          })
+        );
+
+        if (localAlertItems.length) {
+          await fetch("/api/alerts", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ items: localAlertItems }),
+          });
+        }
+
         if (!active) {
           return;
         }
 
         setWatchlist([...new Set([...remoteWatchlist, ...localOnly])]);
+        setAlertSettings(mergeAlertSettings(remoteAlertSettings, initialAlertSettings || {}));
       } finally {
         if (active) {
           setFavoritesHydrated(true);
@@ -118,16 +192,27 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
     return () => {
       active = false;
     };
-  }, [initialWatchlist]);
+  }, [initialAlertSettings, initialWatchlist]);
 
-  const toggleWatch = useCallback(async (itemId) => {
+  const toggleWatch = useCallback(async (itemId, options = {}) => {
     const shouldSave = !watchlist.includes(itemId);
+    const nextWatchlist = shouldSave
+      ? prependUniqueItem(watchlist, itemId)
+      : watchlist.filter((entry) => entry !== itemId);
 
-    setWatchlist((current) =>
-      current.includes(itemId)
-        ? current.filter((entry) => entry !== itemId)
-        : [itemId, ...current].slice(0, 24)
-    );
+    setWatchlist(nextWatchlist);
+
+    if (shouldSave) {
+      trackPersonalizationEvent({
+        event: "favorite_created",
+        surface: options.surface || "app",
+        itemId,
+        metadata: {
+          authenticated: Boolean(sessionUser),
+          label: options.label || null,
+        },
+      });
+    }
 
     if (!sessionUser) {
       return;
@@ -141,7 +226,13 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
         method: shouldSave ? "POST" : "DELETE",
         headers: shouldSave ? { "content-type": "application/json" } : undefined,
         credentials: "same-origin",
-        body: shouldSave ? JSON.stringify({ itemId }) : undefined,
+        body: shouldSave
+          ? JSON.stringify({
+              itemId,
+              label: options.label,
+              metadata: options.metadata,
+            })
+          : undefined,
       }
     );
 
@@ -149,12 +240,122 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
       return;
     }
 
-    setWatchlist((current) =>
-      shouldSave
-        ? current.filter((entry) => entry !== itemId)
-        : [itemId, ...current].slice(0, 24)
-    );
+    setWatchlist(watchlist);
   }, [sessionUser, watchlist]);
+
+  const toggleAlertType = useCallback(
+    async (itemId, notificationType, enabled, options = {}) => {
+      const currentTypes = alertSettings[itemId] || [];
+      const shouldEnable =
+        typeof enabled === "boolean" ? enabled : !currentTypes.includes(notificationType);
+      const nextAlertSettings = toggleAlertSetting(
+        alertSettings,
+        itemId,
+        notificationType,
+        shouldEnable
+      );
+      const shouldAutoFavorite = shouldEnable && !watchlist.includes(itemId);
+      const nextWatchlist = shouldAutoFavorite
+        ? prependUniqueItem(watchlist, itemId)
+        : watchlist;
+
+      setAlertSettings(nextAlertSettings);
+
+      if (shouldAutoFavorite) {
+        setWatchlist(nextWatchlist);
+      }
+
+      if (shouldEnable) {
+        trackPersonalizationEvent({
+          event: "alert_opt_in",
+          surface: options.surface || "app",
+          itemId,
+          notificationType,
+          metadata: {
+            authenticated: Boolean(sessionUser),
+            label: options.label || null,
+          },
+        });
+      }
+
+      if (!sessionUser) {
+        return;
+      }
+
+      const requests = [];
+
+      if (shouldAutoFavorite) {
+        requests.push(
+          fetch("/api/favorites", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              itemId,
+              label: options.label,
+              metadata: options.metadata,
+            }),
+          })
+        );
+      }
+
+      requests.push(
+        fetch(
+          shouldEnable
+            ? "/api/alerts"
+            : `/api/alerts?itemId=${encodeURIComponent(itemId)}&notificationType=${encodeURIComponent(notificationType)}`,
+          {
+            method: shouldEnable ? "POST" : "DELETE",
+            headers: shouldEnable ? { "content-type": "application/json" } : undefined,
+            credentials: "same-origin",
+            body: shouldEnable
+              ? JSON.stringify({
+                  itemId,
+                  notificationType,
+                })
+              : undefined,
+          }
+        )
+      );
+
+      const responses = await Promise.all(requests);
+
+      if (responses.every((response) => response.ok)) {
+        return;
+      }
+
+      setAlertSettings(alertSettings);
+
+      if (shouldAutoFavorite) {
+        setWatchlist(watchlist);
+      }
+    },
+    [alertSettings, sessionUser, watchlist]
+  );
+
+  const recordView = useCallback(
+    async (itemId, options = {}) => {
+      setRecentViews((current) => prependUniqueItem(current, itemId, 20));
+
+      if (!sessionUser) {
+        return;
+      }
+
+      await fetch("/api/recent-views", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          itemId,
+          label: options.label,
+          metadata: options.metadata,
+        }),
+      }).catch(() => {});
+    },
+    [sessionUser]
+  );
 
   const value = useMemo(
     () => ({
@@ -163,12 +364,34 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
       setTheme: setThemeState,
       watchlist,
       watchlistCount: watchlist.length,
+      favoritesCount: watchlist.length,
+      alertSettings,
+      alertCount: Object.values(alertSettings).reduce((count, entry) => count + entry.length, 0),
+      recentViews,
       favoritesHydrated,
       sessionUser,
       isWatched: (itemId) => watchlist.includes(itemId),
+      isFavorite: (itemId) => watchlist.includes(itemId),
+      getAlertTypes: (itemId) => alertSettings[itemId] || [],
+      hasAlertType: (itemId, notificationType) =>
+        (alertSettings[itemId] || []).includes(notificationType),
       toggleWatch,
+      toggleFavorite: toggleWatch,
+      toggleAlertType,
+      recordView,
     }),
-    [favoritesHydrated, initialLocale, sessionUser, theme, toggleWatch, watchlist]
+    [
+      alertSettings,
+      favoritesHydrated,
+      initialLocale,
+      recentViews,
+      recordView,
+      sessionUser,
+      theme,
+      toggleAlertType,
+      toggleWatch,
+      watchlist,
+    ]
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

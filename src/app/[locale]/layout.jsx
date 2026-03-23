@@ -30,6 +30,8 @@ export default async function LocaleLayout({ children, params }) {
       dictionary={dictionary}
       initialTheme={preferences.theme}
       initialWatchlist={preferences.watchlist}
+      initialAlertSettings={preferences.alertSettings}
+      initialRecentViews={preferences.recentViews}
       shellData={shellData}
     >
       {children}

@@ -8,7 +8,14 @@ import { buildCompetitionHref } from "../../lib/coreui/routes";
 import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
 import { NewsModule } from "../../components/coreui/news-module";
+import { PersonalizationUsageTracker } from "../../components/coreui/personalization-usage-tracker";
 import styles from "../../components/coreui/styles.module.css";
+import {
+  getPersonalizationSnapshot,
+  getPersonalizationUsage,
+  sortCompetitionsByPersonalization,
+  sortFixturesByPersonalization,
+} from "../../lib/personalization";
 
 const STATUS_ORDER = {
   LIVE: 0,
@@ -62,17 +69,37 @@ export async function generateMetadata({ params }) {
 export default async function LocaleHomePage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const [snapshot, homeNews, flags] = await Promise.all([
+  const [snapshot, homeNews, flags, personalization] = await Promise.all([
     getHomeSnapshot(),
     getHomepageNewsModule(),
     getPublicSurfaceFlags(),
+    getPersonalizationSnapshot(),
   ]);
-  const boardFixtures = dedupeFixtures([
-    ...snapshot.liveFixtures,
-    ...snapshot.upcomingFixtures,
-    ...snapshot.recentResults,
-  ]).sort(compareFixtures);
-  const boardGroups = groupFixtures(boardFixtures);
+  const usage = getPersonalizationUsage(personalization);
+  const boardFixtures = sortFixturesByPersonalization(
+    dedupeFixtures([
+      ...snapshot.liveFixtures,
+      ...snapshot.upcomingFixtures,
+      ...snapshot.recentResults,
+    ]),
+    personalization,
+    compareFixtures
+  );
+  const boardGroups = sortCompetitionsByPersonalization(
+    groupFixtures(boardFixtures),
+    personalization,
+    (left, right) => (left.name || "").localeCompare(right.name || "")
+  );
+  const prioritizedLeagues = sortCompetitionsByPersonalization(
+    snapshot.leagues,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
+  const prioritizedRecentResults = sortFixturesByPersonalization(
+    snapshot.recentResults,
+    personalization,
+    (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+  );
   const boardDate = new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "2-digit",
@@ -81,6 +108,12 @@ export default async function LocaleHomePage({ params }) {
 
   return (
     <>
+      <PersonalizationUsageTracker
+        active={usage.hasFavorites || usage.hasRecentViews}
+        surface="home-board"
+        metadata={usage}
+      />
+
       <section className={styles.noticeBanner}>
         <span className={styles.noticeLabel}>{dictionary.football}</span>
         <p>
@@ -156,7 +189,16 @@ export default async function LocaleHomePage({ params }) {
                   <div className={styles.inlineBadgeRow}>
                     <span className={styles.badge}>{group.fixtures.length}</span>
                     {group.code ? (
-                      <FavoriteToggle itemId={`competition:${group.code}`} locale={locale} compact />
+                      <FavoriteToggle
+                        itemId={`competition:${group.code}`}
+                        locale={locale}
+                        compact
+                        label={group.name || dictionary.competition}
+                        metadata={{
+                          country: group.country || null,
+                        }}
+                        surface="home-board"
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -190,7 +232,7 @@ export default async function LocaleHomePage({ params }) {
           </div>
 
           <div className={styles.compactList}>
-            {snapshot.leagues.map((league) => (
+            {prioritizedLeagues.map((league) => (
               <article key={league.id} className={styles.miniPanel}>
                 <div className={styles.cardHeader}>
                   <div>
@@ -224,7 +266,7 @@ export default async function LocaleHomePage({ params }) {
           </div>
 
           <div className={styles.compactList}>
-            {snapshot.recentResults.slice(0, 4).map((fixture) => (
+            {prioritizedRecentResults.slice(0, 4).map((fixture) => (
               <FixtureFeedCard
                 key={fixture.id}
                 fixture={fixture}

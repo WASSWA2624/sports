@@ -14,9 +14,10 @@ const preferencesSchema = z.object({
       goals: z.boolean().default(true),
       cards: z.boolean().default(false),
       kickoff: z.boolean().default(true),
+      periodChange: z.boolean().default(false),
       finalResult: z.boolean().default(true),
     })
-    .default({ goals: true, cards: false, kickoff: true, finalResult: true }),
+    .default({ goals: true, cards: false, kickoff: true, periodChange: false, finalResult: true }),
 });
 
 export async function GET(request) {
@@ -39,7 +40,13 @@ export async function GET(request) {
     timezone: result.timezone ?? "UTC",
     favoriteSports: result.favoriteSports ?? [],
     alertPreferences:
-      result.alertPreferences ?? { goals: true, cards: false, kickoff: true, finalResult: true },
+      result.alertPreferences ?? {
+        goals: true,
+        cards: false,
+        kickoff: true,
+        periodChange: false,
+        finalResult: true,
+      },
   });
 }
 

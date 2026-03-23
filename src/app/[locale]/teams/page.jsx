@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getTeamDirectory } from "../../../lib/coreui/read";
+import { getPersonalizationSnapshot, sortTeamsByPersonalization } from "../../../lib/personalization";
 import styles from "../../../components/coreui/styles.module.css";
 
 export async function generateMetadata({ params }) {
@@ -18,19 +20,27 @@ export async function generateMetadata({ params }) {
 export default async function TeamsPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const teams = await getTeamDirectory();
+  const [teams, personalization] = await Promise.all([
+    getTeamDirectory(),
+    getPersonalizationSnapshot(),
+  ]);
+  const prioritizedTeams = sortTeamsByPersonalization(
+    teams,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
 
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{dictionary.teams}</h1>
         <div className={styles.sectionTools}>
-          <span className={styles.badge}>{teams.length}</span>
+          <span className={styles.badge}>{prioritizedTeams.length}</span>
         </div>
       </header>
-      {teams.length ? (
+      {prioritizedTeams.length ? (
         <div className={styles.teamGrid}>
-          {teams.map((team) => (
+          {prioritizedTeams.map((team) => (
             <article key={team.id} className={styles.teamCard}>
               <div className={styles.cardHeader}>
                 <div>
@@ -39,11 +49,23 @@ export default async function TeamsPage({ params }) {
                   </h2>
                   <p className={styles.muted}>{team.shortName || team.code || dictionary.teamProfile}</p>
                 </div>
-                {team.league ? (
-                  <Link href={`/${locale}/leagues/${team.league.code}`} className={styles.badge}>
-                    {team.league.name}
-                  </Link>
-                ) : null}
+                <div className={styles.inlineBadgeRow}>
+                  {team.league ? (
+                    <Link href={`/${locale}/leagues/${team.league.code}`} className={styles.badge}>
+                      {team.league.name}
+                    </Link>
+                  ) : null}
+                  <FavoriteToggle
+                    itemId={`team:${team.id}`}
+                    locale={locale}
+                    compact
+                    label={team.name}
+                    metadata={{
+                      leagueCode: team.league?.code || null,
+                    }}
+                    surface="teams-directory"
+                  />
+                </div>
               </div>
               <p className={styles.metaRow}>
                 {team.homeFor[0]?.status

@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getTablesOverview } from "../../../lib/coreui/read";
+import { getPersonalizationSnapshot, sortCompetitionsByPersonalization } from "../../../lib/personalization";
 import styles from "../../../components/coreui/styles.module.css";
 
 export async function generateMetadata({ params }) {
@@ -17,19 +19,27 @@ export async function generateMetadata({ params }) {
 export default async function TablesPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const leagues = await getTablesOverview();
+  const [leagues, personalization] = await Promise.all([
+    getTablesOverview(),
+    getPersonalizationSnapshot(),
+  ]);
+  const prioritizedLeagues = sortCompetitionsByPersonalization(
+    leagues,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
 
   return (
     <section className={styles.section}>
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{dictionary.standings}</h1>
         <div className={styles.sectionTools}>
-          <span className={styles.badge}>{leagues.length}</span>
+          <span className={styles.badge}>{prioritizedLeagues.length}</span>
         </div>
       </header>
-      {leagues.length ? (
+      {prioritizedLeagues.length ? (
         <div className={styles.tableGrid}>
-          {leagues.map((league) => {
+          {prioritizedLeagues.map((league) => {
             const standings = league.seasons[0]?.standings || [];
             return (
               <article key={league.id} className={styles.tableCard}>
@@ -40,6 +50,16 @@ export default async function TablesPage({ params }) {
                       <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                     </h2>
                   </div>
+                  <FavoriteToggle
+                    itemId={`competition:${league.code}`}
+                    locale={locale}
+                    compact
+                    label={league.name}
+                    metadata={{
+                      country: league.country || null,
+                    }}
+                    surface="tables-overview"
+                  />
                 </div>
                 {standings.length ? (
                   <table className={styles.table}>

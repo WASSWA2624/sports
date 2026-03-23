@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AlertSubscriptionControl } from "../../../../components/coreui/alert-subscription-control";
+import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { NewsModule } from "../../../../components/coreui/news-module";
+import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
@@ -48,6 +51,14 @@ export default async function TeamDetailPage({ params }) {
 
   return (
     <section className={styles.section}>
+      <RecentViewTracker
+        itemId={`team:${team.id}`}
+        label={team.name}
+        metadata={{
+          leagueCode: team.league?.code || null,
+        }}
+      />
+
       <header className={styles.pageHeader}>
         <div>
           <div className={styles.linkList}>
@@ -76,6 +87,25 @@ export default async function TeamDetailPage({ params }) {
         </div>
         <div className={styles.sectionTools}>
           <span className={styles.badge}>{team.fixtureSummary.LIVE}</span>
+          <FavoriteToggle
+            itemId={`team:${team.id}`}
+            locale={locale}
+            label={team.name}
+            metadata={{
+              leagueCode: team.league?.code || null,
+            }}
+            surface="team-detail"
+          />
+          <AlertSubscriptionControl
+            itemId={`team:${team.id}`}
+            locale={locale}
+            supportedTypes={["KICKOFF", "FINAL_RESULT"]}
+            label={team.name}
+            metadata={{
+              leagueCode: team.league?.code || null,
+            }}
+            surface="team-detail"
+          />
           {primaryCompetition ? (
             <Link href={buildCompetitionHref(locale, primaryCompetition)} className={styles.actionLink}>
               {primaryCompetition.name}

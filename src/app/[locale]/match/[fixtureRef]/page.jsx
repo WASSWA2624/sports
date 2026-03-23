@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { AlertSubscriptionControl } from "../../../../components/coreui/alert-subscription-control";
 import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { LiveRefresh } from "../../../../components/coreui/live-refresh";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
+import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
@@ -109,6 +111,14 @@ export default async function MatchDetailPage({ params, searchParams }) {
     detail.lineups.away.starters.length ||
     detail.lineups.away.bench.length;
   const shouldGateOdds = odds.enabled && odds.groups.length > 0;
+  const supportedAlertTypes = [
+    "KICKOFF",
+    detail.coverage.keyEvents === "available" ? "GOAL" : null,
+    detail.coverage.keyEvents === "available" ? "CARD" : null,
+    detail.coverage.timeline === "available" ? "PERIOD_CHANGE" : null,
+    "FINAL_RESULT",
+  ].filter(Boolean);
+  const fixtureLabel = `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`;
 
   const oddsContent = (
     <div className={styles.surfaceStack}>
@@ -188,15 +198,41 @@ export default async function MatchDetailPage({ params, searchParams }) {
         until={detail.refresh.until}
       />
 
+      <RecentViewTracker
+        itemId={`fixture:${fixture.id}`}
+        label={fixtureLabel}
+        metadata={{
+          leagueCode: fixture.league.code,
+        }}
+      />
+
       <header className={styles.pageHeader}>
         <div>
           <p className={styles.eyebrow}>{fixture.league.name}</p>
-          <h1 className={styles.pageTitle}>
-            {fixture.homeTeam.name} vs {fixture.awayTeam.name}
-          </h1>
+          <h1 className={styles.pageTitle}>{fixtureLabel}</h1>
           <p className={styles.pageLead}>{dictionary.matchLead}</p>
         </div>
-        <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} />
+        <div className={styles.sectionTools}>
+          <FavoriteToggle
+            itemId={`fixture:${fixture.id}`}
+            locale={locale}
+            label={fixtureLabel}
+            metadata={{
+              leagueCode: fixture.league.code,
+            }}
+            surface="match-detail"
+          />
+          <AlertSubscriptionControl
+            itemId={`fixture:${fixture.id}`}
+            locale={locale}
+            supportedTypes={supportedAlertTypes}
+            label={fixtureLabel}
+            metadata={{
+              leagueCode: fixture.league.code,
+            }}
+            surface="match-detail"
+          />
+        </div>
       </header>
 
       <div className={styles.detailGrid}>
@@ -260,6 +296,32 @@ export default async function MatchDetailPage({ params, searchParams }) {
             <Link href={`/${locale}/teams/${fixture.awayTeam.id}`} className={styles.badge}>
               {fixture.awayTeam.name}
             </Link>
+          </div>
+
+          <div className={styles.inlineBadgeRow}>
+            <FavoriteToggle
+              itemId={`competition:${fixture.league.code}`}
+              locale={locale}
+              compact
+              label={fixture.league.name}
+              surface="match-detail"
+            />
+            <FavoriteToggle
+              itemId={`team:${fixture.homeTeam.id}`}
+              locale={locale}
+              compact
+              label={fixture.homeTeam.name}
+              metadata={{ leagueCode: fixture.league.code }}
+              surface="match-detail"
+            />
+            <FavoriteToggle
+              itemId={`team:${fixture.awayTeam.id}`}
+              locale={locale}
+              compact
+              label={fixture.awayTeam.name}
+              metadata={{ leagueCode: fixture.league.code }}
+              surface="match-detail"
+            />
           </div>
 
           <div className={styles.coverageGrid}>

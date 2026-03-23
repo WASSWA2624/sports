@@ -48,6 +48,11 @@ const fr = {
   statusCancelled: "AnnulÃ©",
   watch: "Suivre",
   watching: "Suivi",
+  alertsManage: "Alertes",
+  alertsManageCount: "Alertes {count}",
+  alertsSyncAccount: "Les alertes se synchronisent avec votre compte.",
+  alertsSyncGuest: "Les alertes restent sur cet appareil jusqu'a la connexion.",
+  alertsUnavailable: "Les alertes ne sont pas disponibles pour cet element pour le moment.",
   seoSuffix: "Couverture sportive",
   home: "Accueil",
   live: "Direct",
@@ -332,6 +337,7 @@ const fr = {
   profileAlertGoals: "Buts",
   profileAlertCards: "Cartons",
   profileAlertKickoff: "Coup d'envoi",
+  profileAlertPeriodChange: "Changement de periode",
   profileAlertFinalResult: "RÃ©sultat final",
   profileSave: "Enregistrer les prÃ©fÃ©rences",
   profileLoading: "Chargement du profil...",
@@ -367,6 +373,16 @@ const fr = {
   incidentYellows: "{count} jaunes",
   incidentReds: "{count} rouges",
   incidentVar: "{count} VAR",
+  favoritesTitle: "Favoris et alertes",
+  favoritesLead:
+    "Retrouvez vos competitions, equipes et matchs sauvegardes sur une seule page puis activez les alertes utiles.",
+  favoritesEmpty: "Sauvegardez une competition, une equipe ou un match pour commencer.",
+  favoritesCompetitions: "Competitions sauvegardees",
+  favoritesTeams: "Equipes sauvegardees",
+  favoritesMatches: "Matchs sauvegardes",
+  metaFavoritesTitle: "Favoris",
+  metaFavoritesDescription:
+    "Vos competitions, equipes, matchs sauvegardes et raccourcis d'alerte dans un hub personnalise.",
 };
 
 export default fr;

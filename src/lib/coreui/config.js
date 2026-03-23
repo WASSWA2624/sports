@@ -14,7 +14,7 @@ export const SCORES_NAV = [
 ];
 
 export const SPORTS_STRIP = [
-  { key: "favorites", label: "Favorites", href: null, enabled: false },
+  { key: "favorites", label: "Favorites", href: "/favorites", enabled: true },
   { key: "football", label: "Football", href: "/sports/football", enabled: true },
   { key: "tennis", label: "Tennis", href: null, enabled: false },
   { key: "basketball", label: "Basketball", href: null, enabled: false },

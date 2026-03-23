@@ -1,11 +1,18 @@
+import { normalizeAlertSettings } from "../alerts";
+import { normalizeFavoriteItems } from "../favorites";
+
 export const SUPPORTED_LOCALES = ["en", "fr", "sw"];
 export const DEFAULT_LOCALE = "en";
 export const LOCALE_COOKIE_NAME = "sports_locale";
 export const THEME_COOKIE_NAME = "sports_theme";
 export const WATCHLIST_COOKIE_NAME = "sports_watchlist";
+export const ALERT_SETTINGS_COOKIE_NAME = "sports_alert_settings";
+export const RECENT_VIEWS_COOKIE_NAME = "sports_recent_views";
 export const DEFAULT_THEME = "system";
 export const SUPPORTED_THEMES = ["light", "dark", "system"];
 export const WATCHLIST_LIMIT = 24;
+export const ALERT_SETTINGS_LIMIT = 24;
+export const RECENT_VIEWS_LIMIT = 20;
 
 export function normalizeLocale(locale) {
   return SUPPORTED_LOCALES.includes(locale) ? locale : DEFAULT_LOCALE;
@@ -34,4 +41,47 @@ export function readWatchlist(value) {
 
 export function writeWatchlist(items) {
   return JSON.stringify([...new Set(items.map((item) => String(item)).slice(0, WATCHLIST_LIMIT))]);
+}
+
+function clampAlertSettings(settings) {
+  return Object.fromEntries(
+    Object.entries(normalizeAlertSettings(settings)).slice(0, ALERT_SETTINGS_LIMIT)
+  );
+}
+
+export function readAlertSettings(value) {
+  if (!value) {
+    return {};
+  }
+
+  try {
+    return clampAlertSettings(JSON.parse(value));
+  } catch (error) {
+    return {};
+  }
+}
+
+export function writeAlertSettings(settings) {
+  return JSON.stringify(clampAlertSettings(settings));
+}
+
+export function readRecentViews(value) {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return normalizeFavoriteItems(parsed).slice(0, RECENT_VIEWS_LIMIT);
+  } catch (error) {
+    return [];
+  }
+}
+
+export function writeRecentViews(items) {
+  return JSON.stringify(normalizeFavoriteItems(items).slice(0, RECENT_VIEWS_LIMIT));
 }
