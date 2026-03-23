@@ -4,10 +4,13 @@ import { notFound } from "next/navigation";
 import { CompetitionOddsTabs } from "../../../../components/coreui/competition-odds-tabs";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
+import { NewsModule } from "../../../../components/coreui/news-module";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
+import { getCompetitionNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import { getLeagueDetail } from "../../../../lib/coreui/read";
 
@@ -57,14 +60,21 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     territory: filters?.territory,
     headers: await headers(),
   });
-  const league = await getLeagueDetail(leagueCode, {
-    locale,
-    viewerTerritory,
-  });
+  const [league, flags] = await Promise.all([
+    getLeagueDetail(leagueCode, {
+      locale,
+      viewerTerritory,
+    }),
+    getPublicSurfaceFlags(),
+  ]);
 
   if (!league) {
     notFound();
   }
+
+  const competitionNews = flags.news
+    ? await getCompetitionNewsModule(league.competitionId, 4)
+    : { articles: [], total: 0 };
 
   const standings = league.seasons[0]?.standings || [];
   const oddsSurface = league.competitionOdds;
@@ -220,6 +230,19 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           <div className={styles.emptyState}>{dictionary.noData}</div>
         )}
       </section>
+
+      {flags.news ? (
+        <NewsModule
+          locale={locale}
+          eyebrow={dictionary.news}
+          title={dictionary.newsCompetitionModuleTitle}
+          lead={dictionary.newsCompetitionModuleLead}
+          articles={competitionNews.articles}
+          href="/news"
+          actionLabel={dictionary.browseAll}
+          emptyLabel={dictionary.newsEmpty}
+        />
+      ) : null}
     </section>
   );
 }

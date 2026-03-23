@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
+import { getPublicSurfaceFlags } from "../../lib/coreui/feature-flags";
+import { getHomepageNewsModule } from "../../lib/coreui/news-read";
 import { getHomeSnapshot } from "../../lib/coreui/read";
 import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
+import { NewsModule } from "../../components/coreui/news-module";
 import styles from "../../components/coreui/styles.module.css";
 
 const STATUS_ORDER = {
@@ -58,7 +61,11 @@ export async function generateMetadata({ params }) {
 export default async function LocaleHomePage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const snapshot = await getHomeSnapshot();
+  const [snapshot, homeNews, flags] = await Promise.all([
+    getHomeSnapshot(),
+    getHomepageNewsModule(),
+    getPublicSurfaceFlags(),
+  ]);
   const boardFixtures = dedupeFixtures([
     ...snapshot.liveFixtures,
     ...snapshot.upcomingFixtures,
@@ -220,6 +227,19 @@ export default async function LocaleHomePage({ params }) {
           </div>
         </section>
       </div>
+
+      {flags.news ? (
+        <NewsModule
+          locale={locale}
+          eyebrow={dictionary.news}
+          title={dictionary.newsHomeModuleTitle}
+          lead={dictionary.newsHomeModuleLead}
+          articles={homeNews.articles}
+          href="/news"
+          actionLabel={dictionary.browseAll}
+          emptyLabel={dictionary.newsEmpty}
+        />
+      ) : null}
     </>
   );
 }

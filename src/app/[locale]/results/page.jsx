@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
+import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
 import { formatFixtureStatus, formatMatchday } from "../../../lib/coreui/format";
+import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getResultsFeed } from "../../../lib/coreui/live-read";
 import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
+import { NewsModule } from "../../../components/coreui/news-module";
 import styles from "../../../components/coreui/styles.module.css";
 
 function buildResultsHref(locale, status, league) {
@@ -52,11 +55,15 @@ export default async function ResultsPage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const feed = await getResultsFeed({
-    locale,
-    status: filters?.status,
-    leagueCode: filters?.league,
-  });
+  const [feed, latestNews, flags] = await Promise.all([
+    getResultsFeed({
+      locale,
+      status: filters?.status,
+      leagueCode: filters?.league,
+    }),
+    getLatestNewsModule(),
+    getPublicSurfaceFlags(),
+  ]);
   const sections = groupFixturesByDay(feed.fixtures, locale);
 
   return (
@@ -150,6 +157,19 @@ export default async function ResultsPage({ params, searchParams }) {
       ) : (
         <div className={styles.emptyState}>{dictionary.resultsFilterEmpty}</div>
       )}
+
+      {flags.news ? (
+        <NewsModule
+          locale={locale}
+          eyebrow={dictionary.news}
+          title={dictionary.newsScoreStripTitle}
+          lead={dictionary.newsScoreStripLead}
+          articles={latestNews.articles}
+          href="/news"
+          actionLabel={dictionary.browseAll}
+          emptyLabel={dictionary.newsEmpty}
+        />
+      ) : null}
     </section>
   );
 }

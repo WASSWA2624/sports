@@ -2,8 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
+import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
+import { getTeamNewsModule } from "../../../../lib/coreui/news-read";
 import { getTeamDetail } from "../../../../lib/coreui/read";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
+import { NewsModule } from "../../../../components/coreui/news-module";
 import styles from "../../../../components/coreui/styles.module.css";
 
 export async function generateMetadata({ params }) {
@@ -24,11 +27,13 @@ export async function generateMetadata({ params }) {
 export default async function TeamDetailPage({ params }) {
   const { locale, teamId } = await params;
   const dictionary = getDictionary(locale);
-  const team = await getTeamDetail(teamId);
+  const [team, flags] = await Promise.all([getTeamDetail(teamId), getPublicSurfaceFlags()]);
 
   if (!team) {
     notFound();
   }
+
+  const teamNews = flags.news ? await getTeamNewsModule(team.id, 4) : { articles: [], total: 0 };
 
   const fixtures = [...team.homeFor, ...team.awayFor]
     .sort((a, b) => new Date(b.startsAt) - new Date(a.startsAt))
@@ -97,6 +102,19 @@ export default async function TeamDetailPage({ params }) {
           <div className={styles.emptyState}>{dictionary.noData}</div>
         )}
       </section>
+
+      {flags.news ? (
+        <NewsModule
+          locale={locale}
+          eyebrow={dictionary.news}
+          title={dictionary.newsTeamModuleTitle}
+          lead={dictionary.newsTeamModuleLead}
+          articles={teamNews.articles}
+          href="/news"
+          actionLabel={dictionary.browseAll}
+          emptyLabel={dictionary.newsEmpty}
+        />
+      ) : null}
     </section>
   );
 }

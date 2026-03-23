@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { db } from "../db";
 
 const DEFAULT_PUBLIC_SURFACE_FLAGS = {
+  news: true,
   odds: true,
   broadcast: true,
 };
@@ -20,7 +21,7 @@ export const getPublicSurfaceFlags = unstable_cache(
       const flags = await db.featureFlag.findMany({
         where: {
           key: {
-            in: ["odds_surfaces_enabled", "broadcast_surfaces_enabled"],
+            in: ["news_hub_enabled", "odds_surfaces_enabled", "broadcast_surfaces_enabled"],
           },
         },
         select: {
@@ -32,6 +33,7 @@ export const getPublicSurfaceFlags = unstable_cache(
       const byKey = Object.fromEntries(flags.map((flag) => [flag.key, flag.enabled]));
 
       return {
+        news: byKey.news_hub_enabled ?? DEFAULT_PUBLIC_SURFACE_FLAGS.news,
         odds: byKey.odds_surfaces_enabled ?? DEFAULT_PUBLIC_SURFACE_FLAGS.odds,
         broadcast: byKey.broadcast_surfaces_enabled ?? DEFAULT_PUBLIC_SURFACE_FLAGS.broadcast,
       };

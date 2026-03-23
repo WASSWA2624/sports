@@ -1,0 +1,53 @@
+.card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cardCompact {
+  min-height: 100%;
+}
+
+.cardLink {
+  display: grid;
+  min-height: 100%;
+  color: inherit;
+}
+
+.visual,
+.visualCompact {
+  position: relative;
+  display: grid;
+  gap: 0.7rem;
+  align-content: end;
+  min-height: 11rem;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(238, 184, 67, 0.22), transparent 32%),
+    linear-gradient(135deg, rgba(3, 29, 37, 0.98), rgba(9, 53, 63, 0.94));
+  color: #f5fbff;
+}
+
+.visualCompact {
+  min-height: 7.5rem;
+  padding: 0.9rem;
+}
+
+.visualTitle {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(1.05rem, 2.6vw, 1.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.copy {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.entityLine {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}

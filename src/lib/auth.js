@@ -297,6 +297,16 @@ export async function requireAuthenticatedUser(request) {
   return { userContext };
 }
 
+export async function getCurrentUserFromServer() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) {
+    return null;
+  }
+
+  return getCurrentUserFromSessionToken(token);
+}
+
 export function getCurrentSessionCookieValue() {
   return cookies().get(SESSION_COOKIE)?.value ?? null;
 }

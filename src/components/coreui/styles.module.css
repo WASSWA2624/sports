@@ -3305,6 +3305,53 @@
   }
 }
 
+@media (min-width: 1400px) {
+  .headerInner {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .headerTopRow,
+  .headerNavRail {
+    display: contents;
+  }
+
+  .headerBrand,
+  .topModeNav,
+  .sportsStrip,
+  .headerControls {
+    grid-area: auto;
+    min-width: 0;
+  }
+
+  .headerBrand {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .topModeNav {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .sportsStrip {
+    grid-row: 1;
+    grid-column: 3;
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 0.22rem;
+    padding: 0.22rem;
+    border-radius: 999px;
+  }
+
+  .headerControls {
+    grid-row: 1;
+    grid-column: 4;
+    justify-self: end;
+  }
+}
+
 /* Theme alignment */
 .noticeBanner {
   border-color: var(--border);

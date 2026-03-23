@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
+import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
+import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getLiveMatchdayFeed } from "../../../lib/coreui/live-read";
 import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
 import { LiveRefresh } from "../../../components/coreui/live-refresh";
 import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
+import { NewsModule } from "../../../components/coreui/news-module";
 import styles from "../../../components/coreui/styles.module.css";
 
 function buildLiveHref(locale, status, league, date) {
@@ -46,12 +49,16 @@ export default async function LivePage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const feed = await getLiveMatchdayFeed({
-    locale,
-    status: filters?.status,
-    leagueCode: filters?.league,
-    date: filters?.date,
-  });
+  const [feed, latestNews, flags] = await Promise.all([
+    getLiveMatchdayFeed({
+      locale,
+      status: filters?.status,
+      leagueCode: filters?.league,
+      date: filters?.date,
+    }),
+    getLatestNewsModule(),
+    getPublicSurfaceFlags(),
+  ]);
   const selectedDateLabel = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
   }).format(new Date(feed.selectedDate));
@@ -210,6 +217,19 @@ export default async function LivePage({ params, searchParams }) {
       ) : (
         <div className={styles.emptyState}>{dictionary.liveFilterEmpty}</div>
       )}
+
+      {flags.news ? (
+        <NewsModule
+          locale={locale}
+          eyebrow={dictionary.news}
+          title={dictionary.newsScoreStripTitle}
+          lead={dictionary.newsScoreStripLead}
+          articles={latestNews.articles}
+          href="/news"
+          actionLabel={dictionary.browseAll}
+          emptyLabel={dictionary.newsEmpty}
+        />
+      ) : null}
     </section>
   );
 }
