@@ -4,7 +4,7 @@ import { db } from "../../../../lib/db";
 import { logAuditEvent } from "../../../../lib/audit";
 
 export async function GET(request) {
-  const { error, userContext, auditContext } = await requireAdminAccess(request);
+  const { error, auditContext } = await requireAdminAccess(request);
   if (error) {
     return error;
   }

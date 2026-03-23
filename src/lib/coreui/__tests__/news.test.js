@@ -111,4 +111,29 @@ describe("news helpers", () => {
       expect.arrayContaining(["Title race", "Club watch"])
     );
   });
+
+  it("orders homepage placements by explicit homepage rank before recency", () => {
+    const first = buildArticle({
+      id: "article-1",
+      metadata: {
+        topicLabel: "Title race",
+        homepagePlacement: true,
+        homepageRank: 3,
+      },
+      publishedAt: "2026-03-24T11:00:00.000Z",
+    });
+    const second = buildArticle({
+      id: "article-2",
+      metadata: {
+        topicLabel: "Club watch",
+        homepagePlacement: true,
+        homepageRank: 1,
+      },
+      publishedAt: "2026-03-24T09:00:00.000Z",
+    });
+
+    const hub = groupNewsHubArticles([first, second]);
+
+    expect(hub.homepage.map((article) => article.id)).toEqual(["article-2", "article-1"]);
+  });
 });

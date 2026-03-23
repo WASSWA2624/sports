@@ -106,6 +106,7 @@ function buildQualityPreview(form, options) {
     },
     entities: {
       sports: findSelections("SPORT", options.sports),
+      countries: findSelections("COUNTRY", options.countries),
       competitions: findSelections("COMPETITION", options.competitions),
       teams: findSelections("TEAM", options.teams),
       fixtures: findSelections("FIXTURE", options.fixtures),
@@ -258,6 +259,15 @@ export default function NewsEditorClient({
       })),
     },
     {
+      entityType: "COUNTRY",
+      title: dictionary.countries,
+      items: workspace.options.countries.map((entry) => ({
+        id: entry.id,
+        label: entry.name,
+        description: entry.code,
+      })),
+    },
+    {
       entityType: "COMPETITION",
       title: dictionary.leagues,
       items: workspace.options.competitions.map((entry) => ({
@@ -330,7 +340,14 @@ export default function NewsEditorClient({
                 }
                 onClick={() => selectArticle(article)}
               >
-                <span className={sharedStyles.badge}>{article.status}</span>
+                <div className={sharedStyles.inlineBadgeRow}>
+                  <span className={sharedStyles.badge}>{article.status}</span>
+                  {article.openIssueCount ? (
+                    <span className={sharedStyles.indicatorBadge}>
+                      Open issues {article.openIssueCount}
+                    </span>
+                  ) : null}
+                </div>
                 <strong>{article.title}</strong>
                 <span className={sharedStyles.muted}>{article.topicLabel}</span>
               </button>
@@ -511,6 +528,16 @@ export default function NewsEditorClient({
             ) : (
               <div className={sharedStyles.emptyState}>{dictionary.newsManageNoIssues}</div>
             )}
+
+            {selectedArticle?.openIssues?.length ? (
+              <div className={editorStyles.issueList}>
+                {selectedArticle.openIssues.map((issue) => (
+                  <span key={issue.id} className={sharedStyles.indicatorBadge}>
+                    {issue.priority}: {issue.title}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </article>
 
           <article className={sharedStyles.panel}>

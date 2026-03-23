@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminAccess } from "../../../../../lib/admin-auth";
-import { getCoreDataRevalidationTags, ensureProviderIsActive } from "../../../../../lib/control-plane";
-import { getSportsSyncConfig } from "../../../../../lib/sports/config";
+import { getCoreDataRevalidationTags } from "../../../../../lib/control-plane";
 import { runSyncJob, syncJobRegistry } from "../../../../../lib/sync/jobs";
 import { logAuditEvent } from "../../../../../lib/audit";
 import { revalidateTagsWithAudit } from "../../../../../lib/cache";
@@ -18,8 +17,6 @@ export async function POST(request, { params }) {
   }
 
   try {
-    const config = getSportsSyncConfig();
-    await ensureProviderIsActive(config.provider);
     await logAuditEvent({
       ...auditContext,
       action: "admin.sync.triggered",
@@ -39,6 +36,15 @@ export async function POST(request, { params }) {
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (syncError) {
+    await logAuditEvent({
+      ...auditContext,
+      action: "admin.sync.failed",
+      entityType: "SyncJob",
+      entityId: job,
+      metadata: {
+        error: syncError instanceof Error ? syncError.message : String(syncError),
+      },
+    });
     return NextResponse.json(
       {
         ok: false,

@@ -1,4 +1,5 @@
 import { getSportsSyncConfig } from "../sports/config";
+import { ensureProviderIsActive } from "../control-plane";
 import { db } from "../db";
 import { createSportsProvider } from "../sports/provider";
 import {
@@ -291,6 +292,7 @@ export async function runSyncJob(jobName) {
     throw new Error(`Unknown sync job: ${jobName}`);
   }
 
+  await ensureProviderIsActive(config.provider);
   const provider = createSportsProvider();
   const job = await startSyncJob({
     provider: config.provider,

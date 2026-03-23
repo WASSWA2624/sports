@@ -109,6 +109,7 @@ export function buildArticleQualitySignal(article) {
   const wordCount = toPlainText(article?.body).split(/\s+/).filter(Boolean).length;
   const totalLinks =
     (article?.entities?.sports?.length || 0) +
+    (article?.entities?.countries?.length || 0) +
     (article?.entities?.competitions?.length || 0) +
     (article?.entities?.teams?.length || 0) +
     (article?.entities?.fixtures?.length || 0);

@@ -348,12 +348,13 @@ function buildRouteErrorSummary(events) {
 export function buildPublicModuleMap(modules = []) {
   const base = { ...PUBLIC_MODULE_DEFAULTS };
 
-  for (const module of modules) {
-    if (!(module.key in base)) {
+  for (const moduleEntry of modules) {
+    if (!(moduleEntry.key in base)) {
       continue;
     }
 
-    base[module.key] = Boolean(module.isEnabled) && !Boolean(module.emergencyDisabled);
+    base[moduleEntry.key] =
+      Boolean(moduleEntry.isEnabled) && !Boolean(moduleEntry.emergencyDisabled);
   }
 
   return base;
@@ -933,7 +934,7 @@ export async function updateShellModuleControl(key, payload, auditContext = {}) 
     throw new Error("Shell module not found.");
   }
 
-  const module = await db.shellModule.update({
+  const shellModule = await db.shellModule.update({
     where: {
       key,
     },
@@ -968,7 +969,7 @@ export async function updateShellModuleControl(key, payload, auditContext = {}) 
     },
   });
 
-  return serializeShellModule(module);
+  return serializeShellModule(shellModule);
 }
 
 export async function updateAdSlotControl(key, payload, auditContext = {}) {

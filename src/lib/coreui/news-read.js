@@ -387,7 +387,7 @@ export async function getNewsArticleDetail(slug, { includeUnpublished = false } 
 
 export async function getEditorialNewsWorkspace() {
   return safely(async () => {
-    const [rawArticles, categories, sports, competitions, teams, fixtures] = await Promise.all([
+    const [rawArticles, categories, sports, countries, competitions, teams, fixtures] = await Promise.all([
       db.newsArticle.findMany({
         orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
         take: 48,
@@ -400,6 +400,11 @@ export async function getEditorialNewsWorkspace() {
         where: { isEnabled: true },
         orderBy: { name: "asc" },
         select: { id: true, code: true, name: true },
+      }),
+      db.country.findMany({
+        orderBy: { name: "asc" },
+        take: 24,
+        select: { id: true, code: true, slug: true, name: true },
       }),
       db.competition.findMany({
         orderBy: { name: "asc" },
@@ -435,13 +440,50 @@ export async function getEditorialNewsWorkspace() {
       }),
     ]);
 
-    const articles = await hydrateArticles(rawArticles);
+    const issueMap = new Map();
+    const articleIssues = rawArticles.length
+      ? await db.opsIssue.findMany({
+          where: {
+            articleId: {
+              in: rawArticles.map((article) => article.id),
+            },
+            status: {
+              notIn: ["RESOLVED", "DISMISSED"],
+            },
+          },
+          orderBy: [{ updatedAt: "desc" }],
+          select: {
+            id: true,
+            articleId: true,
+            issueType: true,
+            status: true,
+            priority: true,
+            title: true,
+            updatedAt: true,
+          },
+        })
+      : [];
+
+    for (const issue of articleIssues) {
+      if (!issueMap.has(issue.articleId)) {
+        issueMap.set(issue.articleId, []);
+      }
+
+      issueMap.get(issue.articleId).push(issue);
+    }
+
+    const articles = (await hydrateArticles(rawArticles)).map((article) => ({
+      ...article,
+      openIssues: issueMap.get(article.id) || [],
+      openIssueCount: issueMap.get(article.id)?.length || 0,
+    }));
 
     return {
       articles,
       categories,
       options: {
         sports,
+        countries,
         competitions,
         teams,
         fixtures,
@@ -465,6 +507,7 @@ export async function getEditorialNewsWorkspace() {
     categories: [],
     options: {
       sports: [],
+      countries: [],
       competitions: [],
       teams: [],
       fixtures: [],

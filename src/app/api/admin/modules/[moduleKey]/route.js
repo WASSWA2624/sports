@@ -10,12 +10,12 @@ export async function PATCH(request, { params }) {
 
   try {
     const { moduleKey } = await params;
-    const module = await updateShellModuleControl(
+    const shellModule = await updateShellModuleControl(
       moduleKey,
       await request.json(),
       auditContext
     );
-    return NextResponse.json({ ok: true, module });
+    return NextResponse.json({ ok: true, module: shellModule });
   } catch (error) {
     return NextResponse.json(
       { error: error.message || "Failed to update shell module control." },
@@ -23,4 +23,3 @@ export async function PATCH(request, { params }) {
     );
   }
 }
-

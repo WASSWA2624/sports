@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LOCALE_LABELS } from "../../lib/coreui/config";
 import { SUPPORTED_LOCALES } from "../../lib/coreui/preferences";
@@ -117,6 +118,19 @@ export default function ProfileClient({ dictionary, locale }) {
               {dictionary.profileRoles}: {sessionUser.roles.join(", ")}
             </p>
           </div>
+
+          {sessionUser.roles.some((role) => ["EDITOR", "ADMIN"].includes(role)) ? (
+            <div className={styles.quickLinks}>
+              <Link href={`/${locale}/news/manage`} className={styles.quickLink}>
+                {dictionary.newsManage}
+              </Link>
+              {sessionUser.roles.includes("ADMIN") ? (
+                <Link href={`/${locale}/admin`} className={styles.quickLink}>
+                  Admin control room
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
         </header>
 
         <form className={styles.form} onSubmit={handleSavePreferences}>
