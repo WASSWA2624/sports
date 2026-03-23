@@ -32,6 +32,7 @@ export default async function LocaleLayout({ children, params }) {
       initialWatchlist={preferences.watchlist}
       initialAlertSettings={preferences.alertSettings}
       initialRecentViews={preferences.recentViews}
+      initialFavoriteSports={preferences.favoriteSports}
       shellData={shellData}
     >
       {children}

@@ -58,6 +58,50 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
       (shellData?.teamDirectory || []).find((team) => team.id === teamId || team.code === teamId)
     )
     .filter(Boolean);
+  const recentItems = recentViews
+    .map((itemId) => {
+      const [prefix, entityId] = itemId.split(":");
+
+      if (prefix === "competition") {
+        const competition = allCompetitions.find((entry) => entry.code === entityId);
+        return competition
+          ? {
+              key: itemId,
+              href: `/${locale}/leagues/${competition.code}`,
+              title: competition.name,
+              subtitle: competition.country || dictionary.competition,
+            }
+          : null;
+      }
+
+      if (prefix === "team") {
+        const team = (shellData?.teamDirectory || []).find((entry) => entry.id === entityId);
+        return team
+          ? {
+              key: itemId,
+              href: `/${locale}/teams/${team.id}`,
+              title: team.name,
+              subtitle: team.leagueName || dictionary.teams,
+            }
+          : null;
+      }
+
+      if (prefix === "fixture") {
+        const fixture = (shellData?.fixtureDirectory || []).find((entry) => entry.id === entityId);
+        return fixture
+          ? {
+              key: itemId,
+              href: `/${locale}/match/${fixture.externalRef || fixture.id}`,
+              title: fixture.label,
+              subtitle: fixture.leagueName || dictionary.match,
+            }
+          : null;
+      }
+
+      return null;
+    })
+    .filter(Boolean)
+    .slice(0, 6);
 
   const pinnedCompetitions =
     savedCompetitions.length > 0
@@ -124,7 +168,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             </nav>
 
             <div className={styles.headerControls}>
-              <ShellSearch dictionary={dictionary} locale={locale} shortcuts={shellData?.searchShortcuts || []} />
+              <ShellSearch
+                dictionary={dictionary}
+                locale={locale}
+                shortcuts={shellData?.searchShortcuts || []}
+                shellData={shellData}
+              />
               <Link
                 href="/profile"
                 aria-label={sessionUser ? dictionary.profile : dictionary.login}
@@ -623,6 +672,24 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
+                <h2 className={styles.railSectionTitle}>{dictionary.recentItemsTitle}</h2>
+                <div className={styles.railList}>
+                  {recentItems.length ? (
+                    recentItems.map((item) => (
+                      <Link key={item.key} href={item.href} className={styles.railLink}>
+                        <span>{item.title}</span>
+                        <span className={styles.badge}>{item.subtitle}</span>
+                      </Link>
+                    ))
+                  ) : (
+                    <p className={styles.railMuted}>{dictionary.searchRecentEmpty}</p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.railCard}>
+              <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.countries}</h2>
                 <div className={styles.railList}>
                   {(shellData?.countryGroups || []).map((group) => (
@@ -693,6 +760,7 @@ export function PublicShell({
   initialWatchlist,
   initialAlertSettings,
   initialRecentViews,
+  initialFavoriteSports,
   shellData,
 }) {
   return (
@@ -702,6 +770,7 @@ export function PublicShell({
       initialWatchlist={initialWatchlist}
       initialAlertSettings={initialAlertSettings}
       initialRecentViews={initialRecentViews}
+      initialFavoriteSports={initialFavoriteSports}
     >
       <ShellFrame
         locale={locale}

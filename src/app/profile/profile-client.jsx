@@ -10,7 +10,7 @@ const defaultPreferences = {
   locale: "en",
   theme: "system",
   timezone: "UTC",
-  favoriteSports: ["football"],
+  favoriteSports: [],
   alertPreferences: {
     goals: true,
     cards: false,
@@ -48,7 +48,7 @@ export default function ProfileClient({ dictionary, locale }) {
             locale: prefsJson.locale ?? locale,
             theme: prefsJson.theme ?? "system",
             timezone: prefsJson.timezone ?? "UTC",
-            favoriteSports: prefsJson.favoriteSports ?? ["football"],
+            favoriteSports: prefsJson.favoriteSports ?? [],
             alertPreferences:
               prefsJson.alertPreferences ?? {
                 goals: true,

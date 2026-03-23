@@ -63,6 +63,7 @@ function normalizeFilter(value, allowedValues, fallback) {
 
 function buildFixtureInclude() {
   return {
+    sport: true,
     league: true,
     season: true,
     homeTeam: true,
@@ -73,6 +74,7 @@ function buildFixtureInclude() {
 
 function buildFixtureDetailInclude() {
   return {
+    sport: true,
     league: true,
     season: true,
     homeTeam: true,

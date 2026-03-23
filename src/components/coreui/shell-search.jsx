@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { closeSearch, openSearch } from "../../lib/store";
 import { ShellIcon } from "./shell-icons";
+import { SearchResultsSection } from "./search-results";
+import { usePreferences } from "./preferences-provider";
 import styles from "./styles.module.css";
+import searchStyles from "./search-experience.module.css";
+import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 
 const Overlay = styled.div`
   position: fixed;
@@ -19,42 +24,103 @@ const Overlay = styled.div`
   backdrop-filter: blur(10px);
 `;
 
-const Panel = styled.div`
-  width: min(42rem, calc(100vw - 2rem));
-  border: 1px solid var(--overlay-panel-border);
-  border-radius: 0.7rem;
-  background: var(--overlay-panel);
-  box-shadow: var(--shadow-soft);
-  color: var(--overlay-panel-text);
-  overflow: hidden;
-`;
+function mapRecentItems(locale, shellData, recentViews = []) {
+  const featuredCompetitions = shellData?.featuredCompetitions || [];
+  const competitionMap = new Map(featuredCompetitions.map((competition) => [competition.code, competition]));
+  const teamMap = new Map((shellData?.teamDirectory || []).map((team) => [team.id, team]));
+  const fixtureMap = new Map((shellData?.fixtureDirectory || []).map((fixture) => [fixture.id, fixture]));
 
-const SearchField = styled.input`
-  width: 100%;
-  padding: 1rem;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  letter-spacing: 0.04em;
-  outline: none;
+  return recentViews
+    .map((itemId) => {
+      const [prefix, entityId] = String(itemId || "").split(":");
 
-  &::placeholder {
-    color: var(--overlay-placeholder);
-  }
-`;
+      if (prefix === "competition") {
+        const competition = competitionMap.get(entityId);
+        if (!competition) {
+          return null;
+        }
 
-export function ShellSearch({ dictionary, locale, shortcuts }) {
+        return {
+          key: itemId,
+          title: competition.name,
+          subtitle: competition.country || "Competition",
+          href: `/${locale}/leagues/${competition.code}`,
+        };
+      }
+
+      if (prefix === "team") {
+        const team = teamMap.get(entityId);
+        if (!team) {
+          return null;
+        }
+
+        return {
+          key: itemId,
+          title: team.name,
+          subtitle: team.leagueName || "Team",
+          href: `/${locale}/teams/${team.id}`,
+        };
+      }
+
+      if (prefix === "fixture") {
+        const fixture = fixtureMap.get(entityId);
+        if (!fixture) {
+          return null;
+        }
+
+        return {
+          key: itemId,
+          title: fixture.label,
+          subtitle: [fixture.leagueName, fixture.status].filter(Boolean).join(" • "),
+          href: `/${locale}/match/${fixture.externalRef || fixture.id}`,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
+export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
   const dispatch = useDispatch();
+  const router = useRouter();
   const searchOpen = useSelector((state) => state.shell.searchOpen);
+  const { recentViews } = usePreferences();
+  const searchInputRef = useRef(null);
+  const trackedQueryRef = useRef("");
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const deferredQuery = useDeferredValue(query);
+  const recentItems = useMemo(
+    () => mapRecentItems(locale, shellData, recentViews),
+    [locale, recentViews, shellData]
+  );
+  const topCompetitions = (shellData?.featuredCompetitions || []).slice(0, 6);
 
   useEffect(() => {
-    if (!searchOpen) {
-      return undefined;
-    }
-
     const onKeyDown = (event) => {
+      const target = event.target;
+      const inEditableSurface =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
+      if (
+        !inEditableSurface &&
+        ((event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) ||
+          ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k"))
+      ) {
+        event.preventDefault();
+        dispatch(openSearch());
+        return;
+      }
+
+      if (!searchOpen) {
+        return;
+      }
+
       if (event.key === "Escape") {
         dispatch(closeSearch());
       }
@@ -63,6 +129,92 @@ export function ShellSearch({ dictionary, locale, shortcuts }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [dispatch, searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen) {
+      setQuery("");
+      setSearchResults(null);
+      setLoading(false);
+      trackedQueryRef.current = "";
+      return;
+    }
+
+    searchInputRef.current?.focus();
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen) {
+      return undefined;
+    }
+
+    const normalizedQuery = deferredQuery.trim();
+    if (normalizedQuery.length < 2) {
+      setSearchResults(null);
+      setLoading(false);
+      trackedQueryRef.current = "";
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setLoading(true);
+
+    fetch(
+      `/api/search?q=${encodeURIComponent(normalizedQuery)}&locale=${encodeURIComponent(locale)}&limit=5`,
+      {
+        signal: controller.signal,
+      }
+    )
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!payload) {
+          return;
+        }
+
+        setSearchResults(payload);
+
+        if (trackedQueryRef.current !== normalizedQuery) {
+          trackedQueryRef.current = normalizedQuery;
+
+          trackProductAnalyticsEvent({
+            event: "search_query",
+            surface: "shell-search",
+            query: normalizedQuery,
+            metadata: {
+              total: payload.summary?.total || 0,
+              counts: payload.summary?.counts || {},
+            },
+          });
+
+          if (!payload.summary?.total) {
+            trackProductAnalyticsEvent({
+              event: "search_zero_results",
+              surface: "shell-search",
+              query: normalizedQuery,
+            });
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [deferredQuery, locale, searchOpen]);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const normalizedQuery = query.trim();
+
+    if (normalizedQuery.length < 2) {
+      return;
+    }
+
+    router.push(`/${locale}/search?q=${encodeURIComponent(normalizedQuery)}`);
+    dispatch(closeSearch());
+  }
+
+  function handleClose() {
+    dispatch(closeSearch());
+  }
 
   return (
     <>
@@ -77,30 +229,175 @@ export function ShellSearch({ dictionary, locale, shortcuts }) {
       </button>
 
       {searchOpen ? (
-        <Overlay onClick={() => dispatch(closeSearch())}>
-          <Panel onClick={(event) => event.stopPropagation()}>
-            <SearchField
-              type="search"
-              placeholder={dictionary.searchPlaceholder}
-              aria-label={dictionary.search}
-            />
+        <Overlay onClick={handleClose}>
+          <div className={searchStyles.overlayPanel} onClick={(event) => event.stopPropagation()}>
+            <div className={searchStyles.overlaySearchBar}>
+              <form className={searchStyles.overlaySearchForm} onSubmit={handleSubmit}>
+                <ShellIcon name="search" className={styles.controlIcon} />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  className={searchStyles.overlaySearchInput}
+                  placeholder={dictionary.searchPlaceholder}
+                  aria-label={dictionary.search}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+                <div className={searchStyles.overlaySearchActions}>
+                  {loading ? <span className={searchStyles.overlaySpinner}>...</span> : null}
+                  <button type="submit" className={searchStyles.overlaySearchSubmit}>
+                    {dictionary.searchViewResults}
+                  </button>
+                </div>
+              </form>
 
-            <div className={styles.searchOverlayBody}>
-              <p className={styles.railMuted}>{dictionary.searchHelp}</p>
-              <div className={styles.railList}>
-                {shortcuts.map((shortcut) => (
-                  <Link
-                    key={`${shortcut.type}:${shortcut.href}`}
-                    href={`/${locale}${shortcut.href}`}
-                    className={styles.railLink}
-                    onClick={() => dispatch(closeSearch())}
-                  >
-                    {shortcut.label}
-                  </Link>
-                ))}
+              <div className={searchStyles.overlaySearchHint}>
+                <span>{dictionary.searchHelp}</span>
+                <span>{dictionary.searchShortcutHint}</span>
               </div>
             </div>
-          </Panel>
+
+            <div className={searchStyles.overlayBody}>
+              {query.trim().length >= 2 ? (
+                <div className={searchStyles.overlaySections}>
+                  {searchResults?.topResults?.length ? (
+                    <SearchResultsSection
+                      title={dictionary.searchTopResults}
+                      locale={locale}
+                      dictionary={dictionary}
+                      results={searchResults.topResults}
+                      surface="shell-search"
+                      query={searchResults.query}
+                      compact
+                      onResultClick={handleClose}
+                    />
+                  ) : !loading ? (
+                    <div className={searchStyles.emptyState}>{dictionary.searchNoResults}</div>
+                  ) : null}
+
+                  {searchResults?.sections?.competitions?.length ? (
+                    <SearchResultsSection
+                      title={dictionary.searchCompetitions}
+                      locale={locale}
+                      dictionary={dictionary}
+                      results={searchResults.sections.competitions}
+                      surface="shell-search"
+                      query={searchResults.query}
+                      compact
+                      onResultClick={handleClose}
+                    />
+                  ) : null}
+
+                  {searchResults?.sections?.teams?.length ? (
+                    <SearchResultsSection
+                      title={dictionary.searchTeams}
+                      locale={locale}
+                      dictionary={dictionary}
+                      results={searchResults.sections.teams}
+                      surface="shell-search"
+                      query={searchResults.query}
+                      compact
+                      onResultClick={handleClose}
+                    />
+                  ) : null}
+
+                  {searchResults?.sections?.matches?.length ? (
+                    <SearchResultsSection
+                      title={dictionary.searchMatches}
+                      locale={locale}
+                      dictionary={dictionary}
+                      results={searchResults.sections.matches}
+                      surface="shell-search"
+                      query={searchResults.query}
+                      compact
+                      onResultClick={handleClose}
+                    />
+                  ) : null}
+                </div>
+              ) : (
+                <div className={searchStyles.discoveryGrid}>
+                  <section className={searchStyles.discoveryPanel}>
+                    <div className={styles.sectionHeader}>
+                      <div>
+                        <p className={styles.eyebrow}>{dictionary.recent}</p>
+                        <h2 className={styles.sectionTitle}>{dictionary.searchRecentItems}</h2>
+                      </div>
+                    </div>
+
+                    {recentItems.length ? (
+                      <div className={searchStyles.discoveryList}>
+                        {recentItems.map((item) => (
+                          <Link
+                            key={item.key}
+                            href={item.href}
+                            className={searchStyles.discoveryLink}
+                            onClick={handleClose}
+                          >
+                            <span className={searchStyles.discoveryLabel}>
+                              <strong>{item.title}</strong>
+                              <span className={searchStyles.discoveryMeta}>{item.subtitle}</span>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={searchStyles.emptyState}>{dictionary.searchRecentEmpty}</p>
+                    )}
+                  </section>
+
+                  <section className={searchStyles.discoveryPanel}>
+                    <div className={styles.sectionHeader}>
+                      <div>
+                        <p className={styles.eyebrow}>{dictionary.leagues}</p>
+                        <h2 className={styles.sectionTitle}>{dictionary.searchTopCompetitions}</h2>
+                      </div>
+                    </div>
+
+                    <div className={searchStyles.discoveryList}>
+                      {topCompetitions.map((competition) => (
+                        <Link
+                          key={competition.code}
+                          href={`/${locale}/leagues/${competition.code}`}
+                          className={searchStyles.discoveryLink}
+                          onClick={handleClose}
+                        >
+                          <span className={searchStyles.discoveryLabel}>
+                            <strong>{competition.name}</strong>
+                            <span className={searchStyles.discoveryMeta}>{competition.country}</span>
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className={searchStyles.discoveryPanel}>
+                    <div className={styles.sectionHeader}>
+                      <div>
+                        <p className={styles.eyebrow}>{dictionary.browse}</p>
+                        <h2 className={styles.sectionTitle}>{dictionary.searchShortcutsTitle}</h2>
+                      </div>
+                    </div>
+
+                    <div className={searchStyles.discoveryList}>
+                      {shortcuts.map((shortcut) => (
+                        <Link
+                          key={`${shortcut.type}:${shortcut.href}`}
+                          href={`/${locale}${shortcut.href}`}
+                          className={searchStyles.discoveryLink}
+                          onClick={handleClose}
+                        >
+                          <span className={searchStyles.discoveryLabel}>
+                            <strong>{shortcut.label}</strong>
+                            <span className={searchStyles.discoveryMeta}>{shortcut.type}</span>
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
+            </div>
+          </div>
         </Overlay>
       ) : null}
     </>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NewsCard } from "./news-card";
+import { NewsEngagementTracker } from "./news-engagement-tracker";
 import styles from "./styles.module.css";
 
 export function NewsModule({
@@ -12,6 +13,7 @@ export function NewsModule({
   compact = true,
   actionLabel = "View all",
   emptyLabel = "No articles published yet.",
+  trackingSurface = "news-module",
 }) {
   return (
     <section className={styles.section}>
@@ -29,17 +31,22 @@ export function NewsModule({
       </div>
 
       {articles.length ? (
-        <div className={styles.grid}>
-          {articles.map((article, index) => (
-            <NewsCard
-              key={article.id}
-              article={article}
-              locale={locale}
-              compact={compact}
-              priority={index === 0}
-            />
-          ))}
-        </div>
+        <NewsEngagementTracker
+          surface={trackingSurface}
+          articleIds={articles.map((article) => article.id)}
+        >
+          <div className={styles.grid}>
+            {articles.map((article, index) => (
+              <NewsCard
+                key={article.id}
+                article={article}
+                locale={locale}
+                compact={compact}
+                priority={index === 0}
+              />
+            ))}
+          </div>
+        </NewsEngagementTracker>
       ) : (
         <div className={styles.emptyState}>{emptyLabel}</div>
       )}

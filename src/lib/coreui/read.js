@@ -25,6 +25,7 @@ async function safely(query, fallback) {
 
 function fixtureInclude({ includeOdds = true, oddsTake = 2, includeBroadcast = false } = {}) {
   const include = {
+    sport: true,
     league: true,
     season: true,
     homeTeam: true,
@@ -227,6 +228,7 @@ export const getHomeSnapshot = unstable_cache(
           orderBy: [{ name: "asc" }],
           take: 6,
           include: {
+            sport: true,
             teams: { take: 3, orderBy: { name: "asc" } },
             seasons: {
               where: { isCurrent: true },
@@ -306,6 +308,7 @@ export const getTablesOverview = unstable_cache(
           orderBy: { name: "asc" },
           take: 16,
           include: {
+            sport: true,
             seasons: {
               where: { isCurrent: true },
               take: 1,
@@ -334,6 +337,7 @@ export const getLeagueDirectory = unstable_cache(
           orderBy: [{ country: "asc" }, { name: "asc" }],
           take: 60,
           include: {
+            sport: true,
             teams: { select: { id: true } },
             fixtures: {
               orderBy: { startsAt: "asc" },
@@ -351,7 +355,13 @@ export const getLeagueDirectory = unstable_cache(
 export const getShellSnapshot = unstable_cache(
   async (locale = "en") =>
     safely(async () => {
-      const [leagues, teams, shellChrome] = await Promise.all([
+      const now = new Date();
+      const fixtureWindowStart = new Date(now);
+      fixtureWindowStart.setUTCDate(fixtureWindowStart.getUTCDate() - 2);
+      const fixtureWindowEnd = new Date(now);
+      fixtureWindowEnd.setUTCDate(fixtureWindowEnd.getUTCDate() + 7);
+
+      const [leagues, teams, sports, fixtures, shellChrome] = await Promise.all([
         db.league.findMany({
           where: { isActive: true },
           orderBy: [{ country: "asc" }, { name: "asc" }],
@@ -393,6 +403,50 @@ export const getShellSnapshot = unstable_cache(
             },
           },
         }),
+        db.sport.findMany({
+          where: { isEnabled: true },
+          orderBy: [{ name: "asc" }],
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+          },
+        }),
+        db.fixture.findMany({
+          where: {
+            startsAt: {
+              gte: fixtureWindowStart,
+              lte: fixtureWindowEnd,
+            },
+          },
+          orderBy: [{ startsAt: "asc" }],
+          take: 64,
+          select: {
+            id: true,
+            externalRef: true,
+            status: true,
+            startsAt: true,
+            league: {
+              select: {
+                code: true,
+                name: true,
+              },
+            },
+            homeTeam: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            awayTeam: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        }),
         getShellChromeContent(locale),
       ]);
 
@@ -407,7 +461,10 @@ export const getShellSnapshot = unstable_cache(
             sportSlug: league.sport?.slug || league.sport?.code || "football",
             href:
               league.countryRecord && league.sport
-                ? buildCountryHref("en", league.countryRecord, league.sport).replace(/^\/en/, "")
+                ? buildCountryHref(locale, league.countryRecord, league.sport).replace(
+                    new RegExp(`^/${locale}`),
+                    ""
+                  )
                 : null,
             leagues: [],
           });
@@ -441,7 +498,9 @@ export const getShellSnapshot = unstable_cache(
       const searchShortcuts = [
         {
           label: leagues[0]?.sport?.name || "Football",
-          href: leagues[0]?.sport ? buildSportHref("en", leagues[0].sport).replace(/^\/en/, "") : "/sports/football",
+          href: leagues[0]?.sport
+            ? buildSportHref(locale, leagues[0].sport).replace(new RegExp(`^/${locale}`), "")
+            : "/sports/football",
           type: "sport",
         },
         ...countryGroups.slice(0, 3).map((group) => ({
@@ -451,27 +510,40 @@ export const getShellSnapshot = unstable_cache(
         })),
         ...featuredCompetitions.slice(0, 4).map((competition) => ({
           label: competition.name,
-          href: buildCompetitionHref("en", competition).replace(/^\/en/, ""),
+          href: buildCompetitionHref(locale, competition).replace(new RegExp(`^/${locale}`), ""),
           type: "competition",
         })),
         ...teamDirectory.slice(0, 4).map((team) => ({
           label: team.name,
-          href: buildTeamHref("en", team).replace(/^\/en/, ""),
+          href: buildTeamHref(locale, team).replace(new RegExp(`^/${locale}`), ""),
           type: "team",
         })),
       ].filter((shortcut) => shortcut.href);
 
+      const fixtureDirectory = fixtures.map((fixture) => ({
+        id: fixture.id,
+        externalRef: fixture.externalRef,
+        label: `${fixture.homeTeam?.name || "Home"} vs ${fixture.awayTeam?.name || "Away"}`,
+        leagueName: fixture.league?.name || null,
+        leagueCode: fixture.league?.code || null,
+        status: fixture.status,
+      }));
+
       return {
+        availableSports: sports,
         featuredCompetitions,
         countryGroups,
         teamDirectory,
+        fixtureDirectory,
         searchShortcuts,
         chrome: shellChrome,
       };
     }, {
+      availableSports: [],
       featuredCompetitions: [],
       countryGroups: [],
       teamDirectory: [],
+      fixtureDirectory: [],
       searchShortcuts: [],
       chrome: {
         adSlot: null,

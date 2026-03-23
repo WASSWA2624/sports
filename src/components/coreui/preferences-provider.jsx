@@ -5,19 +5,29 @@ import { mergeAlertSettings } from "../../lib/alerts";
 import {
   ALERT_SETTINGS_COOKIE_NAME,
   DEFAULT_THEME,
+  FAVORITE_SPORTS_COOKIE_NAME,
   LOCALE_COOKIE_NAME,
   RECENT_VIEWS_COOKIE_NAME,
   THEME_COOKIE_NAME,
   WATCHLIST_COOKIE_NAME,
   WATCHLIST_LIMIT,
+  writeFavoriteSports,
   writeAlertSettings,
   writeRecentViews,
   normalizeTheme,
   writeWatchlist,
 } from "../../lib/coreui/preferences";
 import { trackPersonalizationEvent } from "../../lib/personalization-analytics";
+import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 
 const PreferencesContext = createContext(null);
+const DEFAULT_ALERT_PREFERENCES = {
+  goals: true,
+  cards: false,
+  kickoff: true,
+  periodChange: false,
+  finalResult: true,
+};
 
 function setCookie(name, value) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
@@ -53,6 +63,32 @@ function resolveTheme(theme) {
   return theme;
 }
 
+function normalizeFavoriteSportsInput(value) {
+  return [...new Set(
+    (Array.isArray(value) ? value : [value])
+      .map((entry) => String(entry || "").trim().toLowerCase())
+      .filter(Boolean)
+  )].slice(0, 12);
+}
+
+function prependUniqueItems(items, additions, limit = WATCHLIST_LIMIT) {
+  return [...new Set([...(additions || []), ...(items || [])])].slice(0, limit);
+}
+
+function buildDefaultProfilePreferences({
+  locale,
+  theme,
+  favoriteSports,
+}) {
+  return {
+    locale,
+    theme,
+    timezone: "UTC",
+    favoriteSports: normalizeFavoriteSportsInput(favoriteSports),
+    alertPreferences: DEFAULT_ALERT_PREFERENCES,
+  };
+}
+
 export function PreferencesProvider({
   children,
   initialLocale,
@@ -60,13 +96,24 @@ export function PreferencesProvider({
   initialWatchlist,
   initialAlertSettings,
   initialRecentViews,
+  initialFavoriteSports,
 }) {
   const [theme, setThemeState] = useState(normalizeTheme(initialTheme));
   const [watchlist, setWatchlist] = useState(initialWatchlist || []);
   const [alertSettings, setAlertSettings] = useState(initialAlertSettings || {});
   const [recentViews, setRecentViews] = useState(initialRecentViews || []);
+  const [favoriteSports, setFavoriteSportsState] = useState(
+    normalizeFavoriteSportsInput(initialFavoriteSports || [])
+  );
   const [sessionUser, setSessionUser] = useState(null);
   const [favoritesHydrated, setFavoritesHydrated] = useState(false);
+  const [profilePreferences, setProfilePreferences] = useState(() =>
+    buildDefaultProfilePreferences({
+      locale: initialLocale,
+      theme: normalizeTheme(initialTheme),
+      favoriteSports: initialFavoriteSports,
+    })
+  );
 
   useEffect(() => {
     const nextTheme = normalizeTheme(theme || DEFAULT_THEME);
@@ -99,6 +146,12 @@ export function PreferencesProvider({
   }, [recentViews]);
 
   useEffect(() => {
+    const serialized = writeFavoriteSports(favoriteSports);
+    window.localStorage.setItem(FAVORITE_SPORTS_COOKIE_NAME, serialized);
+    setCookie(FAVORITE_SPORTS_COOKIE_NAME, serialized);
+  }, [favoriteSports]);
+
+  useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
       if (theme === "system") {
@@ -127,11 +180,14 @@ export function PreferencesProvider({
 
         setSessionUser(meJson.user);
 
-        const [favoritesResponse, alertsResponse] = await Promise.all([
+        const [favoritesResponse, alertsResponse, profilePreferencesResponse] = await Promise.all([
           fetch("/api/favorites", {
             credentials: "same-origin",
           }),
           fetch("/api/alerts", {
+            credentials: "same-origin",
+          }),
+          fetch("/api/profile/preferences", {
             credentials: "same-origin",
           }),
         ]);
@@ -158,12 +214,23 @@ export function PreferencesProvider({
         const remoteAlertSettings = alertsResponse.ok
           ? (await alertsResponse.json()).settings || {}
           : {};
+        const remoteProfilePreferences = profilePreferencesResponse.ok
+          ? await profilePreferencesResponse.json()
+          : buildDefaultProfilePreferences({
+              locale: initialLocale,
+              theme: normalizeTheme(initialTheme),
+              favoriteSports: initialFavoriteSports,
+            });
         const localAlertItems = Object.entries(initialAlertSettings || {}).map(
           ([itemId, notificationTypes]) => ({
             itemId,
             notificationTypes,
           })
         );
+        const mergedFavoriteSports = normalizeFavoriteSportsInput([
+          ...(initialFavoriteSports || []),
+          ...(remoteProfilePreferences.favoriteSports || []),
+        ]);
 
         if (localAlertItems.length) {
           await fetch("/api/alerts", {
@@ -174,12 +241,41 @@ export function PreferencesProvider({
           });
         }
 
+        const remoteFavoriteSports = normalizeFavoriteSportsInput(
+          remoteProfilePreferences.favoriteSports || []
+        );
+        const missingFavoriteSports = mergedFavoriteSports.filter(
+          (sport) => !remoteFavoriteSports.includes(sport)
+        );
+
+        if (missingFavoriteSports.length) {
+          await fetch("/api/profile/preferences", {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              ...remoteProfilePreferences,
+              favoriteSports: mergedFavoriteSports,
+            }),
+          }).catch(() => {});
+        }
+
         if (!active) {
           return;
         }
 
         setWatchlist([...new Set([...remoteWatchlist, ...localOnly])]);
         setAlertSettings(mergeAlertSettings(remoteAlertSettings, initialAlertSettings || {}));
+        setFavoriteSportsState(mergedFavoriteSports);
+        setProfilePreferences({
+          ...buildDefaultProfilePreferences({
+            locale: initialLocale,
+            theme: normalizeTheme(initialTheme),
+            favoriteSports: mergedFavoriteSports,
+          }),
+          ...remoteProfilePreferences,
+          favoriteSports: mergedFavoriteSports,
+        });
       } finally {
         if (active) {
           setFavoritesHydrated(true);
@@ -192,7 +288,27 @@ export function PreferencesProvider({
     return () => {
       active = false;
     };
-  }, [initialAlertSettings, initialWatchlist]);
+  }, [initialAlertSettings, initialFavoriteSports, initialLocale, initialTheme, initialWatchlist]);
+
+  const persistProfilePreferences = useCallback(
+    async (nextProfilePreferences) => {
+      setProfilePreferences(nextProfilePreferences);
+
+      if (!sessionUser) {
+        return true;
+      }
+
+      const response = await fetch("/api/profile/preferences", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(nextProfilePreferences),
+      }).catch(() => null);
+
+      return Boolean(response?.ok);
+    },
+    [sessionUser]
+  );
 
   const toggleWatch = useCallback(async (itemId, options = {}) => {
     const shouldSave = !watchlist.includes(itemId);
@@ -201,6 +317,17 @@ export function PreferencesProvider({
       : watchlist.filter((entry) => entry !== itemId);
 
     setWatchlist(nextWatchlist);
+
+    trackProductAnalyticsEvent({
+      event: "favorites_depth_changed",
+      surface: options.surface || "app",
+      entityId: itemId,
+      metadata: {
+        action: shouldSave ? "add" : "remove",
+        count: nextWatchlist.length,
+        authenticated: Boolean(sessionUser),
+      },
+    });
 
     if (shouldSave) {
       trackPersonalizationEvent({
@@ -242,6 +369,50 @@ export function PreferencesProvider({
 
     setWatchlist(watchlist);
   }, [sessionUser, watchlist]);
+
+  const addFavoriteItems = useCallback(
+    async (itemIds = [], options = {}) => {
+      const additions = [...new Set((itemIds || []).filter(Boolean))].filter(
+        (itemId) => !watchlist.includes(itemId)
+      );
+
+      if (!additions.length) {
+        return;
+      }
+
+      const nextWatchlist = prependUniqueItems(watchlist, additions);
+      setWatchlist(nextWatchlist);
+
+      trackProductAnalyticsEvent({
+        event: "favorites_depth_changed",
+        surface: options.surface || "app",
+        metadata: {
+          action: "batch_add",
+          count: nextWatchlist.length,
+          delta: additions.length,
+          authenticated: Boolean(sessionUser),
+        },
+      });
+
+      if (!sessionUser) {
+        return;
+      }
+
+      const response = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ itemIds: additions }),
+      }).catch(() => null);
+
+      if (response?.ok) {
+        return;
+      }
+
+      setWatchlist(watchlist);
+    },
+    [sessionUser, watchlist]
+  );
 
   const toggleAlertType = useCallback(
     async (itemId, notificationType, enabled, options = {}) => {
@@ -357,6 +528,36 @@ export function PreferencesProvider({
     [sessionUser]
   );
 
+  const saveFavoriteSports = useCallback(
+    async (sports, options = {}) => {
+      const normalizedSports = normalizeFavoriteSportsInput(sports);
+      const previousFavoriteSports = favoriteSports;
+      const previousProfilePreferences = profilePreferences;
+      const nextProfilePreferences = {
+        ...profilePreferences,
+        favoriteSports: normalizedSports,
+      };
+
+      setFavoriteSportsState(normalizedSports);
+      setProfilePreferences(nextProfilePreferences);
+
+      const persisted = await persistProfilePreferences(nextProfilePreferences);
+      if (persisted) {
+        return true;
+      }
+
+      setFavoriteSportsState(previousFavoriteSports);
+      setProfilePreferences(previousProfilePreferences);
+
+      if (options.silent) {
+        return false;
+      }
+
+      return false;
+    },
+    [favoriteSports, persistProfilePreferences, profilePreferences]
+  );
+
   const value = useMemo(
     () => ({
       locale: initialLocale,
@@ -368,6 +569,7 @@ export function PreferencesProvider({
       alertSettings,
       alertCount: Object.values(alertSettings).reduce((count, entry) => count + entry.length, 0),
       recentViews,
+      favoriteSports,
       favoritesHydrated,
       sessionUser,
       isWatched: (itemId) => watchlist.includes(itemId),
@@ -377,15 +579,20 @@ export function PreferencesProvider({
         (alertSettings[itemId] || []).includes(notificationType),
       toggleWatch,
       toggleFavorite: toggleWatch,
+      addFavoriteItems,
       toggleAlertType,
       recordView,
+      setFavoriteSports: saveFavoriteSports,
     }),
     [
+      addFavoriteItems,
       alertSettings,
+      favoriteSports,
       favoritesHydrated,
       initialLocale,
       recentViews,
       recordView,
+      saveFavoriteSports,
       sessionUser,
       theme,
       toggleAlertType,

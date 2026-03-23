@@ -28,7 +28,7 @@ export function NewsCard({
 
   return (
     <article className={articleClassName} data-priority={priority ? "true" : "false"}>
-      <Link href={href} className={styles.cardLink}>
+      <Link href={href} className={styles.cardLink} data-news-article-id={article.id}>
         <div className={compact ? styles.visualCompact : styles.visual}>
           <span className={sharedStyles.badge}>{article.topicLabel}</span>
           <strong className={styles.visualTitle}>
