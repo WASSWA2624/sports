@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useState } from "react";
 import { getDictionary } from "../../lib/coreui/dictionaries";
 import { formatKickoff } from "../../lib/coreui/format";
 import styles from "./styles.module.css";
@@ -24,14 +24,10 @@ function stateTone(state) {
 export function CompetitionOddsTabs({ tabs, locale }) {
   const dictionary = getDictionary(locale);
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id || null);
-
-  useEffect(() => {
-    if (!tabs.some((tab) => tab.id === activeTabId)) {
-      setActiveTabId(tabs[0]?.id || null);
-    }
-  }, [activeTabId, tabs]);
-
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) || tabs[0] || null;
+  const resolvedActiveTabId = tabs.some((tab) => tab.id === activeTabId)
+    ? activeTabId
+    : tabs[0]?.id || null;
+  const activeTab = tabs.find((tab) => tab.id === resolvedActiveTabId) || tabs[0] || null;
   if (!activeTab) {
     return null;
   }
@@ -43,7 +39,7 @@ export function CompetitionOddsTabs({ tabs, locale }) {
           <button
             key={tab.id}
             type="button"
-            className={tab.id === activeTabId ? styles.surfaceTabActive : styles.surfaceTabButton}
+            className={tab.id === resolvedActiveTabId ? styles.surfaceTabActive : styles.surfaceTabButton}
             data-analytics-action={`odds-tab:${tab.label}`}
             onClick={() => {
               startTransition(() => {

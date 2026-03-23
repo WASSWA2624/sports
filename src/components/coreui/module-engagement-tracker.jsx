@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 function pushAnalyticsEvent(payload) {
   if (typeof window === "undefined") {
@@ -65,12 +65,16 @@ export function ModuleEngagementTracker({
 
     hasViewedRef.current = true;
     pushAnalyticsEvent({
-      ...payloadBase,
+      moduleType,
+      entityType,
+      entityId,
+      surface,
+      metadata,
       event: "view",
     });
-  }, [entityId, entityType, moduleType, surface]);
+  }, [entityId, entityType, metadata, moduleType, surface]);
 
-  const handleInteraction = useEffectEvent((event) => {
+  function handleInteraction(event) {
     if (hasInteractedRef.current) {
       return;
     }
@@ -93,7 +97,7 @@ export function ModuleEngagementTracker({
         actionableTarget.textContent?.trim()?.slice(0, 80) ||
         "interact",
     });
-  });
+  }
 
   return <div onClickCapture={handleInteraction}>{children}</div>;
 }

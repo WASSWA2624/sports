@@ -62,7 +62,8 @@ async function seed() {
       VALUES
         (UUID(), 'scores_live_refresh', 'Enable live board refresh behavior', true, NOW(), NOW()),
         (UUID(), 'news_hub_enabled', 'Enable news mode and editorial modules', false, NOW(), NOW()),
-        (UUID(), 'odds_surfaces_enabled', 'Enable informational odds surfaces', true, NOW(), NOW())
+        (UUID(), 'odds_surfaces_enabled', 'Enable informational odds surfaces', true, NOW(), NOW()),
+        (UUID(), 'broadcast_surfaces_enabled', 'Enable broadcast guide surfaces', true, NOW(), NOW())
       ON DUPLICATE KEY UPDATE
         description = VALUES(description),
         enabled = VALUES(enabled),
@@ -226,6 +227,116 @@ async function seed() {
         capturedAt = NOW()
       `,
       [liveFixtureId, upcomingFixtureId, finishedFixtureId]
+    );
+
+    await connection.query(
+      `
+      INSERT INTO OddsMarket (
+        id, fixtureId, provider, externalRef, bookmaker, marketType, suspended, lastSyncedAt, metadata, createdAt, updatedAt
+      )
+      VALUES
+        (
+          UUID(), ?, 'SPORTSMONKS', 'seed-live-1x2', 'PulseBook', '1X2', false,
+          DATE_SUB(NOW(), INTERVAL 40 MINUTE),
+          JSON_OBJECT('allowedTerritories', JSON_ARRAY('US', 'UG')),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'SPORTSMONKS', 'seed-live-goals', 'PulseBook', 'Over/Under 2.5', false,
+          DATE_SUB(NOW(), INTERVAL 40 MINUTE),
+          JSON_OBJECT('allowedTerritories', JSON_ARRAY('US', 'UG')),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'SPORTSMONKS', 'seed-upcoming-1x2', 'NorthLine', '1X2', false,
+          NOW(),
+          JSON_OBJECT('allowedTerritories', JSON_ARRAY('GB')),
+          NOW(), NOW()
+        )
+      ON DUPLICATE KEY UPDATE
+        bookmaker = VALUES(bookmaker),
+        marketType = VALUES(marketType),
+        suspended = VALUES(suspended),
+        lastSyncedAt = VALUES(lastSyncedAt),
+        metadata = VALUES(metadata),
+        updatedAt = NOW()
+      `,
+      [liveFixtureId, liveFixtureId, upcomingFixtureId]
+    );
+
+    const liveOneXTwoMarketId = await fetchSingleId(connection, "OddsMarket", "externalRef = 'seed-live-1x2'", []);
+    const liveGoalsMarketId = await fetchSingleId(connection, "OddsMarket", "externalRef = 'seed-live-goals'", []);
+    const upcomingOneXTwoMarketId = await fetchSingleId(
+      connection,
+      "OddsMarket",
+      "externalRef = 'seed-upcoming-1x2'",
+      []
+    );
+
+    await connection.query(
+      `
+      INSERT INTO OddsSelection (
+        id, oddsMarketId, externalRef, label, line, priceDecimal, isActive, createdAt, updatedAt
+      )
+      VALUES
+        (UUID(), ?, 'seed-live-1x2-home', 'Arsenal', NULL, 1.84, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-live-1x2-draw', 'Draw', NULL, 3.55, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-live-1x2-away', 'Chelsea', NULL, 4.60, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-live-ou-over', 'Over', 2.50, 1.91, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-live-ou-under', 'Under', 2.50, 1.96, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-upcoming-1x2-home', 'Manchester City', NULL, 1.72, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-upcoming-1x2-draw', 'Draw', NULL, 3.90, true, NOW(), NOW()),
+        (UUID(), ?, 'seed-upcoming-1x2-away', 'Liverpool', NULL, 4.80, true, NOW(), NOW())
+      ON DUPLICATE KEY UPDATE
+        label = VALUES(label),
+        line = VALUES(line),
+        priceDecimal = VALUES(priceDecimal),
+        isActive = VALUES(isActive),
+        updatedAt = NOW()
+      `,
+      [
+        liveOneXTwoMarketId,
+        liveOneXTwoMarketId,
+        liveOneXTwoMarketId,
+        liveGoalsMarketId,
+        liveGoalsMarketId,
+        upcomingOneXTwoMarketId,
+        upcomingOneXTwoMarketId,
+        upcomingOneXTwoMarketId,
+      ]
+    );
+
+    await connection.query(
+      `
+      DELETE FROM BroadcastChannel
+      WHERE fixtureId IN (?, ?)
+      `,
+      [liveFixtureId, upcomingFixtureId]
+    );
+
+    await connection.query(
+      `
+      INSERT INTO BroadcastChannel (
+        id, fixtureId, name, territory, channelType, url, isActive, metadata, createdAt, updatedAt
+      )
+      VALUES
+        (
+          UUID(), ?, 'NBC Sports', 'US', 'tv', 'https://www.nbcsports.com', true,
+          JSON_OBJECT('countries', JSON_ARRAY(JSON_OBJECT('code', 'US'))),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'Peacock', 'US', 'streaming', 'https://www.peacocktv.com', true,
+          JSON_OBJECT('countries', JSON_ARRAY(JSON_OBJECT('code', 'US'))),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'Sky Sports Main Event', 'GB', 'tv', 'https://www.skysports.com', true,
+          JSON_OBJECT('countries', JSON_ARRAY(JSON_OBJECT('code', 'GB'))),
+          NOW(), NOW()
+        )
+      `,
+      [liveFixtureId, liveFixtureId, upcomingFixtureId]
     );
 
     await connection.query(

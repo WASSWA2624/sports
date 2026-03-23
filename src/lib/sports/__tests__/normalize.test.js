@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeSportsMonksBroadcastChannels,
   normalizeSportsMonksFixtures,
   normalizeSportsMonksOdds,
   normalizeSportsMonksStandings,
@@ -87,6 +88,28 @@ describe("sports normalizers", () => {
     expect(markets[0].selections[1]).toMatchObject({
       externalRef: "302",
       isActive: false,
+    });
+  });
+
+  it("normalizes broadcast channels", () => {
+    const channels = normalizeSportsMonksBroadcastChannels(
+      [
+        {
+          id: 42,
+          name: "Play Sports",
+          url: "https://www.playsports.example",
+          type: "tv",
+          countries: [{ code: "BE", name: "Belgium" }],
+        },
+      ],
+      "100"
+    );
+
+    expect(channels[0]).toMatchObject({
+      fixtureExternalRef: "100",
+      name: "Play Sports",
+      territory: "BE",
+      channelType: "tv",
     });
   });
 });

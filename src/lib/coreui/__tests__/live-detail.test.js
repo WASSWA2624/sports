@@ -104,7 +104,7 @@ describe("live detail helpers", () => {
     expect(detail.statistics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          label: "Shots On Target",
+          label: "Shots on target",
           home: "7",
           away: "4",
         }),

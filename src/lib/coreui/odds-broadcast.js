@@ -531,7 +531,7 @@ export function buildFixtureOddsModule(
     lastUpdatedAt: status.latestSyncAt,
     territories,
     sourceLabels: [...new Set(normalizedMarkets.map((market) => market.bookmaker))],
-    groups,
+    groups: grouped,
     summary: {
       marketCount: normalizedMarkets.length,
       bookmakerCount: [...new Set(normalizedMarkets.map((market) => market.bookmaker))].length,
