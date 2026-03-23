@@ -7,6 +7,16 @@ import { logAuditEvent } from "../../../../lib/audit";
 const preferencesSchema = z.object({
   locale: z.string().min(2).max(10).default("en"),
   theme: z.enum(["light", "dark", "system"]).default("system"),
+  timezone: z.string().min(2).max(80).default("UTC"),
+  favoriteSports: z.array(z.string().min(2).max(40)).max(12).default([]),
+  alertPreferences: z
+    .object({
+      goals: z.boolean().default(true),
+      cards: z.boolean().default(false),
+      kickoff: z.boolean().default(true),
+      finalResult: z.boolean().default(true),
+    })
+    .default({ goals: true, cards: false, kickoff: true, finalResult: true }),
 });
 
 export async function GET(request) {
@@ -18,7 +28,7 @@ export async function GET(request) {
   const prefs = await db.userPreference.findMany({
     where: {
       userId: userContext.user.id,
-      key: { in: ["locale", "theme"] },
+      key: { in: ["locale", "theme", "timezone", "favoriteSports", "alertPreferences"] },
     },
   });
 
@@ -26,6 +36,10 @@ export async function GET(request) {
   return NextResponse.json({
     locale: result.locale ?? "en",
     theme: result.theme ?? "system",
+    timezone: result.timezone ?? "UTC",
+    favoriteSports: result.favoriteSports ?? [],
+    alertPreferences:
+      result.alertPreferences ?? { goals: true, cards: false, kickoff: true, finalResult: true },
   });
 }
 
@@ -48,6 +62,29 @@ export async function PUT(request) {
         where: { userId_key: { userId: userContext.user.id, key: "theme" } },
         update: { value: payload.theme },
         create: { userId: userContext.user.id, key: "theme", value: payload.theme },
+      }),
+      db.userPreference.upsert({
+        where: { userId_key: { userId: userContext.user.id, key: "timezone" } },
+        update: { value: payload.timezone },
+        create: { userId: userContext.user.id, key: "timezone", value: payload.timezone },
+      }),
+      db.userPreference.upsert({
+        where: { userId_key: { userId: userContext.user.id, key: "favoriteSports" } },
+        update: { value: payload.favoriteSports },
+        create: {
+          userId: userContext.user.id,
+          key: "favoriteSports",
+          value: payload.favoriteSports,
+        },
+      }),
+      db.userPreference.upsert({
+        where: { userId_key: { userId: userContext.user.id, key: "alertPreferences" } },
+        update: { value: payload.alertPreferences },
+        create: {
+          userId: userContext.user.id,
+          key: "alertPreferences",
+          value: payload.alertPreferences,
+        },
       }),
     ]);
 

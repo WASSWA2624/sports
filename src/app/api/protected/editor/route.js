@@ -7,10 +7,10 @@ export async function GET(request) {
     return error;
   }
 
-  const roleError = requireRoles(userContext, ["CREATOR", "ADMIN"]);
+  const roleError = requireRoles(userContext, ["EDITOR", "ADMIN"]);
   if (roleError) {
     return roleError;
   }
 
-  return NextResponse.json({ ok: true, scope: "creator" });
+  return NextResponse.json({ ok: true, scope: "editor" });
 }

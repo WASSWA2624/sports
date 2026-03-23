@@ -15,66 +15,45 @@ enum FixtureStatus {
   CANCELLED
 }
 
-enum InsightVisibility {
-  PUBLIC
-  FOLLOWERS
-  PRIVATE
+enum FavoriteEntityType {
+  FIXTURE
+  TEAM
+  COMPETITION
 }
 
-enum ReportStatus {
-  OPEN
-  IN_REVIEW
-  RESOLVED
-  REJECTED
+enum NotificationType {
+  GOAL
+  CARD
+  KICKOFF
+  PERIOD_CHANGE
+  FINAL_RESULT
+  NEWS
 }
 
-enum ModerationActionType {
-  WARNING
-  CONTENT_REMOVAL
-  TEMP_BAN
-  PERM_BAN
+enum ArticleEntityType {
+  SPORT
+  COUNTRY
+  COMPETITION
+  TEAM
+  FIXTURE
 }
 
-enum BettingSlipStatus {
+enum NewsArticleStatus {
   DRAFT
   PUBLISHED
-  SETTLED
-  VOID
+  ARCHIVED
 }
 
-enum PurchaseStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
+enum FixtureParticipantType {
+  TEAM
+  PLAYER
+  OFFICIAL
 }
 
-enum OutcomeStatus {
-  OPEN
-  WON
-  LOST
-  VOID
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  REFUNDED
-}
-
-enum OrderStatus {
-  CREATED
-  PAID
-  CANCELLED
-  REFUNDED
-}
-
-enum InvoiceStatus {
-  DRAFT
-  ISSUED
-  PAID
-  VOID
+enum FixtureSide {
+  HOME
+  AWAY
+  NEUTRAL
 }
 
 enum SyncJobStatus {
@@ -85,29 +64,22 @@ enum SyncJobStatus {
 }
 
 model User {
-  id                String                @id @default(cuid())
-  email             String                @unique
-  username          String                @unique
-  passwordHash      String
-  displayName       String?
-  isActive          Boolean               @default(true)
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  sessions          Session[]
-  accounts          Account[]
-  roles             UserRole[]
-  preferences       UserPreference[]
-  creatorProfile    CreatorProfile?
-  insights          InsightPost[]
-  comments          InsightComment[]
-  likes             InsightLike[]
-  reportsFiled      Report[]              @relation("ReportReporter")
-  reportsAgainst    Report[]              @relation("ReportTarget")
-  moderationActions ModerationAction[]    @relation("ModerationTarget")
-  purchases         BettingSlipPurchase[]
-  payments          Payment[]
-  orders            Order[]
-  auditLogs         AuditLog[]
+  id                        String                   @id @default(cuid())
+  email                     String                   @unique
+  username                  String                   @unique
+  passwordHash              String
+  displayName               String?
+  isActive                  Boolean                  @default(true)
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  sessions                  Session[]
+  accounts                  Account[]
+  roles                     UserRole[]
+  preferences               UserPreference[]
+  favorites                 FavoriteEntity[]
+  notificationSubscriptions NotificationSubscription[]
+  recentViews               RecentView[]
+  auditLogs                 AuditLog[]
 }
 
 model Session {
@@ -192,113 +164,297 @@ model UserPreference {
   @@unique([userId, key])
 }
 
-model League {
-  id         String   @id @default(cuid())
-  name       String
-  country    String?
-  code       String   @unique
-  provider   String?
-  externalRef String? @unique
-  logoUrl    String?
+model SourceProvider {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  kind        String?
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, code])
+}
+
+model Sport {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  slug        String   @unique
+  name        String
+  isEnabled   Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  competitions Competition[]
+  leagues     League[]
+  fixtures    Fixture[]
+
+  @@index([isEnabled, name])
+}
+
+model Country {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  slug         String   @unique
+  name         String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  competitions Competition[]
+  leagues      League[]
+  fixtures     Fixture[]
+
+  @@index([name])
+}
+
+model Competition {
+  id          String   @id @default(cuid())
+  sportId     String
+  countryId   String?
+  name        String
+  shortName   String?
+  slug        String   @unique
+  code        String?  @unique
+  externalRef String?  @unique
+  logoUrl     String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sport       Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  country     Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  leagues     League[]
+  seasons     Season[]
+  fixtures    Fixture[]
+
+  @@index([sportId, countryId, name])
+}
+
+model FavoriteEntity {
+  id         String             @id @default(cuid())
+  userId     String
+  entityType FavoriteEntityType
+  entityId   String
+  label      String?
   metadata   Json?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  seasons    Season[]
-  teams      Team[]
-  fixtures   Fixture[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+model NotificationSubscription {
+  id               String             @id @default(cuid())
+  userId           String
+  entityType       FavoriteEntityType
+  entityId         String
+  notificationType NotificationType
+  isEnabled        Boolean            @default(true)
+  metadata         Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId, notificationType])
+  @@index([entityType, entityId, notificationType])
+}
+
+model RecentView {
+  id         String             @id @default(cuid())
+  userId     String
+  entityType FavoriteEntityType
+  entityId   String
+  label      String?
+  metadata   Json?
+  viewedAt   DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, viewedAt])
+}
+
+model League {
+  id            String       @id @default(cuid())
+  sportId       String?
+  countryId     String?
+  competitionId String?
+  name          String
+  country       String?
+  code          String       @unique
+  provider      String?
+  externalRef   String?      @unique
+  logoUrl       String?
+  metadata      Json?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  sport         Sport?       @relation(fields: [sportId], references: [id], onDelete: SetNull)
+  countryRecord Country?     @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  competition   Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  seasons       Season[]
+  teams         Team[]
+  fixtures      Fixture[]
 
   @@index([isActive, name])
 }
 
 model Season {
-  id         String   @id @default(cuid())
-  leagueId   String
-  name       String
-  provider   String?
-  externalRef String? @unique
-  startDate  DateTime
-  endDate    DateTime
-  metadata   Json?
-  isCurrent  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  league     League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  fixtures   Fixture[]
-  standings  Standing[]
+  id            String       @id @default(cuid())
+  leagueId      String
+  competitionId String?
+  name          String
+  provider      String?
+  externalRef   String?      @unique
+  startDate     DateTime
+  endDate       DateTime
+  metadata      Json?
+  isCurrent     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  league        League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  competition   Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  fixtures      Fixture[]
+  standings     Standing[]
 
   @@unique([leagueId, name])
   @@index([leagueId, isCurrent])
 }
 
 model Team {
-  id         String   @id @default(cuid())
-  leagueId   String?
-  name       String
-  shortName  String?
-  code       String?
-  provider   String?
-  externalRef String? @unique
-  logoUrl    String?
-  metadata   Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  league     League?  @relation(fields: [leagueId], references: [id], onDelete: SetNull)
-  homeFor    Fixture[] @relation("HomeTeam")
-  awayFor    Fixture[] @relation("AwayTeam")
-  standings  Standing[]
+  id            String              @id @default(cuid())
+  leagueId      String?
+  competitionId String?
+  name          String
+  shortName     String?
+  code          String?
+  provider      String?
+  externalRef   String?             @unique
+  logoUrl       String?
+  metadata      Json?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  league        League?             @relation(fields: [leagueId], references: [id], onDelete: SetNull)
+  competition   Competition?        @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  homeFor       Fixture[]           @relation("HomeTeam")
+  awayFor       Fixture[]           @relation("AwayTeam")
+  fixtureParticipants FixtureParticipant[]
+  standings     Standing[]
+  lineupEntries Lineup[]
+  incidents     Incident[]
+  statistics    Statistic[]
 
   @@unique([leagueId, name])
   @@index([name])
 }
 
+model Venue {
+  id          String   @id @default(cuid())
+  name        String
+  city        String?
+  countryName String?
+  capacity    Int?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  fixtures    Fixture[]
+
+  @@index([name, city])
+}
+
+model Player {
+  id           String   @id @default(cuid())
+  name         String
+  shortName    String?
+  externalRef  String?  @unique
+  countryName  String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  participants FixtureParticipant[]
+  lineupEntries Lineup[]
+  incidents    Incident[]
+
+  @@index([name])
+}
+
+model Official {
+  id           String   @id @default(cuid())
+  name         String
+  role         String?
+  externalRef  String?  @unique
+  countryName  String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  participants FixtureParticipant[]
+
+  @@index([name])
+}
+
 model Fixture {
-  id             String         @id @default(cuid())
-  leagueId       String
-  seasonId       String
-  homeTeamId     String
-  awayTeamId     String
-  provider       String?
-  startsAt       DateTime
-  status         FixtureStatus  @default(SCHEDULED)
-  venue          String?
-  externalRef    String?        @unique
-  round          String?
-  stateReason    String?
-  lastSyncedAt   DateTime?
-  metadata       Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  league         League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  season         Season         @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  homeTeam       Team           @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
-  awayTeam       Team           @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
-  standings      Standing[]
-  oddsMarkets    OddsMarket[]
-  resultSnapshot ResultSnapshot?
-  slipSelections BettingSlipSelection[]
+  id                String               @id @default(cuid())
+  sportId           String?
+  countryId         String?
+  competitionId     String?
+  leagueId          String
+  seasonId          String
+  venueId           String?
+  homeTeamId        String
+  awayTeamId        String
+  provider          String?
+  startsAt          DateTime
+  status            FixtureStatus        @default(SCHEDULED)
+  venue             String?
+  externalRef       String?              @unique
+  round             String?
+  stateReason       String?
+  lastSyncedAt      DateTime?
+  metadata          Json?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  sport             Sport?               @relation(fields: [sportId], references: [id], onDelete: SetNull)
+  countryRecord     Country?             @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  competition       Competition?         @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  league            League               @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season            Season               @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  venueRecord       Venue?               @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  homeTeam          Team                 @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam          Team                 @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  standings         Standing[]
+  participants      FixtureParticipant[]
+  incidents         Incident[]
+  lineups           Lineup[]
+  statistics        Statistic[]
+  h2hSnapshots      H2HSnapshot[]
+  broadcastChannels BroadcastChannel[]
+  oddsMarkets       OddsMarket[]
+  resultSnapshot    ResultSnapshot?
 
   @@index([status, startsAt])
   @@index([leagueId, seasonId, startsAt])
 }
 
 model Standing {
-  id           String   @id @default(cuid())
-  seasonId     String
-  fixtureId    String?
-  teamId       String
-  position     Int
-  played       Int      @default(0)
-  won          Int      @default(0)
-  drawn        Int      @default(0)
-  lost         Int      @default(0)
-  goalsFor     Int      @default(0)
-  goalsAgainst Int      @default(0)
-  points       Int      @default(0)
-  updatedAt    DateTime @updatedAt
-  season       Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  fixture      Fixture? @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
-  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id            String       @id @default(cuid())
+  seasonId      String
+  competitionId String?
+  fixtureId     String?
+  teamId        String
+  position      Int
+  played        Int          @default(0)
+  won           Int          @default(0)
+  drawn         Int          @default(0)
+  lost          Int          @default(0)
+  goalsFor      Int          @default(0)
+  goalsAgainst  Int          @default(0)
+  points        Int          @default(0)
+  updatedAt     DateTime     @updatedAt
+  season        Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  competition   Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  fixture       Fixture?     @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  team          Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([seasonId, teamId])
   @@index([seasonId, position])
@@ -335,7 +491,6 @@ model OddsSelection {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   oddsMarket      OddsMarket  @relation(fields: [oddsMarketId], references: [id], onDelete: Cascade)
-  slipSelections  BettingSlipSelection[]
 
   @@index([oddsMarketId, isActive])
 }
@@ -351,204 +506,161 @@ model ResultSnapshot {
   fixture         Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
 }
 
-model CreatorProfile {
-  id               String        @id @default(cuid())
-  userId           String        @unique
-  slug             String        @unique
-  bio              String?       @db.Text
-  isVerified       Boolean       @default(false)
-  activeSlipCount  Int           @default(0)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bettingSlips     BettingSlip[]
+model FixtureParticipant {
+  id         String                 @id @default(cuid())
+  fixtureId  String
+  teamId     String?
+  playerId   String?
+  officialId String?
+  type       FixtureParticipantType
+  side       FixtureSide?
+  role       String?
+  sortOrder  Int                    @default(0)
+  metadata   Json?
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  fixture    Fixture                @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team       Team?                  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  player     Player?                @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  official   Official?              @relation(fields: [officialId], references: [id], onDelete: SetNull)
+  incidents  Incident[]
 
-  @@index([isVerified])
+  @@index([fixtureId, side, sortOrder])
 }
 
-model InsightPost {
-  id             String            @id @default(cuid())
-  authorId       String
-  title          String
-  body           String            @db.Text
-  visibility     InsightVisibility @default(PUBLIC)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  author         User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments       InsightComment[]
-  likes          InsightLike[]
-  reports        Report[]
+model Incident {
+  id           String      @id @default(cuid())
+  fixtureId    String
+  participantId String?
+  teamId       String?
+  playerId     String?
+  minute       Int?
+  extraMinute  Int?
+  sortOrder    Int         @default(0)
+  side         FixtureSide?
+  type         String
+  title        String
+  description  String?     @db.Text
+  payload      Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  fixture      Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  participant  FixtureParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  team         Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  player       Player?     @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
-  @@index([createdAt])
-  @@index([authorId, createdAt])
+  @@index([fixtureId, minute, sortOrder])
 }
 
-model InsightComment {
-  id         String      @id @default(cuid())
-  postId     String
-  authorId   String
-  body       String      @db.Text
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  post       InsightPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+model Lineup {
+  id            String      @id @default(cuid())
+  fixtureId      String
+  teamId         String
+  playerId       String?
+  side           FixtureSide?
+  entryType      String?
+  jerseyNumber   String?
+  formationSlot  String?
+  positionLabel  String?
+  isStarter      Boolean     @default(false)
+  sortOrder      Int         @default(0)
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  fixture        Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team           Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player         Player?     @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([fixtureId, teamId, sortOrder])
 }
 
-model InsightLike {
-  postId      String
-  userId      String
-  createdAt   DateTime   @default(now())
-  post        InsightPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Statistic {
+  id           String      @id @default(cuid())
+  fixtureId     String
+  teamId        String?
+  side          FixtureSide?
+  name          String
+  statGroup     String?
+  period        String?
+  value         String?
+  sortOrder     Int         @default(0)
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  fixture       Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team          Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
-  @@id([postId, userId])
+  @@index([fixtureId, name, sortOrder])
 }
 
-model Report {
-  id             String       @id @default(cuid())
-  postId          String?
-  reporterId      String
-  targetUserId    String?
-  reason          String
-  details         String?     @db.Text
-  status          ReportStatus @default(OPEN)
-  createdAt       DateTime    @default(now())
-  resolvedAt      DateTime?
-  post            InsightPost? @relation(fields: [postId], references: [id], onDelete: SetNull)
-  reporter        User         @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetUser      User?        @relation("ReportTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
-  moderationActions ModerationAction[]
+model H2HSnapshot {
+  id          String   @id @default(cuid())
+  fixtureId    String
+  homeTeamId   String
+  awayTeamId   String
+  payload      Json?
+  capturedAt   DateTime @default(now())
+  fixture      Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
 
-  @@index([status, createdAt])
+  @@index([fixtureId, capturedAt])
 }
 
-model ModerationAction {
-  id            String               @id @default(cuid())
-  reportId       String?
-  targetUserId   String?
-  actionType     ModerationActionType
-  notes          String?             @db.Text
-  expiresAt      DateTime?
-  createdAt      DateTime            @default(now())
-  report         Report?             @relation(fields: [reportId], references: [id], onDelete: SetNull)
-  targetUser     User?               @relation("ModerationTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+model BroadcastChannel {
+  id          String   @id @default(cuid())
+  fixtureId    String
+  name        String
+  territory   String?
+  channelType String?
+  url         String?
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  fixture     Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+
+  @@index([fixtureId, territory])
 }
 
-model BettingSlip {
-  id                String               @id @default(cuid())
-  creatorProfileId  String
-  title             String
-  description       String?              @db.Text
-  status            BettingSlipStatus    @default(DRAFT)
-  stakeAmount       Decimal?             @db.Decimal(12, 2)
-  unitPrice         Decimal              @default(0) @db.Decimal(12, 2)
-  publishedAt       DateTime?
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  creatorProfile    CreatorProfile       @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
-  selections        BettingSlipSelection[]
-  prices            BettingSlipPrice[]
-  purchases         BettingSlipPurchase[]
-  outcomes          BettingSlipOutcome[]
-
-  @@index([creatorProfileId, status])
-  @@index([status, createdAt])
+model NewsCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  articles    NewsArticle[]
 }
 
-model BettingSlipSelection {
-  id               String        @id @default(cuid())
-  bettingSlipId    String
-  fixtureId        String
-  oddsSelectionId  String
-  createdAt        DateTime      @default(now())
-  bettingSlip      BettingSlip   @relation(fields: [bettingSlipId], references: [id], onDelete: Cascade)
-  fixture          Fixture       @relation(fields: [fixtureId], references: [id], onDelete: Restrict)
-  oddsSelection    OddsSelection @relation(fields: [oddsSelectionId], references: [id], onDelete: Restrict)
+model NewsArticle {
+  id          String            @id @default(cuid())
+  categoryId  String?
+  slug        String            @unique
+  title       String
+  excerpt     String?           @db.Text
+  body        String?           @db.LongText
+  status      NewsArticleStatus @default(DRAFT)
+  sourceUrl   String?
+  imageUrl    String?
+  publishedAt DateTime?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  category    NewsCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  entityLinks ArticleEntityLink[]
 
-  @@unique([bettingSlipId, oddsSelectionId])
-  @@index([fixtureId])
+  @@index([status, publishedAt])
 }
 
-model BettingSlipPrice {
-  id              String      @id @default(cuid())
-  bettingSlipId   String
-  totalOdds       Decimal     @db.Decimal(12, 4)
-  expectedPayout  Decimal?    @db.Decimal(12, 2)
-  createdAt       DateTime    @default(now())
-  bettingSlip     BettingSlip @relation(fields: [bettingSlipId], references: [id], onDelete: Cascade)
+model ArticleEntityLink {
+  id         String            @id @default(cuid())
+  articleId   String
+  entityType  ArticleEntityType
+  entityId    String
+  label       String?
+  createdAt   DateTime         @default(now())
+  article     NewsArticle      @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
-  @@index([bettingSlipId, createdAt])
-}
-
-model BettingSlipPurchase {
-  id              String         @id @default(cuid())
-  bettingSlipId   String
-  buyerId         String
-  amountPaid      Decimal        @db.Decimal(12, 2)
-  status          PurchaseStatus @default(PENDING)
-  purchasedAt     DateTime       @default(now())
-  bettingSlip     BettingSlip    @relation(fields: [bettingSlipId], references: [id], onDelete: Restrict)
-  buyer           User           @relation(fields: [buyerId], references: [id], onDelete: Restrict)
-  order           Order?
-
-  @@index([buyerId, purchasedAt])
-}
-
-model BettingSlipOutcome {
-  id              String        @id @default(cuid())
-  bettingSlipId   String
-  status          OutcomeStatus @default(OPEN)
-  settledAt       DateTime?
-  payoutAmount    Decimal?      @db.Decimal(12, 2)
-  notes           String?       @db.Text
-  bettingSlip     BettingSlip   @relation(fields: [bettingSlipId], references: [id], onDelete: Cascade)
-
-  @@index([bettingSlipId, status])
-}
-
-model Payment {
-  id               String         @id @default(cuid())
-  userId           String
-  provider         String
-  providerRef      String         @unique
-  amount           Decimal        @db.Decimal(12, 2)
-  currency         String         @default("USD")
-  status           PaymentStatus  @default(PENDING)
-  paidAt           DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  user             User           @relation(fields: [userId], references: [id], onDelete: Restrict)
-  order            Order?
-
-  @@index([userId, createdAt])
-}
-
-model Order {
-  id                     String               @id @default(cuid())
-  userId                 String
-  bettingSlipPurchaseId  String?              @unique
-  paymentId              String?              @unique
-  totalAmount            Decimal              @db.Decimal(12, 2)
-  status                 OrderStatus          @default(CREATED)
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
-  user                   User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
-  bettingSlipPurchase    BettingSlipPurchase? @relation(fields: [bettingSlipPurchaseId], references: [id], onDelete: SetNull)
-  payment                Payment?             @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  invoice                Invoice?
-}
-
-model Invoice {
-  id          String        @id @default(cuid())
-  orderId     String        @unique
-  number      String        @unique
-  amount      Decimal       @db.Decimal(12, 2)
-  status      InvoiceStatus @default(DRAFT)
-  issuedAt    DateTime?
-  dueAt       DateTime?
-  paidAt      DateTime?
-  createdAt   DateTime      @default(now())
-  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  @@unique([articleId, entityType, entityId])
+  @@index([entityType, entityId])
 }
 
 model AuditLog {

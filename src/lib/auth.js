@@ -29,7 +29,7 @@ const signUpSchema = authSchema.extend({
 
 const stepUpSchema = z.object({
   password: z.string().min(8).max(128),
-  purpose: z.enum(["payout", "profile-security", "admin"]),
+  purpose: z.enum(["profile-security", "admin"]),
 });
 
 function getAuthSecret() {

@@ -27,8 +27,7 @@ async function seed() {
       INSERT INTO Role (id, name, description, createdAt, updatedAt)
       VALUES
         (UUID(), 'ADMIN', 'Full system access', NOW(), NOW()),
-        (UUID(), 'MODERATOR', 'Community moderation access', NOW(), NOW()),
-        (UUID(), 'CREATOR', 'Can publish betting slips', NOW(), NOW()),
+        (UUID(), 'EDITOR', 'Editorial and news curation access', NOW(), NOW()),
         (UUID(), 'USER', 'Standard app user', NOW(), NOW())
       ON DUPLICATE KEY UPDATE
         description = VALUES(description),
@@ -40,9 +39,9 @@ async function seed() {
       `
       INSERT INTO FeatureFlag (id, \`key\`, description, enabled, createdAt, updatedAt)
       VALUES
-        (UUID(), 'insights_enabled', 'Enable community insights feed', true, NOW(), NOW()),
-        (UUID(), 'marketplace_enabled', 'Enable betting slip marketplace', true, NOW(), NOW()),
-        (UUID(), 'creator_verification_enabled', 'Enable creator verification tooling', false, NOW(), NOW())
+        (UUID(), 'scores_live_refresh', 'Enable live board refresh behavior', true, NOW(), NOW()),
+        (UUID(), 'news_hub_enabled', 'Enable news mode and editorial modules', false, NOW(), NOW()),
+        (UUID(), 'odds_surfaces_enabled', 'Enable informational odds surfaces', true, NOW(), NOW())
       ON DUPLICATE KEY UPDATE
         description = VALUES(description),
         enabled = VALUES(enabled),

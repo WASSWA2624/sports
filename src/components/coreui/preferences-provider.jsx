@@ -27,6 +27,8 @@ function resolveTheme(theme) {
 export function PreferencesProvider({ children, initialLocale, initialTheme, initialWatchlist }) {
   const [theme, setThemeState] = useState(normalizeTheme(initialTheme));
   const [watchlist, setWatchlist] = useState(initialWatchlist || []);
+  const [sessionUser, setSessionUser] = useState(null);
+  const [favoritesHydrated, setFavoritesHydrated] = useState(false);
 
   useEffect(() => {
     const nextTheme = normalizeTheme(theme || DEFAULT_THEME);
@@ -58,6 +60,102 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
     return () => media.removeEventListener("change", handleChange);
   }, [theme]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function hydrateFavorites() {
+      try {
+        const meResponse = await fetch("/api/auth/me", { credentials: "same-origin" });
+        if (!meResponse.ok) {
+          return;
+        }
+
+        const meJson = await meResponse.json();
+        if (!active) {
+          return;
+        }
+
+        setSessionUser(meJson.user);
+
+        const favoritesResponse = await fetch("/api/favorites", {
+          credentials: "same-origin",
+        });
+        if (!favoritesResponse.ok) {
+          return;
+        }
+
+        const favoritesJson = await favoritesResponse.json();
+        const remoteWatchlist = (favoritesJson.items || [])
+          .map((item) => item.itemId)
+          .filter(Boolean);
+        const localOnly = (initialWatchlist || []).filter(
+          (itemId) => !remoteWatchlist.includes(itemId)
+        );
+
+        if (localOnly.length) {
+          await fetch("/api/favorites", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ itemIds: localOnly }),
+          });
+        }
+
+        if (!active) {
+          return;
+        }
+
+        setWatchlist([...new Set([...remoteWatchlist, ...localOnly])]);
+      } finally {
+        if (active) {
+          setFavoritesHydrated(true);
+        }
+      }
+    }
+
+    hydrateFavorites();
+
+    return () => {
+      active = false;
+    };
+  }, [initialWatchlist]);
+
+  async function toggleWatch(itemId) {
+    const shouldSave = !watchlist.includes(itemId);
+
+    setWatchlist((current) =>
+      current.includes(itemId)
+        ? current.filter((entry) => entry !== itemId)
+        : [itemId, ...current].slice(0, 24)
+    );
+
+    if (!sessionUser) {
+      return;
+    }
+
+    const response = await fetch(
+      shouldSave
+        ? "/api/favorites"
+        : `/api/favorites?itemId=${encodeURIComponent(itemId)}`,
+      {
+        method: shouldSave ? "POST" : "DELETE",
+        headers: shouldSave ? { "content-type": "application/json" } : undefined,
+        credentials: "same-origin",
+        body: shouldSave ? JSON.stringify({ itemId }) : undefined,
+      }
+    );
+
+    if (response.ok) {
+      return;
+    }
+
+    setWatchlist((current) =>
+      shouldSave
+        ? current.filter((entry) => entry !== itemId)
+        : [itemId, ...current].slice(0, 24)
+    );
+  }
+
   const value = useMemo(
     () => ({
       locale: initialLocale,
@@ -65,15 +163,12 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
       setTheme: setThemeState,
       watchlist,
       watchlistCount: watchlist.length,
+      favoritesHydrated,
+      sessionUser,
       isWatched: (itemId) => watchlist.includes(itemId),
-      toggleWatch: (itemId) =>
-        setWatchlist((current) =>
-          current.includes(itemId)
-            ? current.filter((entry) => entry !== itemId)
-            : [itemId, ...current].slice(0, 24)
-        ),
+      toggleWatch,
     }),
-    [initialLocale, theme, watchlist]
+    [favoritesHydrated, initialLocale, sessionUser, theme, watchlist]
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

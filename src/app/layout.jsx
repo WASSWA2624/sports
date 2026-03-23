@@ -1,6 +1,8 @@
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { StoreProvider } from "../components/coreui/store-provider";
+import StyledComponentsRegistry from "../lib/styled-components/registry";
 import {
   DEFAULT_LOCALE,
   THEME_COOKIE_NAME,
@@ -61,7 +63,9 @@ export default async function RootLayout({ children }) {
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        {children}
+        <StyledComponentsRegistry>
+          <StoreProvider>{children}</StoreProvider>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );

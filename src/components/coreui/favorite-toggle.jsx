@@ -16,7 +16,7 @@ export function FavoriteToggle({ itemId, locale }) {
       className={active ? styles.favoriteButtonActive : styles.favoriteButton}
       onClick={() => toggleWatch(itemId)}
     >
-      <span aria-hidden="true">{active ? "★" : "☆"}</span>
+      <span aria-hidden="true">{active ? "[*]" : "[ ]"}</span>
       {active ? dictionary.watching : dictionary.watch}
     </button>
   );
