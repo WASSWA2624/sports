@@ -2977,3 +2977,244 @@
     font-size: 1.5rem;
   }
 }
+
+/* Header navigation refresh */
+.headerInner {
+  width: min(100% - 0.8rem, var(--page-max));
+  gap: 0.45rem;
+  padding: 0.45rem 0 0.35rem;
+}
+
+.headerTopRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "brand controls"
+    "mode mode";
+  gap: 0.45rem;
+}
+
+.headerBrand {
+  grid-area: brand;
+}
+
+.topModeNav {
+  grid-area: mode;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  margin-right: 0;
+  gap: 0.22rem;
+  padding: 0.22rem;
+  border: 1px solid rgba(191, 216, 220, 0.08);
+  border-radius: 999px;
+  background: #061a22;
+}
+
+.topModeNav::after,
+.nav::after {
+  display: none;
+}
+
+.topModeLink,
+.topModeLinkActive {
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0 0.72rem;
+  border: 0;
+  background: transparent;
+}
+
+.topModeLinkActive,
+.topModeLink:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: transparent;
+}
+
+.headerControls {
+  grid-area: controls;
+}
+
+.headerNavRail {
+  display: grid;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.nav,
+.sportsStrip {
+  width: 100%;
+  margin: 0;
+  border: 1px solid rgba(191, 216, 220, 0.08);
+  border-radius: 1rem;
+  background: #061a22;
+  box-shadow: none;
+}
+
+.nav {
+  padding: 0.22rem;
+  margin-right: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sportsStrip {
+  gap: 0.28rem;
+  padding: 0.28rem;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: visible;
+}
+
+.navLink,
+.navLinkActive,
+.sportsChip,
+.sportsChipActive,
+.sportsChipDisabled,
+.sportsMoreSummary {
+  min-height: 1.95rem;
+  padding: 0 0.62rem;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.navLink,
+.sportsChip,
+.sportsChipDisabled,
+.sportsMoreSummary {
+  background: transparent;
+}
+
+.navLinkActive,
+.navLink:hover,
+.sportsChipActive,
+.sportsMoreSummary:hover,
+.sportsMoreMenu[open] .sportsMoreSummary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: transparent;
+}
+
+.sportsMoreSummary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  list-style: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.sportsMoreSummary::-webkit-details-marker {
+  display: none;
+}
+
+.sportsCount {
+  min-width: 1.1rem;
+  min-height: 1.1rem;
+  margin-left: 0.2rem;
+  font-size: 0.66rem;
+}
+
+.sportsMoreMenu {
+  position: static;
+}
+
+.sportsMoreMenu[open] {
+  z-index: 5;
+}
+
+.sportsMorePanel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0.28rem;
+  left: 0.28rem;
+  z-index: 6;
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.45rem;
+  border: 1px solid rgba(191, 216, 220, 0.12);
+  border-radius: 0.85rem;
+  background: #0b2730;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+}
+
+.sportsMoreItem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 2.7rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(191, 216, 220, 0.1);
+  border-radius: 0.7rem;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sportsMoreItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sportsMoreItemMuted {
+  opacity: 0.78;
+  cursor: default;
+}
+
+.sportsMoreItemMuted:hover {
+  background: transparent;
+}
+
+@media (min-width: 900px) {
+  .headerInner {
+    width: min(100% - 1.6rem, var(--page-max));
+    gap: 0.55rem;
+    padding: 0.5rem 0 0.4rem;
+  }
+
+  .headerTopRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "brand mode controls";
+    gap: 0.8rem;
+  }
+
+  .topModeNav {
+    display: inline-flex;
+    width: auto;
+    justify-self: start;
+  }
+
+  .headerNavRail {
+    gap: 0.5rem;
+  }
+
+  .navLink,
+  .navLinkActive,
+  .sportsChip,
+  .sportsChipActive,
+  .sportsChipDisabled,
+  .sportsMoreSummary {
+    min-height: 2.05rem;
+    padding: 0 0.72rem;
+    font-size: 0.76rem;
+  }
+
+  .sportsMoreMenu {
+    position: relative;
+  }
+
+  .sportsMorePanel {
+    left: auto;
+    min-width: 16rem;
+    max-width: 22rem;
+  }
+}
