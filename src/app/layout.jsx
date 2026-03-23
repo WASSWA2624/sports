@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import {
@@ -7,13 +7,19 @@ import {
 } from "../lib/coreui/preferences";
 import { getPreferredLocale } from "../lib/coreui/preferences-server";
 
-const geistSans = Geist({
+const bodyFont = Space_Grotesk({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const monoFont = IBM_Plex_Mono({
   variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
+const displayFont = Space_Grotesk({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
@@ -49,7 +55,7 @@ export default async function RootLayout({ children }) {
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${bodyFont.variable} ${monoFont.variable} ${displayFont.variable}`}
     >
       <body>
         <Script id="theme-init" strategy="beforeInteractive">

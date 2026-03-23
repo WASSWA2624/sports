@@ -16,33 +16,50 @@ function ShellFrame({ children, locale, dictionary, watchlistItems }) {
     <div className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <div className={styles.brandBlock}>
-            <Link href={`/${locale}`} className={styles.brand}>
-              {dictionary.brand}
-            </Link>
-            <p className={styles.brandTag}>SEO-first matchday navigation for public sports coverage.</p>
-          </div>
-          <nav className={styles.nav}>
-            {PUBLIC_NAV.map((item) => {
-              const href = `/${locale}${item.href}`;
-              const active =
-                item.href === ""
-                  ? pathname === `/${locale}`
-                  : pathname === href || pathname.startsWith(`${href}/`);
-
-              return (
-                <Link key={item.key} href={href} className={active ? styles.navLinkActive : styles.navLink}>
-                  {item.label}
+          <div className={styles.headerTop}>
+            <div className={styles.brandCluster}>
+              <p className={styles.brandKicker}>Matchday Desk</p>
+              <div className={styles.brandBlock}>
+                <Link href={`/${locale}`} className={styles.brand}>
+                  {dictionary.brand}
                 </Link>
-              );
-            })}
-          </nav>
-          <div className={styles.headerControls}>
-            <LocaleSwitcher locale={locale} label={dictionary.locale} />
-            <ThemeToggle label={dictionary.theme} />
-            <div className={styles.watchPill}>
-              {dictionary.watchlist}: {watchlistCount || watchlistItems.length}
+                <p className={styles.brandTag}>
+                  Streamlined public browsing for scores, fixtures, results, tables, and club pages.
+                </p>
+              </div>
             </div>
+            <div className={styles.headerUtilities}>
+              <div className={styles.headerControls}>
+                <LocaleSwitcher locale={locale} label={dictionary.locale} />
+                <ThemeToggle label={dictionary.theme} />
+                <div className={styles.watchPill}>
+                  {dictionary.watchlist}: {watchlistCount || watchlistItems.length}
+                </div>
+              </div>
+              <p className={styles.utilityHint}>
+                Persistent locale, theme, and watchlist preferences across visits.
+              </p>
+            </div>
+          </div>
+          <div className={styles.headerBottom}>
+            <nav className={styles.nav}>
+              {PUBLIC_NAV.map((item) => {
+                const href = `/${locale}${item.href}`;
+                const active =
+                  item.href === ""
+                    ? pathname === `/${locale}`
+                    : pathname === href || pathname.startsWith(`${href}/`);
+
+                return (
+                  <Link key={item.key} href={href} className={active ? styles.navLinkActive : styles.navLink}>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <p className={styles.navNote}>
+              Clean matchday navigation without the clutter.
+            </p>
           </div>
         </div>
       </header>

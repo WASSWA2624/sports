@@ -1,7 +1,6 @@
 :root {
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  --page-max: 1180px;
+  --page-max: 1240px;
+  --reading-width: 72ch;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -12,21 +11,25 @@
   --radius-sm: 0.75rem;
   --radius-md: 1.25rem;
   --radius-lg: 1.75rem;
-  --shadow-soft: 0 16px 40px rgba(14, 24, 40, 0.12);
-  --shadow-card: 0 10px 24px rgba(18, 34, 60, 0.1);
-  --background: #f4f7fb;
-  --background-accent: radial-gradient(circle at top left, rgba(54, 92, 255, 0.16), transparent 32%), radial-gradient(circle at top right, rgba(31, 179, 126, 0.16), transparent 28%), linear-gradient(180deg, #fbfcfe 0%, #edf3fb 100%);
-  --surface: rgba(255, 255, 255, 0.84);
-  --surface-strong: #ffffff;
-  --surface-muted: #edf3fb;
-  --surface-inverse: #0e1830;
-  --text: #12213a;
-  --text-muted: #5f6f89;
-  --text-soft: #7f8ba1;
-  --border: rgba(16, 34, 63, 0.1);
-  --accent: #1f7aeb;
-  --accent-strong: #1554b8;
-  --accent-soft: rgba(31, 122, 235, 0.12);
+  --shadow-soft: 0 22px 70px rgba(8, 17, 34, 0.18);
+  --shadow-card: 0 14px 40px rgba(16, 31, 58, 0.12);
+  --background: #f3f7fd;
+  --background-accent:
+    radial-gradient(circle at 8% 12%, rgba(41, 121, 255, 0.2), transparent 26%),
+    radial-gradient(circle at 92% 14%, rgba(53, 196, 153, 0.16), transparent 20%),
+    radial-gradient(circle at 50% 90%, rgba(15, 40, 87, 0.12), transparent 26%),
+    linear-gradient(180deg, #fbfdff 0%, #eef4fb 45%, #e8eef8 100%);
+  --surface: rgba(255, 255, 255, 0.74);
+  --surface-strong: rgba(255, 255, 255, 0.92);
+  --surface-muted: rgba(229, 238, 250, 0.86);
+  --surface-inverse: #0b1730;
+  --text: #10203a;
+  --text-muted: #61718d;
+  --text-soft: #8391a6;
+  --border: rgba(16, 34, 63, 0.08);
+  --accent: #216dff;
+  --accent-strong: #154ec2;
+  --accent-soft: rgba(33, 109, 255, 0.14);
   --success: #0f9d6a;
   --warning: #db8a06;
   --danger: #d64545;
@@ -34,21 +37,25 @@
 }
 
 html[data-theme="dark"] {
-  --background: #09111f;
-  --background-accent: radial-gradient(circle at top left, rgba(54, 92, 255, 0.22), transparent 28%), radial-gradient(circle at top right, rgba(31, 179, 126, 0.2), transparent 24%), linear-gradient(180deg, #09111f 0%, #111b2c 100%);
-  --surface: rgba(17, 27, 44, 0.86);
-  --surface-strong: #16233a;
-  --surface-muted: #111b2c;
+  --background: #07111f;
+  --background-accent:
+    radial-gradient(circle at 12% 10%, rgba(53, 104, 255, 0.24), transparent 24%),
+    radial-gradient(circle at 88% 14%, rgba(36, 176, 159, 0.18), transparent 22%),
+    radial-gradient(circle at 50% 80%, rgba(84, 92, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, #07111f 0%, #0b1526 45%, #101c31 100%);
+  --surface: rgba(11, 23, 48, 0.74);
+  --surface-strong: rgba(19, 33, 60, 0.9);
+  --surface-muted: rgba(15, 26, 45, 0.84);
   --surface-inverse: #eff5ff;
   --text: #eef4ff;
   --text-muted: #a9b8d1;
   --text-soft: #8898b2;
-  --border: rgba(214, 227, 255, 0.12);
-  --accent: #6ca8ff;
+  --border: rgba(214, 227, 255, 0.1);
+  --accent: #6da8ff;
   --accent-strong: #9fc3ff;
   --accent-soft: rgba(108, 168, 255, 0.14);
-  --shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.28);
-  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.22);
+  --shadow-soft: 0 26px 72px rgba(0, 0, 0, 0.34);
+  --shadow-card: 0 14px 44px rgba(0, 0, 0, 0.26);
 }
 
 html {
@@ -66,9 +73,37 @@ body {
   overflow-x: hidden;
   color: var(--text);
   background: var(--background-accent);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans), sans-serif;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(70px);
+}
+
+body::before {
+  top: 8rem;
+  left: -3rem;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(33, 109, 255, 0.14);
+}
+
+body::after {
+  right: -4rem;
+  bottom: 5rem;
+  width: 24rem;
+  height: 24rem;
+  background: rgba(53, 196, 153, 0.12);
 }
 
 * {
@@ -96,6 +131,14 @@ textarea {
 img {
   max-width: 100%;
   display: block;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  letter-spacing: -0.03em;
 }
 
 .app-empty,
