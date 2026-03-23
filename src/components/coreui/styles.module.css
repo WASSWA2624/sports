@@ -2455,17 +2455,19 @@
 
 .headerInner {
   align-items: stretch;
+  grid-template-columns: 184px minmax(0, 1fr) auto;
 }
 
 .headerBrand,
 .headerStack,
 .headerControls {
-  min-height: 4.2rem;
+  min-height: 3.55rem;
 }
 
 .headerBrand {
   display: flex;
   align-items: center;
+  padding: 0.55rem 0.8rem;
 }
 
 .headerStack {
@@ -2475,6 +2477,9 @@
 .headerControls {
   align-items: center;
   justify-content: flex-end;
+  min-width: 0;
+  padding: 0 0.75rem;
+  gap: 0.4rem;
 }
 
 .modeLinkContent,
@@ -2491,7 +2496,7 @@
 
 .modeLinkContent,
 .sportLinkContent {
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .modeIcon,
@@ -2500,22 +2505,22 @@
 .chevronIcon {
   flex: 0 0 auto;
   display: block;
-  width: 1rem;
-  height: 1rem;
+  width: 0.92rem;
+  height: 0.92rem;
 }
 
 .modeIcon {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .sportIcon {
-  width: 1.08rem;
-  height: 1.08rem;
+  width: 0.96rem;
+  height: 0.96rem;
 }
 
 .headerAction {
-  gap: 0.55rem;
+  gap: 0.45rem;
   flex: 0 0 auto;
 }
 
@@ -2524,7 +2529,7 @@
 }
 
 .headerSelect {
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .selectAdornment,
@@ -2541,8 +2546,8 @@
 }
 
 .chevronIcon {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 0.82rem;
+  height: 0.82rem;
 }
 
 .selectControl {
@@ -2551,7 +2556,7 @@
 }
 
 .headerPreferenceBlock {
-  gap: 0.45rem;
+  gap: 0.38rem;
 }
 
 .preferenceBlock .segmentedControl {
@@ -2568,20 +2573,20 @@
 }
 
 .headerWatchPill {
-  gap: 0.5rem;
+  gap: 0.42rem;
 }
 
 .watchValue {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.5rem;
-  min-height: 1.5rem;
-  padding: 0 0.38rem;
-  border-radius: 0.4rem;
+  min-width: 1.3rem;
+  min-height: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 0.34rem;
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -2589,7 +2594,7 @@
 .sportsChipActive,
 .sportsChipDisabled {
   justify-content: center;
-  gap: 0.55rem;
+  gap: 0.42rem;
 }
 
 .sportsChipDisabled {
@@ -2600,14 +2605,134 @@
   gap: 0.45rem;
 }
 
+.desktopMetaControls {
+  display: none;
+}
+
+.headerBrand {
+  border-right: 1px solid rgba(191, 216, 220, 0.08);
+}
+
+.brandLockup {
+  gap: 0.6rem;
+  min-height: 3rem;
+}
+
+.brandMark {
+  min-width: 2.35rem;
+  min-height: 2.35rem;
+  font-size: 0.78rem;
+}
+
+.brand {
+  font-size: clamp(1.45rem, 1.8vw, 1.8rem);
+  letter-spacing: 0.05em;
+}
+
+.brandTag {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+
+.topModeLink,
+.topModeLinkActive {
+  min-height: 3.25rem;
+  padding: 0 1rem;
+  font-size: 0.96rem;
+}
+
+.nav {
+  padding: 0.38rem 0.7rem 0.42rem;
+}
+
+.navLink,
+.navLinkActive {
+  padding: 0.34rem 0.48rem;
+  font-size: 0.8rem;
+}
+
+.inlineControl,
+.preferenceBlock,
+.watchPill,
+.sectionAction,
+.mobileMenuButton {
+  min-height: 2.35rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 0.58rem;
+}
+
+.watchPill,
+.sectionAction,
+.selectControl,
+.segment,
+.segmentActive,
+.mobileMenuButton {
+  font-size: 0.76rem;
+}
+
+.sportsStrip {
+  padding: 0 0.75rem;
+}
+
+.sportsChip,
+.sportsChipActive,
+.sportsChipDisabled {
+  min-height: 2.85rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.84rem;
+}
+
+.mobileMenuOverlay {
+  display: grid;
+  align-items: start;
+  justify-items: end;
+  padding: 4.15rem 1rem 1rem;
+  background: rgba(2, 10, 13, 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.mobileMenuPanel {
+  width: min(25rem, calc(100vw - 1rem));
+  max-height: calc(100vh - 5rem);
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid rgba(191, 216, 220, 0.08);
+  border-radius: 0.8rem;
+  background: #071a22;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.28);
+}
+
+.mobileMenuBody {
+  gap: 0.85rem;
+}
+
 @media (max-width: 900px) {
+  .headerInner {
+    grid-template-columns: 1fr;
+  }
+
   .headerControls {
     gap: 0.45rem;
+    padding: 0.65rem 0.8rem;
   }
 
   .headerAction,
   .mobileMenuButton {
     padding-inline: 0.75rem;
+  }
+
+  .mobileMenuOverlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .mobileMenuPanel {
+    width: min(24rem, 100vw);
+    max-height: none;
+    height: 100vh;
+    border: 0;
+    border-radius: 0;
+    padding: 1rem;
   }
 }
 
@@ -2633,5 +2758,25 @@
   .modeLinkContent,
   .sportLinkContent {
     gap: 0.42rem;
+  }
+
+  .headerBrand {
+    padding: 0.55rem 0.75rem;
+  }
+
+  .topModeLink,
+  .topModeLinkActive {
+    padding-inline: 0.85rem;
+  }
+
+  .nav {
+    padding-inline: 0.55rem;
+  }
+
+  .sportsChip,
+  .sportsChipActive,
+  .sportsChipDisabled {
+    min-height: 2.65rem;
+    padding-inline: 0.7rem;
   }
 }

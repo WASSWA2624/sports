@@ -47,6 +47,14 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
     savedCompetitions.length > 0
       ? savedCompetitions
       : (shellData?.featuredCompetitions || []).slice(0, 6);
+  const visibleScoreViews = SCORES_NAV.filter((item) => {
+    const active =
+      item.href === ""
+        ? pathname === `/${locale}`
+        : pathname === `/${locale}${item.href}` || pathname.startsWith(`/${locale}${item.href}/`);
+
+    return ["home", "live", "fixtures", "results"].includes(item.key) || active;
+  });
 
   return (
     <div className={styles.shell}>
@@ -92,7 +100,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
             {!isNewsMode ? (
               <nav className={styles.nav}>
-                {SCORES_NAV.map((item) => {
+                {visibleScoreViews.map((item) => {
                   const href = `/${locale}${item.href}`;
                   const active =
                     item.href === ""
@@ -125,15 +133,6 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 {sessionUser ? dictionary.profile : dictionary.login}
               </span>
             </Link>
-            <div className={styles.desktopMetaControls}>
-              <LocaleSwitcher locale={locale} label={dictionary.locale} />
-              <ThemeToggle label={dictionary.theme} />
-              <div className={`${styles.watchPill} ${styles.headerWatchPill}`}>
-                <ShellIcon name="favorites" className={styles.controlIcon} />
-                <span>{dictionary.watchlist}</span>
-                <strong className={styles.watchValue}>{watchCount}</strong>
-              </div>
-            </div>
             <button
               type="button"
               className={styles.mobileMenuButton}
