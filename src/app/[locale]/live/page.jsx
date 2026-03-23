@@ -187,7 +187,13 @@ export default async function LivePage({ params, searchParams }) {
 
               <div className={styles.fixtureGrid}>
                 {group.fixtures.map((fixture) => (
-                  <FixtureFeedCard key={fixture.id} fixture={fixture} locale={locale} mode="live" />
+                  <FixtureFeedCard
+                    key={fixture.id}
+                    fixture={fixture}
+                    locale={locale}
+                    mode="live"
+                    showLeague={false}
+                  />
                 ))}
               </div>
             </details>

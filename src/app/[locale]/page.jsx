@@ -2,8 +2,51 @@ import Link from "next/link";
 import { buildPageMetadata } from "../../lib/coreui/metadata";
 import { getDictionary } from "../../lib/coreui/dictionaries";
 import { getHomeSnapshot } from "../../lib/coreui/read";
-import { FixtureCard } from "../../components/coreui/fixture-card";
+import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
+import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
 import styles from "../../components/coreui/styles.module.css";
+
+const STATUS_ORDER = {
+  LIVE: 0,
+  SCHEDULED: 1,
+  FINISHED: 2,
+  POSTPONED: 3,
+  CANCELLED: 4,
+};
+
+function dedupeFixtures(fixtures) {
+  return [...new Map(fixtures.map((fixture) => [fixture.id, fixture])).values()];
+}
+
+function compareFixtures(left, right) {
+  const leftRank = STATUS_ORDER[left.status] ?? 99;
+  const rightRank = STATUS_ORDER[right.status] ?? 99;
+
+  if (leftRank !== rightRank) {
+    return leftRank - rightRank;
+  }
+
+  return new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
+}
+
+function groupFixtures(fixtures) {
+  return [...fixtures.reduce((accumulator, fixture) => {
+    const key = fixture.league?.code || fixture.league?.id || fixture.id;
+
+    if (!accumulator.has(key)) {
+      accumulator.set(key, {
+        key,
+        code: fixture.league?.code || null,
+        name: fixture.league?.name || "Competition",
+        country: fixture.league?.country || "International",
+        fixtures: [],
+      });
+    }
+
+    accumulator.get(key).fixtures.push(fixture);
+    return accumulator;
+  }, new Map()).values()];
+}
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
@@ -16,56 +59,100 @@ export default async function LocaleHomePage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
   const snapshot = await getHomeSnapshot();
-  const quickLinks = [
-    { href: `/${locale}/live`, label: dictionary.liveNow, value: snapshot.liveFixtures.length },
-    {
-      href: `/${locale}/fixtures`,
-      label: dictionary.upcoming,
-      value: snapshot.upcomingFixtures.length,
-    },
-    { href: `/${locale}/results`, label: dictionary.recent, value: snapshot.recentResults.length },
-    { href: `/${locale}/tables`, label: dictionary.standings, value: snapshot.leagues.length },
-  ];
+  const boardFixtures = dedupeFixtures([
+    ...snapshot.liveFixtures,
+    ...snapshot.upcomingFixtures,
+    ...snapshot.recentResults,
+  ]).sort(compareFixtures);
+  const boardGroups = groupFixtures(boardFixtures);
+  const boardDate = new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    weekday: "short",
+  }).format(new Date());
 
   return (
     <>
-      <section className={styles.hero}>
-        <div className={styles.heroGrid}>
-          <div className={styles.heroMain}>
-            <p className={styles.heroEyebrow}>{dictionary.seoSuffix}</p>
-            <h1 className={styles.heroTitle}>Matchday</h1>
-            <div className={styles.heroPills}>
-              <span className={styles.badge}>{snapshot.liveFixtures.length} live</span>
-              <span className={styles.badge}>{snapshot.upcomingFixtures.length} next</span>
-              <span className={styles.badge}>{snapshot.leagues.length} leagues</span>
-            </div>
-          </div>
-
-          <div className={styles.heroActionGrid}>
-            {quickLinks.map((item) => (
-              <Link key={item.href} href={item.href} className={styles.heroActionCard}>
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
+      <section className={styles.noticeBanner}>
+        <span className={styles.noticeLabel}>Football</span>
+        <p>
+          {boardFixtures.length} match rows loaded for today. Pin competitions from the board and move
+          between live, scheduled, and final scores from one surface.
+        </p>
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{dictionary.liveNow}</h2>
+      <section className={styles.homeBoard}>
+        <header className={styles.pageHeader}>
+          <div>
+            <p className={styles.eyebrow}>Scores</p>
+            <h1 className={styles.pageTitle}>Football live scores</h1>
+            <p className={styles.pageLead}>
+              {snapshot.liveFixtures.length} live, {snapshot.upcomingFixtures.length} scheduled,{" "}
+              {snapshot.recentResults.length} finished.
+            </p>
+          </div>
           <div className={styles.sectionTools}>
-            <span className={styles.badge}>{snapshot.liveFixtures.length}</span>
+            <span className={styles.badge}>{boardDate}</span>
             <Link href={`/${locale}/live`} className={styles.sectionAction}>
-              {dictionary.browseAll}
+              Open live board
+            </Link>
+          </div>
+        </header>
+
+        <div className={styles.filterStack}>
+          <div className={styles.filterRow}>
+            <Link href={`/${locale}`} className={styles.filterChipActive}>
+              All
+              <span className={styles.filterCount}>{boardFixtures.length}</span>
+            </Link>
+            <Link href={`/${locale}/live`} className={styles.filterChip}>
+              {dictionary.liveNow}
+              <span className={styles.filterCount}>{snapshot.liveFixtures.length}</span>
+            </Link>
+            <Link href={`/${locale}/fixtures`} className={styles.filterChip}>
+              {dictionary.upcoming}
+              <span className={styles.filterCount}>{snapshot.upcomingFixtures.length}</span>
+            </Link>
+            <Link href={`/${locale}/results`} className={styles.filterChip}>
+              {dictionary.recent}
+              <span className={styles.filterCount}>{snapshot.recentResults.length}</span>
+            </Link>
+            <Link href={`/${locale}/tables`} className={styles.filterChip}>
+              {dictionary.standings}
+              <span className={styles.filterCount}>{snapshot.leagues.length}</span>
             </Link>
           </div>
         </div>
-        {snapshot.liveFixtures.length ? (
-          <div className={styles.fixtureGrid}>
-            {snapshot.liveFixtures.map((fixture) => (
-              <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
+
+        {boardGroups.length ? (
+          <div className={styles.section}>
+            {boardGroups.map((group) => (
+              <section key={group.key} className={styles.boardGroup}>
+                <div className={styles.boardGroupSummary}>
+                  <div>
+                    <p className={styles.eyebrow}>{group.country}</p>
+                    <h2 className={styles.sectionTitle}>{group.name}</h2>
+                  </div>
+                  <div className={styles.inlineBadgeRow}>
+                    <span className={styles.badge}>{group.fixtures.length}</span>
+                    {group.code ? (
+                      <FavoriteToggle itemId={`competition:${group.code}`} locale={locale} compact />
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className={styles.fixtureGrid}>
+                  {group.fixtures.map((fixture) => (
+                    <FixtureFeedCard
+                      key={fixture.id}
+                      fixture={fixture}
+                      locale={locale}
+                      mode="live"
+                      showLeague={false}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (
@@ -73,41 +160,18 @@ export default async function LocaleHomePage({ params }) {
         )}
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{dictionary.upcoming}</h2>
-          <div className={styles.sectionTools}>
-            <span className={styles.badge}>{snapshot.upcomingFixtures.length}</span>
-            <Link href={`/${locale}/fixtures`} className={styles.sectionAction}>
+      <div className={styles.homeSplit}>
+        <section className={styles.panel}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{dictionary.standings}</h2>
+            <Link href={`/${locale}/tables`} className={styles.sectionAction}>
               {dictionary.browseAll}
             </Link>
           </div>
-        </div>
-        {snapshot.upcomingFixtures.length ? (
-          <div className={styles.fixtureGrid}>
-            {snapshot.upcomingFixtures.map((fixture) => (
-              <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>{dictionary.noData}</div>
-        )}
-      </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{dictionary.standings}</h2>
-          <div className={styles.sectionTools}>
-            <span className={styles.badge}>{snapshot.leagues.length}</span>
-            <Link href={`/${locale}/leagues`} className={styles.sectionAction}>
-              {dictionary.browseAll}
-            </Link>
-          </div>
-        </div>
-        {snapshot.leagues.length ? (
-          <div className={styles.leagueGrid}>
+          <div className={styles.compactList}>
             {snapshot.leagues.map((league) => (
-              <article key={league.id} className={styles.leagueCard}>
+              <article key={league.id} className={styles.miniPanel}>
                 <div className={styles.cardHeader}>
                   <div>
                     <p className={styles.eyebrow}>{league.country || "International"}</p>
@@ -115,20 +179,43 @@ export default async function LocaleHomePage({ params }) {
                       <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                     </h3>
                   </div>
-                  <span className={styles.badge}>{league.teams.length}</span>
                 </div>
-                <p className={styles.muted}>
-                  {league.seasons[0]?.standings.length
-                    ? league.seasons[0].standings[0].team.name
-                    : dictionary.noData}
-                </p>
+
+                <div className={styles.miniTable}>
+                  {(league.seasons[0]?.standings || []).slice(0, 4).map((row) => (
+                    <div key={row.id} className={styles.miniTableRow}>
+                      <span>{row.position}</span>
+                      <span>{row.team.name}</span>
+                      <strong>{row.points}</strong>
+                    </div>
+                  ))}
+                </div>
               </article>
             ))}
           </div>
-        ) : (
-          <div className={styles.emptyState}>{dictionary.noData}</div>
-        )}
-      </section>
+        </section>
+
+        <section className={styles.panel}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{dictionary.recent}</h2>
+            <Link href={`/${locale}/results`} className={styles.sectionAction}>
+              {dictionary.browseAll}
+            </Link>
+          </div>
+
+          <div className={styles.compactList}>
+            {snapshot.recentResults.slice(0, 4).map((fixture) => (
+              <FixtureFeedCard
+                key={fixture.id}
+                fixture={fixture}
+                locale={locale}
+                mode="results"
+                showLeague
+              />
+            ))}
+          </div>
+        </section>
+      </div>
     </>
   );
 }

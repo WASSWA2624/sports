@@ -1,4 +1,4 @@
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { Barlow_Condensed, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { StoreProvider } from "../components/coreui/store-provider";
@@ -20,9 +20,10 @@ const monoFont = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-const displayFont = Space_Grotesk({
+const displayFont = Barlow_Condensed({
   variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "600", "700"],
 });
 
 export const metadata = {
@@ -31,6 +32,12 @@ export const metadata = {
     template: "%s | Sports Pulse",
   },
   description: "SEO-first sports coverage for live scores, fixtures, results, tables, leagues, and teams.",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const themeInitScript = `

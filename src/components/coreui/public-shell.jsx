@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -12,7 +13,9 @@ import { SCORES_NAV, SPORTS_STRIP, TOP_LEVEL_NAV } from "../../lib/coreui/config
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData }) {
   const pathname = usePathname();
   const { sessionUser, watchlist, watchlistCount } = usePreferences();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
+  const watchCount = watchlistCount || watchlistItems.length;
   const allCompetitions = [
     ...(shellData?.featuredCompetitions || []),
     ...((shellData?.countryGroups || []).flatMap((group) =>
@@ -49,11 +52,16 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.headerBrand}>
-            <div className={styles.brandBlock}>
-              <Link href={`/${locale}`} className={styles.brand}>
-                {dictionary.brand}
-              </Link>
-              <p className={styles.brandTag}>Live, fixtures, tables.</p>
+            <div className={styles.brandLockup}>
+              <div className={styles.brandMark} aria-hidden="true">
+                SP
+              </div>
+              <div className={styles.brandBlock}>
+                <Link href={`/${locale}`} className={styles.brand}>
+                  {dictionary.brand}
+                </Link>
+                <p className={styles.brandTag}>Live scores and standings</p>
+              </div>
             </div>
           </div>
 
@@ -106,32 +114,166 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             <Link href="/profile" className={styles.sectionAction}>
               {sessionUser ? dictionary.profile : dictionary.login}
             </Link>
-            <LocaleSwitcher locale={locale} label={dictionary.locale} />
-            <ThemeToggle label={dictionary.theme} />
-            <div className={styles.watchPill}>
-              {dictionary.watchlist} {watchlistCount || watchlistItems.length}
+            <div className={styles.desktopMetaControls}>
+              <LocaleSwitcher locale={locale} label={dictionary.locale} />
+              <ThemeToggle label={dictionary.theme} />
+              <div className={styles.watchPill}>
+                {dictionary.watchlist} {watchCount}
+              </div>
             </div>
+            <button
+              type="button"
+              className={styles.mobileMenuButton}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-shell-menu"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+            >
+              Menu
+            </button>
           </div>
         </div>
 
         <div className={styles.sportsStrip}>
-          {SPORTS_STRIP.map((sport) =>
-            sport.enabled ? (
-              <Link
-                key={sport.key}
-                href={`/${locale}${sport.href}`}
-                className={sport.key === "football" ? styles.sportsChipActive : styles.sportsChip}
-              >
-                {sport.label}
-              </Link>
-            ) : (
+          {SPORTS_STRIP.map((sport) => {
+            if (sport.key === "favorites") {
+              return (
+                <button key={sport.key} type="button" className={styles.sportsChipDisabled}>
+                  <span>{sport.label}</span>
+                  <span className={styles.sportsCount}>{watchCount}</span>
+                </button>
+              );
+            }
+
+            if (sport.enabled) {
+              return (
+                <Link
+                  key={sport.key}
+                  href={`/${locale}${sport.href}`}
+                  className={sport.key === "football" && !isNewsMode ? styles.sportsChipActive : styles.sportsChip}
+                >
+                  {sport.label}
+                </Link>
+              );
+            }
+
+            return (
               <button key={sport.key} type="button" className={styles.sportsChipDisabled}>
                 {sport.label}
               </button>
-            )
-          )}
+            );
+          })}
         </div>
       </header>
+
+      {mobileMenuOpen ? (
+        <div className={styles.mobileMenuOverlay} onClick={() => setMobileMenuOpen(false)}>
+          <div
+            id="mobile-shell-menu"
+            className={styles.mobileMenuPanel}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.mobileMenuHeader}>
+              <strong>Menu</strong>
+              <button
+                type="button"
+                className={styles.mobileMenuClose}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className={styles.mobileMenuBody}>
+              <section className={styles.mobileMenuSection}>
+                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.scoreViews}</h2>
+                <div className={styles.mobileMenuList}>
+                  {SCORES_NAV.map((item) => {
+                    const href = `/${locale}${item.href}`;
+                    const active =
+                      item.href === ""
+                        ? pathname === `/${locale}`
+                        : pathname === href || pathname.startsWith(`${href}/`);
+
+                    return (
+                      <Link
+                        key={item.key}
+                        href={href}
+                        className={active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className={styles.mobileMenuSection}>
+                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.pinnedCompetitions}</h2>
+                <div className={styles.mobileMenuList}>
+                  {pinnedCompetitions.length ? (
+                    pinnedCompetitions.map((competition) => (
+                      <Link
+                        key={competition.code}
+                        href={`/${locale}/leagues/${competition.code}`}
+                        className={styles.mobileMenuLink}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {competition.name}
+                      </Link>
+                    ))
+                  ) : (
+                    <p className={styles.railMuted}>{dictionary.watchlistEmpty}</p>
+                  )}
+                </div>
+              </section>
+
+              <section className={styles.mobileMenuSection}>
+                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.myTeams}</h2>
+                <div className={styles.mobileMenuList}>
+                  {savedTeams.length ? (
+                    savedTeams.map((team) => (
+                      <Link
+                        key={team.id}
+                        href={`/${locale}/teams/${team.id}`}
+                        className={styles.mobileMenuLink}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {team.name}
+                      </Link>
+                    ))
+                  ) : (
+                    <p className={styles.railMuted}>Save teams to surface them here.</p>
+                  )}
+                </div>
+              </section>
+
+              <section className={styles.mobileMenuSection}>
+                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.countries}</h2>
+                <div className={styles.mobileMenuList}>
+                  {(shellData?.countryGroups || []).map((group) => (
+                    <div key={group.country} className={styles.mobileMenuCountryRow}>
+                      <span>{group.country}</span>
+                      <span className={styles.badge}>{group.leagues.length}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className={styles.mobileMenuSection}>
+                <h2 className={styles.mobileMenuSectionTitle}>Preferences</h2>
+                <div className={styles.mobileMenuPreferences}>
+                  <LocaleSwitcher locale={locale} label={dictionary.locale} />
+                  <ThemeToggle label={dictionary.theme} />
+                  <div className={styles.watchPill}>
+                    {dictionary.watchlist} {watchCount}
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <main className={styles.main}>
         <div className={styles.shellColumns}>
@@ -140,11 +282,23 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
               <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.scoreViews}</h2>
                 <div className={styles.railList}>
-                  {SCORES_NAV.map((item) => (
-                    <Link key={item.key} href={`/${locale}${item.href}`} className={styles.railLink}>
-                      {item.label}
-                    </Link>
-                  ))}
+                  {SCORES_NAV.map((item) => {
+                    const href = `/${locale}${item.href}`;
+                    const active =
+                      item.href === ""
+                        ? pathname === `/${locale}`
+                        : pathname === href || pathname.startsWith(`${href}/`);
+
+                    return (
+                      <Link
+                        key={item.key}
+                        href={href}
+                        className={active ? styles.railLinkActive : styles.railLink}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </section>

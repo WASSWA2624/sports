@@ -13,33 +13,34 @@ const Overlay = styled.div`
   z-index: 50;
   display: grid;
   place-items: start center;
-  padding: 5.5rem 1rem 1rem;
-  background: rgba(6, 12, 24, 0.56);
-  backdrop-filter: blur(16px);
+  padding: 5rem 1rem 1rem;
+  background: rgba(2, 10, 13, 0.72);
+  backdrop-filter: blur(10px);
 `;
 
 const Panel = styled.div`
   width: min(42rem, calc(100vw - 2rem));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.35rem;
-  background: rgba(14, 22, 37, 0.96);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
-  color: #f4f8ff;
+  border: 1px solid rgba(191, 216, 220, 0.12);
+  border-radius: 0.7rem;
+  background: rgba(8, 31, 38, 0.98);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
+  color: #f2f6f7;
   overflow: hidden;
 `;
 
 const SearchField = styled.input`
   width: 100%;
-  padding: 1rem 1.1rem;
+  padding: 1rem;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(191, 216, 220, 0.08);
   background: transparent;
   color: inherit;
   font: inherit;
+  letter-spacing: 0.04em;
   outline: none;
 
   &::placeholder {
-    color: rgba(244, 248, 255, 0.56);
+    color: rgba(242, 246, 247, 0.5);
   }
 `;
 

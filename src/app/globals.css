@@ -1,5 +1,5 @@
 :root {
-  --page-max: 1240px;
+  --page-max: 1380px;
   --reading-width: 72ch;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -8,54 +8,46 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-8: 3rem;
-  --radius-sm: 0.75rem;
-  --radius-md: 1.25rem;
-  --radius-lg: 1.75rem;
-  --shadow-soft: 0 22px 70px rgba(8, 17, 34, 0.18);
-  --shadow-card: 0 14px 40px rgba(16, 31, 58, 0.12);
-  --background: #f3f7fd;
-  --background-accent:
-    radial-gradient(circle at 8% 12%, rgba(41, 121, 255, 0.2), transparent 26%),
-    radial-gradient(circle at 92% 14%, rgba(53, 196, 153, 0.16), transparent 20%),
-    radial-gradient(circle at 50% 90%, rgba(15, 40, 87, 0.12), transparent 26%),
-    linear-gradient(180deg, #fbfdff 0%, #eef4fb 45%, #e8eef8 100%);
-  --surface: rgba(255, 255, 255, 0.74);
-  --surface-strong: rgba(255, 255, 255, 0.92);
-  --surface-muted: rgba(229, 238, 250, 0.86);
-  --surface-inverse: #0b1730;
-  --text: #10203a;
-  --text-muted: #61718d;
-  --text-soft: #8391a6;
-  --border: rgba(16, 34, 63, 0.08);
-  --accent: #216dff;
-  --accent-strong: #154ec2;
-  --accent-soft: rgba(33, 109, 255, 0.14);
-  --success: #0f9d6a;
-  --warning: #db8a06;
-  --danger: #d64545;
-  --live: #e44747;
+  --radius-sm: 0.45rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --shadow-soft: 0 18px 40px rgba(3, 12, 15, 0.14);
+  --shadow-card: 0 8px 20px rgba(8, 20, 24, 0.08);
+  --background: #eef2f3;
+  --background-accent: linear-gradient(180deg, #eef2f3 0%, #e3e8ea 100%);
+  --surface: #ffffff;
+  --surface-strong: #f5f8f8;
+  --surface-muted: #edf2f3;
+  --surface-inverse: #07181f;
+  --text: #0d232a;
+  --text-muted: #5f7075;
+  --text-soft: #829499;
+  --border: rgba(13, 35, 42, 0.12);
+  --accent: #ff1f59;
+  --accent-strong: #df1148;
+  --accent-soft: rgba(255, 31, 89, 0.12);
+  --success: #18a66b;
+  --warning: #c98a16;
+  --danger: #d44d4d;
+  --live: #ff3b69;
 }
 
 html[data-theme="dark"] {
-  --background: #07111f;
-  --background-accent:
-    radial-gradient(circle at 12% 10%, rgba(53, 104, 255, 0.24), transparent 24%),
-    radial-gradient(circle at 88% 14%, rgba(36, 176, 159, 0.18), transparent 22%),
-    radial-gradient(circle at 50% 80%, rgba(84, 92, 255, 0.12), transparent 30%),
-    linear-gradient(180deg, #07111f 0%, #0b1526 45%, #101c31 100%);
-  --surface: rgba(11, 23, 48, 0.74);
-  --surface-strong: rgba(19, 33, 60, 0.9);
-  --surface-muted: rgba(15, 26, 45, 0.84);
-  --surface-inverse: #eff5ff;
-  --text: #eef4ff;
-  --text-muted: #a9b8d1;
-  --text-soft: #8898b2;
-  --border: rgba(214, 227, 255, 0.1);
-  --accent: #6da8ff;
-  --accent-strong: #9fc3ff;
-  --accent-soft: rgba(108, 168, 255, 0.14);
-  --shadow-soft: 0 26px 72px rgba(0, 0, 0, 0.34);
-  --shadow-card: 0 14px 44px rgba(0, 0, 0, 0.26);
+  --background: #04161c;
+  --background-accent: linear-gradient(180deg, #04161c 0%, #071b22 100%);
+  --surface: #081f26;
+  --surface-strong: #0b2730;
+  --surface-muted: #0d2b34;
+  --surface-inverse: #eff5f6;
+  --text: #f2f6f7;
+  --text-muted: #a5b8bc;
+  --text-soft: #81959a;
+  --border: rgba(185, 209, 213, 0.12);
+  --accent: #ff1f59;
+  --accent-strong: #ff4a7c;
+  --accent-soft: rgba(255, 31, 89, 0.16);
+  --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.26);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 html {
@@ -81,29 +73,7 @@ body {
 
 body::before,
 body::after {
-  content: "";
-  position: fixed;
-  inset: auto;
-  pointer-events: none;
-  z-index: -1;
-  border-radius: 999px;
-  filter: blur(70px);
-}
-
-body::before {
-  top: 8rem;
-  left: -3rem;
-  width: 18rem;
-  height: 18rem;
-  background: rgba(33, 109, 255, 0.14);
-}
-
-body::after {
-  right: -4rem;
-  bottom: 5rem;
-  width: 24rem;
-  height: 24rem;
-  background: rgba(53, 196, 153, 0.12);
+  display: none;
 }
 
 * {
@@ -149,7 +119,6 @@ h4 {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  backdrop-filter: blur(18px);
   box-shadow: var(--shadow-soft);
 }
 
@@ -172,7 +141,7 @@ h4 {
   margin-top: 1.25rem;
   padding: 0.8rem 1rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0.6rem;
   background: var(--accent);
   color: white;
   cursor: pointer;
