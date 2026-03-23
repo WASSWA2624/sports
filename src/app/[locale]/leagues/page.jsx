@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
+import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getLeagueDirectory } from "../../../lib/coreui/read";
 import styles from "../../../components/coreui/styles.module.css";
 
@@ -8,8 +9,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "Leagues",
-    "Explore active leagues, team counts, and the next scheduled competition coverage.",
+    getDictionary(locale).metaLeaguesTitle,
+    getDictionary(locale).metaLeaguesDescription,
     "/leagues"
   );
 }
@@ -33,7 +34,7 @@ export default async function LeaguesPage({ params }) {
             <article key={league.id} className={styles.leagueCard}>
               <div className={styles.cardHeader}>
                 <div>
-                  <p className={styles.eyebrow}>{league.country || "International"}</p>
+                  <p className={styles.eyebrow}>{league.country || dictionary.international}</p>
                   <h2 className={styles.cardTitle}>
                     <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                   </h2>
@@ -41,7 +42,9 @@ export default async function LeaguesPage({ params }) {
                 <span className={styles.badge}>{league.teams.length}</span>
               </div>
               <p className={styles.metaRow}>
-                {league.fixtures[0]?.status || dictionary.noData}
+                {league.fixtures[0]?.status
+                  ? formatFixtureStatus(league.fixtures[0].status, locale)
+                  : dictionary.noData}
               </p>
             </article>
           ))}

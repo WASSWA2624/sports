@@ -6,8 +6,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "News",
-    "Top-level sports news mode with room for global, team, and competition coverage.",
+    getDictionary(locale).metaNewsTitle,
+    getDictionary(locale).metaNewsDescription,
     "/news"
   );
 }
@@ -22,29 +22,22 @@ export default async function NewsPage({ params }) {
         <div>
           <p className={styles.eyebrow}>{dictionary.news}</p>
           <h1 className={styles.pageTitle}>{dictionary.news}</h1>
-          <p className={styles.pageLead}>
-            The news hub now exists as a first-class mode in the shared shell. Editorial ingestion and
-            article detail work continue in later phases.
-          </p>
+          <p className={styles.pageLead}>{dictionary.newsLead}</p>
         </div>
       </header>
 
       <div className={styles.grid}>
         <article className={styles.panel}>
-          <h2 className={styles.cardTitle}>Global feed</h2>
-          <p className={styles.muted}>Top stories, sport grouping, and linked entities live here.</p>
+          <h2 className={styles.cardTitle}>{dictionary.newsGlobalFeed}</h2>
+          <p className={styles.muted}>{dictionary.newsGlobalFeedBody}</p>
         </article>
         <article className={styles.panel}>
-          <h2 className={styles.cardTitle}>Competition modules</h2>
-          <p className={styles.muted}>
-            League and team pages can surface related articles without leaving the shared shell.
-          </p>
+          <h2 className={styles.cardTitle}>{dictionary.newsCompetitionModules}</h2>
+          <p className={styles.muted}>{dictionary.newsCompetitionModulesBody}</p>
         </article>
         <article className={styles.panel}>
-          <h2 className={styles.cardTitle}>Article pages</h2>
-          <p className={styles.muted}>
-            SEO-ready article templates will layer onto this mode as editorial data lands.
-          </p>
+          <h2 className={styles.cardTitle}>{dictionary.newsArticlePages}</h2>
+          <p className={styles.muted}>{dictionary.newsArticlePagesBody}</p>
         </article>
       </div>
     </section>

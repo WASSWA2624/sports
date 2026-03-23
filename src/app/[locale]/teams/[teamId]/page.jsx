@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
-import { getDictionary } from "../../../../lib/coreui/dictionaries";
+import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getTeamDetail } from "../../../../lib/coreui/read";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import styles from "../../../../components/coreui/styles.module.css";
@@ -9,11 +9,14 @@ import styles from "../../../../components/coreui/styles.module.css";
 export async function generateMetadata({ params }) {
   const { locale, teamId } = await params;
   const team = await getTeamDetail(teamId);
+  const dictionary = getDictionary(locale);
 
   return buildPageMetadata(
     locale,
-    team?.name || "Team",
-    team ? `Fixtures and standings snapshots for ${team.name}.` : "Team coverage page.",
+    team?.name || dictionary.metaTeamFallbackTitle,
+    team
+      ? formatDictionaryText(dictionary.metaTeamDescription, { name: team.name })
+      : dictionary.metaTeamFallbackDescription,
     `/teams/${teamId}`
   );
 }
@@ -54,10 +57,10 @@ export default async function TeamDetailPage({ params }) {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>League</th>
-                  <th>#</th>
-                  <th>P</th>
-                  <th>Pts</th>
+                  <th>{dictionary.tableLeague}</th>
+                  <th>{dictionary.tablePosition}</th>
+                  <th>{dictionary.tablePlayed}</th>
+                  <th>{dictionary.tablePoints}</th>
                 </tr>
               </thead>
               <tbody>

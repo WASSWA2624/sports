@@ -3038,20 +3038,25 @@
   display: grid;
   gap: 0.4rem;
   width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
 }
 
 .nav,
 .sportsStrip {
   width: 100%;
   margin: 0;
-  border: 1px solid rgba(191, 216, 220, 0.08);
-  border-radius: 1rem;
-  background: #061a22;
   box-shadow: none;
 }
 
 .nav {
-  padding: 0.22rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   margin-right: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -3064,6 +3069,9 @@
 .sportsStrip {
   gap: 0.28rem;
   padding: 0.28rem;
+  border: 1px solid rgba(191, 216, 220, 0.08);
+  border-radius: 0.72rem;
+  background: #061a22;
   flex-wrap: wrap;
   position: relative;
   overflow: visible;
@@ -3216,5 +3224,514 @@
     left: auto;
     min-width: 16rem;
     max-width: 22rem;
+  }
+}
+
+/* Theme alignment */
+.noticeBanner {
+  border-color: var(--border);
+  background: var(--notice-bg);
+  color: var(--notice-text);
+}
+
+.noticeBanner p {
+  color: var(--notice-muted);
+}
+
+.noticeLabel {
+  background: var(--shell-chip-bg);
+  color: var(--notice-text);
+}
+
+.homeBoard,
+.panel,
+.fixtureCard,
+.leagueCard,
+.teamCard,
+.tableCard,
+.detailCard,
+.pageHeader,
+.boardGroup,
+.miniPanel {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.miniPanel,
+.filterChip,
+.favoriteButton,
+.favoriteButtonCompact,
+.secondaryAction,
+.railLink,
+.railLinkActive,
+.mobileMenuLink,
+.mobileMenuClose,
+.mobileMenuSportRow,
+.sportsMoreItem {
+  background: var(--surface-strong);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.miniTableRow,
+.scoreLine > div,
+.fixtureFeedRow {
+  border-top-color: var(--border);
+}
+
+.sectionAction,
+.badge {
+  color: var(--text);
+}
+
+.adSlot {
+  background:
+    linear-gradient(135deg, var(--accent-soft), transparent),
+    var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.badge,
+.liveBadge {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.liveBadge {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.indicatorBadge,
+.infoBanner,
+.emptyState {
+  border-color: var(--border);
+  background: var(--surface-strong);
+  color: var(--text-muted);
+}
+
+.filterChip,
+.filterChipActive {
+  background: var(--surface-strong);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.filterChip:hover,
+.filterChipActive,
+.favoriteButtonActive,
+.favoriteButtonCompactActive,
+.actionLink,
+.mobileMenuLinkActive {
+  background: var(--accent);
+  color: #fff;
+}
+
+.filterCount,
+.watchValue {
+  background: var(--surface-muted);
+  color: inherit;
+}
+
+.favoriteButton,
+.favoriteButtonCompact,
+.secondaryAction {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.mobileMenuOverlay {
+  background: var(--overlay-backdrop);
+}
+
+.mobileMenuPanel {
+  background: var(--overlay-panel);
+  border-color: var(--overlay-panel-border);
+  color: var(--overlay-panel-text);
+}
+
+.mobileMenuSection {
+  border-color: var(--border);
+  background: var(--surface-strong);
+}
+
+.mobileMenuHeader strong,
+.mobileMenuSectionTitle,
+.sportsMoreItem,
+.sportsMoreSummary {
+  color: var(--text);
+}
+
+.headerNavRail,
+.topModeNav,
+.sportsStrip {
+  background: var(--shell-bar-bg);
+  border-color: var(--shell-bar-border);
+}
+
+.topModeLinkActive,
+.topModeLink:hover,
+.navLinkActive,
+.navLink:hover,
+.sportsChipActive,
+.sportsMoreSummary:hover,
+.sportsMoreMenu[open] .sportsMoreSummary {
+  background: var(--shell-chip-bg);
+}
+
+.navLink,
+.sportsChip,
+.sportsChipDisabled,
+.sportsMoreSummary {
+  color: var(--text);
+}
+
+.sportsMorePanel {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.sportsMoreItem:hover {
+  background: var(--shell-chip-bg);
+}
+
+/* Menu refinement */
+.mobileMenuButton {
+  gap: 0.48rem;
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
+    var(--surface-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.mobileMenuButton:hover {
+  background: var(--shell-chip-bg);
+  border-color: var(--shell-bar-border);
+  transform: translateY(-1px);
+}
+
+.mobileMenuOverlay {
+  align-items: stretch;
+  justify-items: end;
+  padding: 0;
+}
+
+.mobileMenuPanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(100vw, 30rem);
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%),
+    var(--overlay-panel);
+}
+
+.mobileMenuHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: start;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 88%),
+    var(--overlay-panel);
+  backdrop-filter: blur(18px);
+}
+
+.mobileMenuHeaderIntro,
+.mobileMenuHeaderCopy,
+.mobileMenuHeaderStats,
+.mobileMenuSectionsGrid,
+.mobileMenuQuickGrid,
+.mobileMenuScoreGrid,
+.mobileMenuSportsGrid {
+  display: grid;
+}
+
+.mobileMenuHeaderIntro {
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.mobileMenuHeaderLockup,
+.mobileMenuItemContent {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.mobileMenuHeaderLockup {
+  gap: 0.72rem;
+}
+
+.mobileMenuHeader .brandMark {
+  min-width: 2.3rem;
+  min-height: 2.3rem;
+}
+
+.mobileMenuHeaderCopy {
+  gap: 0.2rem;
+}
+
+.mobileMenuHeaderCopy strong {
+  font-size: 1.18rem;
+  letter-spacing: 0.08em;
+}
+
+.mobileMenuHeaderCopy span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.mobileMenuHeaderStats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.mobileMenuStat {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--surface);
+}
+
+.mobileMenuStat span {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.mobileMenuStat strong {
+  color: var(--text);
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.mobileMenuClose {
+  min-height: 2.9rem;
+  padding: 0 0.95rem;
+  border-radius: 0.95rem;
+}
+
+.mobileMenuBody {
+  padding: 0.95rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.mobileMenuSectionsGrid {
+  gap: 0.85rem;
+}
+
+.mobileMenuSection {
+  gap: 0.85rem;
+  padding: 0.95rem;
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--surface-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.mobileMenuSectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobileMenuSectionTitle {
+  margin: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.09em;
+}
+
+.mobileMenuSectionCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  min-height: 1.6rem;
+  padding: 0 0.44rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.mobileMenuList,
+.mobileMenuPreferences,
+.mobileMenuQuickGrid,
+.mobileMenuScoreGrid,
+.mobileMenuSportsGrid {
+  gap: 0.65rem;
+}
+
+.mobileMenuQuickGrid,
+.mobileMenuScoreGrid,
+.mobileMenuSportsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mobileMenuItemContent,
+.mobileMenuSportContent {
+  gap: 0.58rem;
+}
+
+.mobileMenuLink,
+.mobileMenuLinkActive,
+.mobileMenuClose,
+.mobileMenuSportRow {
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.mobileMenuLink:hover,
+.mobileMenuClose:hover,
+.mobileMenuSportRow:hover {
+  background: var(--shell-chip-bg);
+  border-color: var(--shell-bar-border);
+  transform: translateY(-1px);
+}
+
+.mobileMenuLinkActive {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent),
+    var(--accent);
+  box-shadow: none;
+}
+
+.mobileMenuCountryRow {
+  min-height: 3rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.95rem;
+  background: var(--surface);
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.mobileMenuCountryRow span:first-child,
+.mobileMenuLink span:last-child,
+.mobileMenuLinkActive span:last-child,
+.mobileMenuSportRow span:first-child {
+  min-width: 0;
+}
+
+.mobileMenuPreferences > * {
+  width: 100%;
+}
+
+.mobileMenuWatchPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--surface);
+}
+
+.mobileMenuLinkMuted {
+  opacity: 0.72;
+  background: var(--surface-muted);
+}
+
+.mobileMenuSection .railMuted {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+@media (min-width: 640px) {
+  .mobileMenuPanel {
+    width: min(32rem, calc(100vw - 1rem));
+    height: calc(100vh - 1rem);
+    margin: 0.5rem;
+    border: 1px solid var(--overlay-panel-border);
+    border-radius: 1.1rem;
+  }
+
+  .mobileMenuHeader {
+    padding: 1.05rem 1.05rem 1rem;
+  }
+
+  .mobileMenuBody {
+    padding: 1rem 1.05rem 1.05rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .mobileMenuPanel {
+    width: min(48rem, calc(100vw - 1.5rem));
+    height: auto;
+    max-height: calc(100vh - 1.5rem);
+  }
+
+  .mobileMenuSectionsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .mobileMenuSectionWide {
+    grid-column: 1 / -1;
+  }
+
+  .mobileMenuScoreGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mobileMenuSportsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1180px) {
+  .mobileMenuPanel {
+    width: min(54rem, calc(100vw - 2rem));
+  }
+
+  .mobileMenuHeader {
+    padding: 1.15rem 1.15rem 1.05rem;
+  }
+
+  .mobileMenuBody {
+    padding: 1.05rem 1.15rem 1.15rem;
   }
 }

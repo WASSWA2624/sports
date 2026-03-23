@@ -1,3 +1,5 @@
+import { formatDictionaryText, getDictionary } from "./dictionaries";
+
 const TERMINAL_STATUSES = new Set(["FINISHED", "POSTPONED", "CANCELLED"]);
 
 const STATUS_PRIORITY = {
@@ -237,14 +239,14 @@ function getEventSecondaryActor(event) {
   );
 }
 
-function getEventDescription(event) {
+function getEventDescription(event, fallback = "") {
   return pickFirst(
     event?.info,
     event?.description,
     event?.comment,
     event?.note,
     event?.type?.name,
-    "Match event"
+    fallback
   );
 }
 
@@ -273,7 +275,8 @@ function isFeaturedEvent(typeKey, title) {
   );
 }
 
-function buildTimelineItems(fixture, payload) {
+function buildTimelineItems(fixture, payload, locale = "en") {
+  const dictionary = getDictionary(locale);
   const sourceEvents = asArray(payload?.events).length
     ? asArray(payload.events)
     : asArray(payload?.timeline);
@@ -281,7 +284,8 @@ function buildTimelineItems(fixture, payload) {
   return sourceEvents
     .map((event) => {
       const typeKey = normalizeEventTypeKey(event);
-      const title = pickFirst(event?.type?.name, event?.name, "Match event");
+      const title = pickFirst(event?.type?.name, event?.name, dictionary.match);
+      const description = getEventDescription(event, dictionary.match);
       const minuteLabel = formatMinuteLabel(getEventMinute(event), getEventExtraMinute(event));
       const side =
         normalizeSide(event?.location) ||
@@ -299,7 +303,7 @@ function buildTimelineItems(fixture, payload) {
         typeKey,
         actor: getEventActor(event),
         secondaryActor: getEventSecondaryActor(event),
-        description: getEventDescription(event),
+        description,
         score: pickFirst(event?.result, event?.score),
         sortValue: getEventSortValue(event),
         featured: isFeaturedEvent(typeKey, title),
@@ -308,9 +312,26 @@ function buildTimelineItems(fixture, payload) {
     .sort(compareTimelineItems);
 }
 
-function getStatisticLabel(entry) {
-  const rawLabel = pickFirst(entry?.type?.name, entry?.name, entry?.type?.code, "Statistic");
-  return String(rawLabel).replace(/-/g, " ");
+function getStatisticLabel(entry, locale = "en") {
+  const dictionary = getDictionary(locale);
+  const rawLabel = pickFirst(entry?.type?.name, entry?.name, entry?.type?.code, dictionary.statistics);
+  const normalized = String(rawLabel).replace(/-/g, " ").toLowerCase();
+  const translations = {
+    possession: dictionary.statPossession,
+    "shots on target": dictionary.statShotsOnTarget,
+    "shots off target": dictionary.statShotsOffTarget,
+    "shots total": dictionary.statShotsTotal,
+    shots: dictionary.statShots,
+    corners: dictionary.statCorners,
+    "big chances": dictionary.statBigChances,
+    xg: dictionary.statExpectedGoals,
+    passes: dictionary.statPasses,
+    fouls: dictionary.statFouls,
+    "yellow cards": dictionary.statYellowCards,
+    "red cards": dictionary.statRedCards,
+  };
+
+  return translations[normalized] || String(rawLabel).replace(/-/g, " ");
 }
 
 function getStatisticValue(entry) {
@@ -331,11 +352,11 @@ function getStatisticOrderKey(label) {
   return priorityIndex === -1 ? STAT_PRIORITY.length + 1 : priorityIndex;
 }
 
-function buildStatistics(payload, fixture) {
+function buildStatistics(payload, fixture, locale = "en") {
   const grouped = new Map();
 
   for (const entry of asArray(payload?.statistics)) {
-    const label = getStatisticLabel(entry);
+    const label = getStatisticLabel(entry, locale);
     const key = label.toLowerCase();
     const side =
       normalizeSide(entry?.location) ||
@@ -409,7 +430,8 @@ function getFormationForSide(side, payload, fixture) {
   );
 }
 
-function normalizeLineupPlayer(entry) {
+function normalizeLineupPlayer(entry, locale = "en") {
+  const dictionary = getDictionary(locale);
   const lineupTypeId = toNumber(entry?.type_id);
   const isStarter =
     lineupTypeId === 11 ||
@@ -418,7 +440,7 @@ function normalizeLineupPlayer(entry) {
 
   return {
     id: String(pickFirst(entry?.id, entry?.player_id, entry?.player_name)),
-    name: pickFirst(entry?.player_name, entry?.player?.display_name, entry?.player?.name, "Player"),
+    name: pickFirst(entry?.player_name, entry?.player?.display_name, entry?.player?.name, dictionary.player),
     jerseyNumber: pickFirst(entry?.jersey_number, entry?.shirt_number, "?"),
     formationField: formatFormationField(entry?.formation_field),
     formationPosition: pickFirst(entry?.formation_position, null),
@@ -445,13 +467,13 @@ function sortLineupPlayers(left, right) {
   });
 }
 
-function buildLineupSide(side, payload, fixture) {
+function buildLineupSide(side, payload, fixture, locale = "en") {
   const sideIds = getSideIds(side, fixture, payload);
   const players = asArray(payload?.lineups)
     .filter((entry) =>
       sideIds.has(String(pickFirst(entry?.participant_id, entry?.team_id, entry?.id)))
     )
-    .map(normalizeLineupPlayer)
+    .map((entry) => normalizeLineupPlayer(entry, locale))
     .sort(sortLineupPlayers);
 
   return {
@@ -477,9 +499,9 @@ export function getFixturePayload(fixture) {
   return fixture?.metadata || fixture?.resultSnapshot?.payload || {};
 }
 
-export function getFixtureMinute(fixture) {
+export function getFixtureMinute(fixture, locale = "en") {
   const payload = getFixturePayload(fixture);
-  const timeline = buildTimelineItems(fixture, payload);
+  const timeline = buildTimelineItems(fixture, payload, locale);
   const state = payload?.state || {};
 
   return formatMinuteLabel(
@@ -488,7 +510,8 @@ export function getFixtureMinute(fixture) {
   );
 }
 
-export function buildFixtureRefreshProfile(fixture) {
+export function buildFixtureRefreshProfile(fixture, locale = "en") {
+  const dictionary = getDictionary(locale);
   const now = Date.now();
   const startsAt = parseDate(fixture?.startsAt)?.getTime() || now;
   const snapshotCapturedAt = parseDate(fixture?.resultSnapshot?.capturedAt)?.getTime();
@@ -498,7 +521,7 @@ export function buildFixtureRefreshProfile(fixture) {
       enabled: true,
       intervalMs: LIVE_REFRESH_MS,
       until: new Date(Math.max(now, startsAt) + LIVE_MATCH_BUFFER_MS).toISOString(),
-      label: "Refreshing every 20s while the match is live.",
+      label: dictionary.refreshLiveMatch,
     };
   }
 
@@ -511,7 +534,7 @@ export function buildFixtureRefreshProfile(fixture) {
       enabled: true,
       intervalMs: KICKOFF_REFRESH_MS,
       until: new Date(startsAt + PRE_MATCH_WINDOW_MS).toISOString(),
-      label: "Refreshing around kickoff.",
+      label: dictionary.refreshKickoff,
     };
   }
 
@@ -524,7 +547,7 @@ export function buildFixtureRefreshProfile(fixture) {
       enabled: true,
       intervalMs: FINAL_SETTLE_REFRESH_MS,
       until: new Date(snapshotCapturedAt + POST_MATCH_SETTLE_MS).toISOString(),
-      label: "Refreshing while the final snapshot settles.",
+      label: dictionary.refreshFinalSettle,
     };
   }
 
@@ -532,15 +555,14 @@ export function buildFixtureRefreshProfile(fixture) {
     enabled: false,
     intervalMs: 0,
     until: null,
-    label: isTerminalStatus(fixture?.status)
-      ? "Final snapshot frozen."
-      : "No live refresh active.",
+    label: isTerminalStatus(fixture?.status) ? dictionary.refreshFrozen : dictionary.refreshInactive,
   };
 }
 
-export function buildFeedRefreshProfile(fixtures) {
+export function buildFeedRefreshProfile(fixtures, locale = "en") {
+  const dictionary = getDictionary(locale);
   const profiles = fixtures
-    .map((fixture) => buildFixtureRefreshProfile(fixture))
+    .map((fixture) => buildFixtureRefreshProfile(fixture, locale))
     .filter((profile) => profile.enabled);
 
   if (!profiles.length) {
@@ -548,7 +570,7 @@ export function buildFeedRefreshProfile(fixtures) {
       enabled: false,
       intervalMs: 0,
       until: null,
-      label: "Live refresh is idle right now.",
+      label: dictionary.refreshIdle,
     };
   }
 
@@ -562,8 +584,8 @@ export function buildFeedRefreshProfile(fixtures) {
     intervalMs,
     until,
     label: profiles.some((profile) => profile.intervalMs === LIVE_REFRESH_MS)
-      ? "Live matches are auto-refreshing."
-      : "The feed is refreshing around active kickoff windows.",
+      ? dictionary.refreshLiveFeed
+      : dictionary.refreshKickoffFeed,
   };
 }
 
@@ -592,13 +614,13 @@ export function sortFixturesForLiveFeed(fixtures) {
   });
 }
 
-export function buildFixtureDetailModules(fixture) {
+export function buildFixtureDetailModules(fixture, locale = "en") {
   const payload = getFixturePayload(fixture);
-  const timeline = buildTimelineItems(fixture, payload);
-  const statistics = buildStatistics(payload, fixture);
+  const timeline = buildTimelineItems(fixture, payload, locale);
+  const statistics = buildStatistics(payload, fixture, locale);
   const lineups = {
-    home: buildLineupSide("home", payload, fixture),
-    away: buildLineupSide("away", payload, fixture),
+    home: buildLineupSide("home", payload, fixture, locale),
+    away: buildLineupSide("away", payload, fixture, locale),
   };
   const coverage = {
     timeline: timeline.length ? "available" : "missing",
@@ -631,7 +653,7 @@ export function buildFixtureDetailModules(fixture) {
       statusText: stateText,
       reason: pickFirst(fixture?.stateReason, payload?.state?.reason, null),
     },
-    refresh: buildFixtureRefreshProfile(fixture),
+    refresh: buildFixtureRefreshProfile(fixture, locale),
     resultFreeze: {
       isFrozen: isTerminalStatus(fixture?.status) && Boolean(fixture?.resultSnapshot),
       frozenAt: isTerminalStatus(fixture?.status)
@@ -641,8 +663,9 @@ export function buildFixtureDetailModules(fixture) {
   };
 }
 
-export function buildFixtureIncidentIndicators(fixture) {
-  const timeline = buildTimelineItems(fixture, getFixturePayload(fixture));
+export function buildFixtureIncidentIndicators(fixture, locale = "en") {
+  const dictionary = getDictionary(locale);
+  const timeline = buildTimelineItems(fixture, getFixturePayload(fixture), locale);
   const counts = timeline.reduce(
     (summary, entry) => {
       if (entry.typeKey.includes("GOAL")) {
@@ -663,9 +686,11 @@ export function buildFixtureIncidentIndicators(fixture) {
   );
 
   return [
-    counts.goals ? `${counts.goals} goals` : null,
-    counts.yellowCards ? `${counts.yellowCards} yellows` : null,
-    counts.redCards ? `${counts.redCards} reds` : null,
-    counts.varChecks ? `${counts.varChecks} VAR` : null,
+    counts.goals ? formatDictionaryText(dictionary.incidentGoals, { count: counts.goals }) : null,
+    counts.yellowCards
+      ? formatDictionaryText(dictionary.incidentYellows, { count: counts.yellowCards })
+      : null,
+    counts.redCards ? formatDictionaryText(dictionary.incidentReds, { count: counts.redCards }) : null,
+    counts.varChecks ? formatDictionaryText(dictionary.incidentVar, { count: counts.varChecks }) : null,
   ].filter(Boolean);
 }

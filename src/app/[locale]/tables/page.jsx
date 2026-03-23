@@ -8,8 +8,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "Tables",
-    "Current league tables and top positions across active competitions.",
+    getDictionary(locale).metaTablesTitle,
+    getDictionary(locale).metaTablesDescription,
     "/tables"
   );
 }
@@ -35,7 +35,7 @@ export default async function TablesPage({ params }) {
               <article key={league.id} className={styles.tableCard}>
                 <div className={styles.cardHeader}>
                   <div>
-                    <p className={styles.eyebrow}>{league.country || "International"}</p>
+                    <p className={styles.eyebrow}>{league.country || dictionary.international}</p>
                     <h2 className={styles.cardTitle}>
                       <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                     </h2>
@@ -45,10 +45,10 @@ export default async function TablesPage({ params }) {
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        <th>#</th>
-                        <th>Team</th>
-                        <th>P</th>
-                        <th>Pts</th>
+                        <th>{dictionary.tablePosition}</th>
+                        <th>{dictionary.tableTeam}</th>
+                        <th>{dictionary.tablePlayed}</th>
+                        <th>{dictionary.tablePoints}</th>
                       </tr>
                     </thead>
                     <tbody>

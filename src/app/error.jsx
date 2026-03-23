@@ -1,13 +1,20 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { getDictionary } from "../lib/coreui/dictionaries";
+
 export default function GlobalError({ reset }) {
+  const pathname = usePathname();
+  const locale = pathname?.split("/").filter(Boolean)[0] || "en";
+  const dictionary = getDictionary(locale);
+
   return (
     <html>
       <body>
         <main className="app-error">
-          <h1>Something went wrong</h1>
-          <p>We hit a rendering issue while building this page. Try the request again.</p>
-          <button onClick={() => reset()}>Retry</button>
+          <h1>{dictionary.globalErrorTitle}</h1>
+          <p>{dictionary.globalErrorBody}</p>
+          <button onClick={() => reset()}>{dictionary.retry}</button>
         </main>
       </body>
     </html>

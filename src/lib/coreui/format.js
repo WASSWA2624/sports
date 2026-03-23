@@ -15,7 +15,7 @@ export function formatFixtureStatus(status, locale) {
 
 export function formatKickoff(date, locale) {
   if (!date) {
-    return "TBD";
+    return getDictionary(locale).tbd;
   }
 
   return new Intl.DateTimeFormat(locale, {
@@ -34,7 +34,7 @@ export function formatScore(snapshot) {
 
 export function formatMatchday(date, locale) {
   if (!date) {
-    return "Matchday";
+    return getDictionary(locale).matchday;
   }
 
   return new Intl.DateTimeFormat(locale, {
@@ -46,7 +46,7 @@ export function formatMatchday(date, locale) {
 
 export function formatSnapshotTime(date, locale) {
   if (!date) {
-    return "Snapshot pending";
+    return getDictionary(locale).snapshotPending;
   }
 
   return new Intl.DateTimeFormat(locale, {

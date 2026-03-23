@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
-import { getDictionary } from "../../../lib/coreui/dictionaries";
+import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getLiveMatchdayFeed } from "../../../lib/coreui/live-read";
 import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
@@ -36,8 +36,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "Live Matches",
-    "Follow live fixtures with status pivots, fast league filters, and active refresh windows.",
+    getDictionary(locale).metaLiveTitle,
+    getDictionary(locale).metaLiveDescription,
     "/live"
   );
 }
@@ -47,10 +47,14 @@ export default async function LivePage({ params, searchParams }) {
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
   const feed = await getLiveMatchdayFeed({
+    locale,
     status: filters?.status,
     leagueCode: filters?.league,
     date: filters?.date,
   });
+  const selectedDateLabel = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+  }).format(new Date(feed.selectedDate));
 
   return (
     <section className={styles.section}>
@@ -62,11 +66,15 @@ export default async function LivePage({ params, searchParams }) {
 
       <header className={styles.pageHeader}>
         <div>
-          <p className={styles.eyebrow}>Matchday pulse</p>
+          <p className={styles.eyebrow}>{dictionary.livePageEyebrow}</p>
           <h1 className={styles.pageTitle}>{dictionary.liveNow}</h1>
           <p className={styles.pageLead}>
-            {feed.summary.LIVE} live, {feed.summary.SCHEDULED} scheduled, {feed.summary.FINISHED} final on{" "}
-            {feed.selectedDate}.
+            {formatDictionaryText(dictionary.livePageLead, {
+              live: feed.summary.LIVE,
+              scheduled: feed.summary.SCHEDULED,
+              finished: feed.summary.FINISHED,
+              date: selectedDateLabel,
+            })}
           </p>
         </div>
         <div className={styles.sectionTools}>
@@ -80,41 +88,41 @@ export default async function LivePage({ params, searchParams }) {
           href={buildLiveHref(locale, feed.selectedStatus, feed.selectedLeague, shiftDate(feed.selectedDate, -1))}
           className={styles.filterChip}
         >
-          Previous day
+          {dictionary.previousDay}
         </Link>
-        <span className={styles.filterChipActive}>{feed.selectedDate}</span>
+        <span className={styles.filterChipActive}>{selectedDateLabel}</span>
         <Link
           href={buildLiveHref(locale, feed.selectedStatus, feed.selectedLeague, shiftDate(feed.selectedDate, 1))}
           className={styles.filterChip}
         >
-          Next day
+          {dictionary.nextDay}
         </Link>
       </div>
 
       {feed.surfaceState.degraded ? (
-        <div className={styles.infoBanner}>
-          Live data is temporarily degraded. Showing the latest stored board snapshot.
-        </div>
+        <div className={styles.infoBanner}>{dictionary.liveDataDegraded}</div>
       ) : null}
 
       {feed.surfaceState.stale ? (
         <div className={styles.infoBanner}>
-          {feed.surfaceState.staleCount} live fixture rows may be stale while provider updates catch up.
+          {formatDictionaryText(dictionary.liveDataStale, {
+            count: feed.surfaceState.staleCount,
+          })}
         </div>
       ) : null}
 
       <div className={styles.grid}>
         <article className={styles.panel}>
           <strong className={styles.summaryValue}>{feed.summary.LIVE}</strong>
-          <p className={styles.muted}>Live matches</p>
+          <p className={styles.muted}>{dictionary.liveMatches}</p>
         </article>
         <article className={styles.panel}>
           <strong className={styles.summaryValue}>{feed.summary.SCHEDULED}</strong>
-          <p className={styles.muted}>Kickoff window</p>
+          <p className={styles.muted}>{dictionary.kickoffWindow}</p>
         </article>
         <article className={styles.panel}>
           <strong className={styles.summaryValue}>{feed.summary.FINISHED}</strong>
-          <p className={styles.muted}>Result snapshots</p>
+          <p className={styles.muted}>{dictionary.resultSnapshots}</p>
         </article>
       </div>
 
@@ -147,7 +155,7 @@ export default async function LivePage({ params, searchParams }) {
             href={buildLiveHref(locale, feed.selectedStatus, "all", feed.selectedDate)}
             className={feed.selectedLeague === "all" ? styles.filterChipActive : styles.filterChip}
           >
-            All leagues
+            {dictionary.allLeagues}
             <span className={styles.filterCount}>
               {feed.selectedStatus === "ALL"
                 ? feed.summary.total
@@ -176,8 +184,8 @@ export default async function LivePage({ params, searchParams }) {
             <details key={group.key} open className={styles.boardGroup}>
               <summary className={styles.boardGroupSummary}>
                 <div>
-                  <p className={styles.eyebrow}>{group.country}</p>
-                  <h2 className={styles.sectionTitle}>{group.leagueName}</h2>
+                  <p className={styles.eyebrow}>{group.country || dictionary.international}</p>
+                  <h2 className={styles.sectionTitle}>{group.leagueName || dictionary.competition}</h2>
                 </div>
                 <div className={styles.inlineBadgeRow}>
                   <span className={styles.badge}>{group.fixtures.length}</span>
@@ -200,9 +208,7 @@ export default async function LivePage({ params, searchParams }) {
           ))}
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          No fixtures match this board filter right now. Try another date, status, or competition.
-        </div>
+        <div className={styles.emptyState}>{dictionary.liveFilterEmpty}</div>
       )}
     </section>
   );

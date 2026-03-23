@@ -7,6 +7,7 @@ import {
   DEFAULT_LOCALE,
   THEME_COOKIE_NAME,
 } from "../lib/coreui/preferences";
+import { getDictionary } from "../lib/coreui/dictionaries";
 import { getPreferredLocale } from "../lib/coreui/preferences-server";
 
 const bodyFont = Space_Grotesk({
@@ -26,13 +27,18 @@ const displayFont = Barlow_Condensed({
   weight: ["400", "600", "700"],
 });
 
-export const metadata = {
-  title: {
-    default: "Sports Pulse",
-    template: "%s | Sports Pulse",
-  },
-  description: "SEO-first sports coverage for live scores, fixtures, results, tables, leagues, and teams.",
-};
+export async function generateMetadata() {
+  const locale = await getPreferredLocale().catch(() => DEFAULT_LOCALE);
+  const dictionary = getDictionary(locale);
+
+  return {
+    title: {
+      default: dictionary.brand,
+      template: `%s | ${dictionary.brand}`,
+    },
+    description: dictionary.heroBody,
+  };
+}
 
 export const viewport = {
   width: "device-width",

@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { getDictionary } from "../lib/coreui/dictionaries";
+import { getPreferredLocale } from "../lib/coreui/preferences-server";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const locale = await getPreferredLocale().catch(() => "en");
+  const dictionary = getDictionary(locale);
+
   return (
     <main className="app-empty">
-      <h1>Page not found</h1>
-      <p>The route you asked for is outside the current sports map or the record no longer exists.</p>
-      <Link href="/en">Return to home</Link>
+      <h1>{dictionary.pageNotFound}</h1>
+      <p>{dictionary.notFoundBody}</p>
+      <Link href={`/${locale}`}>{dictionary.returnHome}</Link>
     </main>
   );
 }

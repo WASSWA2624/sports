@@ -132,16 +132,16 @@ function normalizeBoardDate(dateValue) {
 
 function buildBoardGroups(fixtures) {
   const groups = fixtures.reduce((accumulator, fixture) => {
-    const country = fixture.league?.country || "International";
+    const country = fixture.league?.country || null;
     const leagueCode = fixture.league?.code || fixture.league?.id || "unknown-league";
-    const key = `${country}::${leagueCode}`;
+    const key = `${country || "unknown-country"}::${leagueCode}`;
 
     if (!accumulator.has(key)) {
       accumulator.set(key, {
         key,
         country,
         leagueCode,
-        leagueName: fixture.league?.name || "Competition",
+        leagueName: fixture.league?.name || null,
         fixtures: [],
       });
     }
@@ -151,12 +151,12 @@ function buildBoardGroups(fixtures) {
   }, new Map());
 
   return [...groups.values()].sort((left, right) => {
-    const countryDifference = left.country.localeCompare(right.country);
+    const countryDifference = (left.country || "").localeCompare(right.country || "");
     if (countryDifference !== 0) {
       return countryDifference;
     }
 
-    return left.leagueName.localeCompare(right.leagueName);
+    return (left.leagueName || "").localeCompare(right.leagueName || "");
   });
 }
 
@@ -177,7 +177,7 @@ function buildSurfaceState(fixtures, degraded) {
   };
 }
 
-export async function getLiveMatchdayFeed({ status, leagueCode, date } = {}) {
+export async function getLiveMatchdayFeed({ locale = "en", status, leagueCode, date } = {}) {
   const selectedDate = normalizeBoardDate(date);
   let degraded = false;
   let fixtures = [];
@@ -224,12 +224,13 @@ export async function getLiveMatchdayFeed({ status, leagueCode, date } = {}) {
     })),
     leaguePivots,
     summary: buildFixtureWindowSummary(fixtures),
-    refresh: buildFeedRefreshProfile(sortedFixtures),
+    refresh: buildFeedRefreshProfile(sortedFixtures, locale),
     surfaceState: buildSurfaceState(fixtures, degraded),
   };
 }
 
-export async function getResultsFeed({ status, leagueCode } = {}) {
+export async function getResultsFeed({ locale = "en", status, leagueCode } = {}) {
+  void locale;
   const fixtures = await safely(
     () =>
       db.fixture.findMany({
@@ -270,7 +271,7 @@ export async function getResultsFeed({ status, leagueCode } = {}) {
   };
 }
 
-export async function getLiveMatchDetail(reference) {
+export async function getLiveMatchDetail(reference, locale = "en") {
   return safely(async () => {
     const fixture = await db.fixture.findFirst({
       where: {
@@ -283,7 +284,7 @@ export async function getLiveMatchDetail(reference) {
       return null;
     }
 
-    const detail = buildFixtureDetailModules(fixture);
+    const detail = buildFixtureDetailModules(fixture, locale);
 
     return {
       ...fixture,

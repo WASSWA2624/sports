@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
-import { getDictionary } from "../../../lib/coreui/dictionaries";
+import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
 import { formatFixtureStatus, formatMatchday } from "../../../lib/coreui/format";
 import { getResultsFeed } from "../../../lib/coreui/live-read";
 import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
@@ -42,8 +42,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "Results",
-    "See final score snapshots, postponements, and cancellations across recent fixtures.",
+    getDictionary(locale).metaResultsTitle,
+    getDictionary(locale).metaResultsDescription,
     "/results"
   );
 }
@@ -53,6 +53,7 @@ export default async function ResultsPage({ params, searchParams }) {
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
   const feed = await getResultsFeed({
+    locale,
     status: filters?.status,
     leagueCode: filters?.league,
   });
@@ -62,16 +63,17 @@ export default async function ResultsPage({ params, searchParams }) {
     <section className={styles.section}>
       <header className={styles.pageHeader}>
         <div>
-          <p className={styles.eyebrow}>Frozen scorelines</p>
+          <p className={styles.eyebrow}>{dictionary.resultsEyebrow}</p>
           <h1 className={styles.pageTitle}>{dictionary.recent}</h1>
-          <p className={styles.pageLead}>
-            Result cards hold the stored post-match snapshot so finished scorelines stay stable after
-            capture.
-          </p>
+          <p className={styles.pageLead}>{dictionary.resultsLead}</p>
         </div>
         <div className={styles.sectionTools}>
           <span className={styles.badge}>{feed.summary.total}</span>
-          <span className={styles.badge}>{feed.summary.FINISHED} finals</span>
+          <span className={styles.badge}>
+            {formatDictionaryText(dictionary.resultsFinals, {
+              count: feed.summary.FINISHED,
+            })}
+          </span>
         </div>
       </header>
 
@@ -104,7 +106,7 @@ export default async function ResultsPage({ params, searchParams }) {
             href={buildResultsHref(locale, feed.selectedStatus, "all")}
             className={feed.selectedLeague === "all" ? styles.filterChipActive : styles.filterChip}
           >
-            All leagues
+            {dictionary.allLeagues}
             <span className={styles.filterCount}>
               {feed.selectedStatus === "ALL"
                 ? feed.summary.total
@@ -132,7 +134,7 @@ export default async function ResultsPage({ params, searchParams }) {
           <section key={section.key} className={styles.section}>
             <div className={styles.sectionHeader}>
               <div>
-                <p className={styles.eyebrow}>Results</p>
+                <p className={styles.eyebrow}>{dictionary.resultsSectionEyebrow}</p>
                 <h2 className={styles.sectionTitle}>{section.label}</h2>
               </div>
               <span className={styles.badge}>{section.fixtures.length}</span>
@@ -146,9 +148,7 @@ export default async function ResultsPage({ params, searchParams }) {
           </section>
         ))
       ) : (
-        <div className={styles.emptyState}>
-          No stored result snapshots match this filter yet. Try another league or status.
-        </div>
+        <div className={styles.emptyState}>{dictionary.resultsFilterEmpty}</div>
       )}
     </section>
   );

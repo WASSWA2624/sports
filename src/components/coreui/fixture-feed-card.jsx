@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FavoriteToggle } from "./favorite-toggle";
 import styles from "./styles.module.css";
+import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
 import {
   formatFixtureStatus,
   formatKickoff,
@@ -15,10 +16,11 @@ import {
 
 export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = true }) {
   const href = `/${locale}/match/${fixture.externalRef || fixture.id}`;
+  const dictionary = getDictionary(locale);
   const minuteLabel = fixture.status === "LIVE" ? getFixtureMinute(fixture) : null;
-  const refreshProfile = buildFixtureRefreshProfile(fixture);
+  const refreshProfile = buildFixtureRefreshProfile(fixture, locale);
   const isFrozen = isTerminalStatus(fixture.status) && fixture.resultSnapshot?.capturedAt;
-  const indicators = buildFixtureIncidentIndicators(fixture);
+  const indicators = buildFixtureIncidentIndicators(fixture, locale);
   const statusLabel = minuteLabel || formatFixtureStatus(fixture.status, locale);
 
   return (
@@ -30,7 +32,7 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
       </div>
 
       <div className={styles.fixtureFeedMain}>
-        {showLeague ? <p className={styles.eyebrow}>{fixture.league?.name || "League"}</p> : null}
+        {showLeague ? <p className={styles.eyebrow}>{fixture.league?.name || dictionary.league}</p> : null}
 
         <div className={styles.fixtureFeedTeams}>
           <div className={styles.fixtureFeedTeamRow}>
@@ -61,7 +63,9 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
           ) : null}
           {mode === "results" && isFrozen ? (
             <span className={styles.fixtureFeedMeta}>
-              Snapshot frozen {formatSnapshotTime(fixture.resultSnapshot.capturedAt, locale)}
+              {formatDictionaryText(dictionary.snapshotFrozenLabel, {
+                time: formatSnapshotTime(fixture.resultSnapshot.capturedAt, locale),
+              })}
             </span>
           ) : null}
         </div>
@@ -70,7 +74,7 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
       <div className={styles.fixtureFeedActions}>
         <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} compact />
         <Link href={href} className={styles.actionLink}>
-          Match
+          {dictionary.match}
         </Link>
       </div>
     </article>

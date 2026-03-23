@@ -1,12 +1,20 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { RouteError } from "../../../../components/coreui/route-error";
+import { getDictionary } from "../../../../lib/coreui/dictionaries";
 
 export default function Error({ reset }) {
+  const pathname = usePathname();
+  const locale = pathname?.split("/").filter(Boolean)[0] || "en";
+  const dictionary = getDictionary(locale);
+
   return (
     <RouteError
-      title="Match centre unavailable"
-      body="We hit a rendering issue while assembling this fixture view. Try again."
+      eyebrow={dictionary.routeError}
+      title={dictionary.matchPageUnavailable}
+      body={dictionary.matchPageUnavailableBody}
+      resetLabel={dictionary.retry}
       reset={reset}
     />
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
+import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getTeamDirectory } from "../../../lib/coreui/read";
 import styles from "../../../components/coreui/styles.module.css";
 
@@ -8,8 +9,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "Teams",
-    "Browse team profiles, league associations, and recent activity.",
+    getDictionary(locale).metaTeamsTitle,
+    getDictionary(locale).metaTeamsDescription,
     "/teams"
   );
 }
@@ -36,7 +37,7 @@ export default async function TeamsPage({ params }) {
                   <h2 className={styles.cardTitle}>
                     <Link href={`/${locale}/teams/${team.id}`}>{team.name}</Link>
                   </h2>
-                  <p className={styles.muted}>{team.shortName || team.code || "Team profile"}</p>
+                  <p className={styles.muted}>{team.shortName || team.code || dictionary.teamProfile}</p>
                 </div>
                 {team.league ? (
                   <Link href={`/${locale}/leagues/${team.league.code}`} className={styles.badge}>
@@ -45,7 +46,9 @@ export default async function TeamsPage({ params }) {
                 ) : null}
               </div>
               <p className={styles.metaRow}>
-                {team.homeFor[0]?.status || dictionary.noData}
+                {team.homeFor[0]?.status
+                  ? formatFixtureStatus(team.homeFor[0].status, locale)
+                  : dictionary.noData}
               </p>
             </article>
           ))}

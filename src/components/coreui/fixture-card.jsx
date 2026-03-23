@@ -2,15 +2,17 @@ import Link from "next/link";
 import { FavoriteToggle } from "./favorite-toggle";
 import styles from "./styles.module.css";
 import { formatFixtureStatus, formatKickoff } from "../../lib/coreui/format";
+import { getDictionary } from "../../lib/coreui/dictionaries";
 
 export function FixtureCard({ fixture, locale }) {
   const href = `/${locale}/match/${fixture.externalRef || fixture.id}`;
+  const dictionary = getDictionary(locale);
 
   return (
     <article className={styles.fixtureCard}>
       <div className={styles.fixtureCardTop}>
         <div>
-          <p className={styles.eyebrow}>{fixture.league?.name || "League"}</p>
+          <p className={styles.eyebrow}>{fixture.league?.name || dictionary.league}</p>
           <h3 className={styles.fixtureTitle}>
             <Link href={href}>
               {fixture.homeTeam?.name} vs {fixture.awayTeam?.name}

@@ -28,6 +28,6 @@ export const SPORTS_STRIP = [
 
 export const LOCALE_LABELS = {
   en: "English",
-  fr: "Francais",
+  fr: "Français",
   sw: "Kiswahili",
 };

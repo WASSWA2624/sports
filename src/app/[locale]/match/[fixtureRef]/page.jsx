@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
-import { getDictionary } from "../../../../lib/coreui/dictionaries";
+import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import {
   formatFixtureStatus,
   formatKickoff,
@@ -16,16 +16,32 @@ function coverageTone(state) {
   return state === "available" ? styles.coverageAvailable : styles.coverageMissing;
 }
 
+function getSideLabel(side, dictionary) {
+  if (side === "home") {
+    return dictionary.homeSide;
+  }
+
+  if (side === "away") {
+    return dictionary.awaySide;
+  }
+
+  return dictionary.matchSide;
+}
+
 export async function generateMetadata({ params }) {
   const { locale, fixtureRef } = await params;
-  const fixture = await getLiveMatchDetail(fixtureRef);
+  const fixture = await getLiveMatchDetail(fixtureRef, locale);
+  const dictionary = getDictionary(locale);
 
   return buildPageMetadata(
     locale,
-    fixture ? `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}` : "Match",
+    fixture ? `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}` : dictionary.metaMatchFallbackTitle,
     fixture
-      ? `Live match centre for ${fixture.homeTeam.name} vs ${fixture.awayTeam.name}.`
-      : "Sports match detail page.",
+      ? formatDictionaryText(dictionary.metaMatchDescription, {
+          home: fixture.homeTeam.name,
+          away: fixture.awayTeam.name,
+        })
+      : dictionary.metaMatchFallbackDescription,
     `/match/${fixtureRef}`
   );
 }
@@ -33,7 +49,7 @@ export async function generateMetadata({ params }) {
 export default async function MatchDetailPage({ params }) {
   const { locale, fixtureRef } = await params;
   const dictionary = getDictionary(locale);
-  const fixture = await getLiveMatchDetail(fixtureRef);
+  const fixture = await getLiveMatchDetail(fixtureRef, locale);
 
   if (!fixture) {
     notFound();
@@ -41,10 +57,10 @@ export default async function MatchDetailPage({ params }) {
 
   const detail = fixture.detail;
   const coverage = [
-    { label: "Timeline", state: detail.coverage.timeline },
-    { label: "Stats", state: detail.coverage.statistics },
-    { label: "Lineups", state: detail.coverage.lineups },
-    { label: "Key events", state: detail.coverage.keyEvents },
+    { label: dictionary.timeline, state: detail.coverage.timeline },
+    { label: dictionary.statistics, state: detail.coverage.statistics },
+    { label: dictionary.lineups, state: detail.coverage.lineups },
+    { label: dictionary.keyEvents, state: detail.coverage.keyEvents },
   ];
   const hasLineups =
     detail.lineups.home.starters.length ||
@@ -66,10 +82,7 @@ export default async function MatchDetailPage({ params }) {
           <h1 className={styles.pageTitle}>
             {fixture.homeTeam.name} vs {fixture.awayTeam.name}
           </h1>
-          <p className={styles.pageLead}>
-            Match centre with live pulse, team stats, event timeline, lineups, and the stored result
-            snapshot.
-          </p>
+          <p className={styles.pageLead}>{dictionary.matchLead}</p>
         </div>
         <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} />
       </header>
@@ -102,7 +115,9 @@ export default async function MatchDetailPage({ params }) {
             {detail.liveState.statusText ? <span className={styles.badge}>{detail.liveState.statusText}</span> : null}
             {detail.resultFreeze.isFrozen ? (
               <span className={styles.badge}>
-                Snapshot frozen {formatSnapshotTime(detail.resultFreeze.frozenAt, locale)}
+                {formatDictionaryText(dictionary.snapshotFrozenLabel, {
+                  time: formatSnapshotTime(detail.resultFreeze.frozenAt, locale),
+                })}
               </span>
             ) : null}
             {!detail.resultFreeze.isFrozen && detail.refresh.label ? (
@@ -120,7 +135,7 @@ export default async function MatchDetailPage({ params }) {
 
         <article className={styles.detailCard}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Competition</h2>
+            <h2 className={styles.cardTitle}>{dictionary.competitionSection}</h2>
           </div>
 
           <div className={styles.linkList}>
@@ -140,7 +155,7 @@ export default async function MatchDetailPage({ params }) {
               <div key={entry.label} className={styles.coverageItem}>
                 <span>{entry.label}</span>
                 <strong className={coverageTone(entry.state)}>
-                  {entry.state === "available" ? "Ready" : "Waiting"}
+                  {entry.state === "available" ? dictionary.coverageReady : dictionary.coverageWaiting}
                 </strong>
               </div>
             ))}
@@ -151,8 +166,8 @@ export default async function MatchDetailPage({ params }) {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <p className={styles.eyebrow}>Highlights</p>
-            <h2 className={styles.sectionTitle}>Key events</h2>
+            <p className={styles.eyebrow}>{dictionary.highlights}</p>
+            <h2 className={styles.sectionTitle}>{dictionary.keyEvents}</h2>
           </div>
           <span className={styles.badge}>{detail.keyEvents.length}</span>
         </div>
@@ -171,30 +186,30 @@ export default async function MatchDetailPage({ params }) {
                           : styles.badge
                     }
                   >
-                    {event.side || "match"}
+                    {getSideLabel(event.side, dictionary)}
                   </span>
                   {event.minuteLabel ? <span className={styles.badge}>{event.minuteLabel}</span> : null}
                 </div>
                 <h3 className={styles.cardTitle}>{event.title}</h3>
                 {event.actor ? <p className={styles.muted}>{event.actor}</p> : null}
                 {event.secondaryActor ? (
-                  <p className={styles.muted}>With {event.secondaryActor}</p>
+                  <p className={styles.muted}>
+                    {formatDictionaryText(dictionary.eventWith, { name: event.secondaryActor })}
+                  </p>
                 ) : null}
                 <p className={styles.fixtureSummary}>{event.description}</p>
               </article>
             ))}
           </div>
         ) : (
-          <div className={styles.emptyState}>
-            Key event coverage will appear here for fixtures that have detailed provider data.
-          </div>
+          <div className={styles.emptyState}>{dictionary.eventCoveragePending}</div>
         )}
       </section>
 
       <div className={styles.analysisGrid}>
         <article className={styles.detailCard}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Timeline</h2>
+            <h2 className={styles.cardTitle}>{dictionary.timeline}</h2>
             <span className={styles.badge}>{detail.timeline.length}</span>
           </div>
 
@@ -202,7 +217,7 @@ export default async function MatchDetailPage({ params }) {
             <div className={styles.timeline}>
               {detail.timeline.map((event) => (
                 <div key={event.id} className={styles.timelineItem}>
-                  <div className={styles.timelineMinute}>{event.minuteLabel || "Play"}</div>
+                  <div className={styles.timelineMinute}>{event.minuteLabel || dictionary.play}</div>
                   <div className={styles.timelineBody}>
                     <div className={styles.cardHeader}>
                       <strong>{event.title}</strong>
@@ -215,12 +230,14 @@ export default async function MatchDetailPage({ params }) {
                               : styles.badge
                         }
                       >
-                        {event.side || "match"}
+                        {getSideLabel(event.side, dictionary)}
                       </span>
                     </div>
                     {event.actor ? <p className={styles.muted}>{event.actor}</p> : null}
                     {event.secondaryActor ? (
-                      <p className={styles.muted}>Related: {event.secondaryActor}</p>
+                      <p className={styles.muted}>
+                        {formatDictionaryText(dictionary.eventRelated, { name: event.secondaryActor })}
+                      </p>
                     ) : null}
                     <p className={styles.fixtureSummary}>{event.description}</p>
                   </div>
@@ -228,15 +245,13 @@ export default async function MatchDetailPage({ params }) {
               ))}
             </div>
           ) : (
-            <div className={styles.emptyState}>
-              No detailed event timeline is stored for this fixture yet.
-            </div>
+            <div className={styles.emptyState}>{dictionary.timelinePending}</div>
           )}
         </article>
 
         <article className={styles.detailCard}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Statistics</h2>
+            <h2 className={styles.cardTitle}>{dictionary.statistics}</h2>
             <span className={styles.badge}>{detail.statistics.length}</span>
           </div>
 
@@ -263,9 +278,7 @@ export default async function MatchDetailPage({ params }) {
               ))}
             </div>
           ) : (
-            <div className={styles.emptyState}>
-              Team statistics are not available for this fixture yet.
-            </div>
+            <div className={styles.emptyState}>{dictionary.statisticsPending}</div>
           )}
         </article>
       </div>
@@ -273,8 +286,8 @@ export default async function MatchDetailPage({ params }) {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <p className={styles.eyebrow}>Squads</p>
-            <h2 className={styles.sectionTitle}>Lineups</h2>
+            <p className={styles.eyebrow}>{dictionary.squads}</p>
+            <h2 className={styles.sectionTitle}>{dictionary.lineups}</h2>
           </div>
           <span className={styles.badge}>
             {detail.lineups.home.starters.length + detail.lineups.away.starters.length}
@@ -302,14 +315,18 @@ export default async function MatchDetailPage({ params }) {
                   <div>
                     <h3 className={styles.cardTitle}>{entry.team}</h3>
                     <p className={styles.muted}>
-                      {entry.lineup.formation ? `Formation ${entry.lineup.formation}` : "Formation pending"}
+                      {entry.lineup.formation
+                        ? formatDictionaryText(dictionary.formation, {
+                            value: entry.lineup.formation,
+                          })
+                        : dictionary.formationPending}
                     </p>
                   </div>
-                  <span className={entry.markerClass}>{entry.key}</span>
+                  <span className={entry.markerClass}>{getSideLabel(entry.key, dictionary)}</span>
                 </div>
 
                 <div className={styles.lineupSection}>
-                  <strong>Starting XI</strong>
+                  <strong>{dictionary.startingXi}</strong>
                   <div className={styles.lineupList}>
                     {entry.lineup.starters.map((player) => (
                       <div key={player.id} className={styles.lineupRow}>
@@ -317,7 +334,11 @@ export default async function MatchDetailPage({ params }) {
                         <div>
                           <strong>{player.name}</strong>
                           {player.formationField ? (
-                            <p className={styles.muted}>Slot {player.formationField}</p>
+                            <p className={styles.muted}>
+                              {formatDictionaryText(dictionary.slot, {
+                                value: player.formationField,
+                              })}
+                            </p>
                           ) : null}
                         </div>
                       </div>
@@ -327,7 +348,7 @@ export default async function MatchDetailPage({ params }) {
 
                 {entry.lineup.bench.length ? (
                   <div className={styles.lineupSection}>
-                    <strong>Bench</strong>
+                    <strong>{dictionary.bench}</strong>
                     <div className={styles.lineupList}>
                       {entry.lineup.bench.map((player) => (
                         <div key={player.id} className={styles.lineupRow}>
@@ -342,9 +363,7 @@ export default async function MatchDetailPage({ params }) {
             ))}
           </div>
         ) : (
-          <div className={styles.emptyState}>
-            Detailed lineups are not available for this fixture yet.
-          </div>
+          <div className={styles.emptyState}>{dictionary.lineupsPending}</div>
         )}
       </section>
 
@@ -352,7 +371,7 @@ export default async function MatchDetailPage({ params }) {
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>{dictionary.matchDetail}</p>
-            <h2 className={styles.sectionTitle}>Markets</h2>
+            <h2 className={styles.sectionTitle}>{dictionary.markets}</h2>
           </div>
         </div>
 
@@ -365,7 +384,9 @@ export default async function MatchDetailPage({ params }) {
                     <h3 className={styles.cardTitle}>{market.marketType}</h3>
                     <p className={styles.muted}>{market.bookmaker}</p>
                   </div>
-                  <span className={styles.badge}>{market.suspended ? "Suspended" : "Open"}</span>
+                  <span className={styles.badge}>
+                    {market.suspended ? dictionary.marketSuspended : dictionary.marketOpen}
+                  </span>
                 </div>
                 <div className={styles.grid}>
                   {market.selections.map((selection) => (
@@ -379,7 +400,7 @@ export default async function MatchDetailPage({ params }) {
             ))}
           </div>
         ) : (
-          <div className={styles.emptyState}>Odds coverage is not available for this fixture yet.</div>
+          <div className={styles.emptyState}>{dictionary.oddsPending}</div>
         )}
       </section>
     </section>

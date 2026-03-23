@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buildPageMetadata } from "../../lib/coreui/metadata";
-import { getDictionary } from "../../lib/coreui/dictionaries";
+import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
 import { getHomeSnapshot } from "../../lib/coreui/read";
 import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
@@ -37,8 +37,8 @@ function groupFixtures(fixtures) {
       accumulator.set(key, {
         key,
         code: fixture.league?.code || null,
-        name: fixture.league?.name || "Competition",
-        country: fixture.league?.country || "International",
+        name: fixture.league?.name || null,
+        country: fixture.league?.country || null,
         fixtures: [],
       });
     }
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
 
-  return buildPageMetadata(locale, "Matchday Home", dictionary.heroBody, "");
+  return buildPageMetadata(locale, dictionary.metaHomeTitle, dictionary.metaHomeDescription, "");
 }
 
 export default async function LocaleHomePage({ params }) {
@@ -74,27 +74,31 @@ export default async function LocaleHomePage({ params }) {
   return (
     <>
       <section className={styles.noticeBanner}>
-        <span className={styles.noticeLabel}>Football</span>
+        <span className={styles.noticeLabel}>{dictionary.football}</span>
         <p>
-          {boardFixtures.length} match rows loaded for today. Pin competitions from the board and move
-          between live, scheduled, and final scores from one surface.
+          {formatDictionaryText(dictionary.homeNotice, {
+            count: boardFixtures.length,
+          })}
         </p>
       </section>
 
       <section className={styles.homeBoard}>
         <header className={styles.pageHeader}>
           <div>
-            <p className={styles.eyebrow}>Scores</p>
-            <h1 className={styles.pageTitle}>Football live scores</h1>
+            <p className={styles.eyebrow}>{dictionary.scores}</p>
+            <h1 className={styles.pageTitle}>{dictionary.homeScoresTitle}</h1>
             <p className={styles.pageLead}>
-              {snapshot.liveFixtures.length} live, {snapshot.upcomingFixtures.length} scheduled,{" "}
-              {snapshot.recentResults.length} finished.
+              {formatDictionaryText(dictionary.homeScoresLead, {
+                live: snapshot.liveFixtures.length,
+                scheduled: snapshot.upcomingFixtures.length,
+                finished: snapshot.recentResults.length,
+              })}
             </p>
           </div>
           <div className={styles.sectionTools}>
             <span className={styles.badge}>{boardDate}</span>
             <Link href={`/${locale}/live`} className={styles.sectionAction}>
-              Open live board
+              {dictionary.openLiveBoard}
             </Link>
           </div>
         </header>
@@ -130,8 +134,8 @@ export default async function LocaleHomePage({ params }) {
               <section key={group.key} className={styles.boardGroup}>
                 <div className={styles.boardGroupSummary}>
                   <div>
-                    <p className={styles.eyebrow}>{group.country}</p>
-                    <h2 className={styles.sectionTitle}>{group.name}</h2>
+                    <p className={styles.eyebrow}>{group.country || dictionary.international}</p>
+                    <h2 className={styles.sectionTitle}>{group.name || dictionary.competition}</h2>
                   </div>
                   <div className={styles.inlineBadgeRow}>
                     <span className={styles.badge}>{group.fixtures.length}</span>
@@ -174,7 +178,7 @@ export default async function LocaleHomePage({ params }) {
               <article key={league.id} className={styles.miniPanel}>
                 <div className={styles.cardHeader}>
                   <div>
-                    <p className={styles.eyebrow}>{league.country || "International"}</p>
+                    <p className={styles.eyebrow}>{league.country || dictionary.international}</p>
                     <h3 className={styles.cardTitle}>
                       <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                     </h3>

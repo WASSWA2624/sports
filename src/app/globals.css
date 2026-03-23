@@ -30,6 +30,17 @@
   --warning: #c98a16;
   --danger: #d44d4d;
   --live: #ff3b69;
+  --overlay-backdrop: rgba(13, 35, 42, 0.42);
+  --overlay-panel: rgba(255, 255, 255, 0.98);
+  --overlay-panel-border: rgba(13, 35, 42, 0.12);
+  --overlay-panel-text: var(--text);
+  --overlay-placeholder: rgba(95, 112, 117, 0.72);
+  --shell-bar-bg: rgba(255, 255, 255, 0.94);
+  --shell-bar-border: rgba(13, 35, 42, 0.12);
+  --shell-chip-bg: rgba(13, 35, 42, 0.06);
+  --notice-bg: linear-gradient(135deg, rgba(33, 109, 255, 0.12), rgba(255, 31, 89, 0.08));
+  --notice-text: var(--text);
+  --notice-muted: var(--text-muted);
 }
 
 html[data-theme="dark"] {
@@ -48,6 +59,17 @@ html[data-theme="dark"] {
   --accent-soft: rgba(255, 31, 89, 0.16);
   --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.26);
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --overlay-backdrop: rgba(2, 10, 13, 0.72);
+  --overlay-panel: rgba(8, 31, 38, 0.98);
+  --overlay-panel-border: rgba(191, 216, 220, 0.12);
+  --overlay-panel-text: #f2f6f7;
+  --overlay-placeholder: rgba(242, 246, 247, 0.5);
+  --shell-bar-bg: #061a22;
+  --shell-bar-border: rgba(191, 216, 220, 0.08);
+  --shell-chip-bg: rgba(255, 255, 255, 0.08);
+  --notice-bg: #0a3152;
+  --notice-text: #f2f6f7;
+  --notice-muted: rgba(242, 246, 247, 0.82);
 }
 
 html {

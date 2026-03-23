@@ -2,12 +2,12 @@
 
 import styles from "./styles.module.css";
 
-export function RouteError({ title, body, resetLabel = "Retry", reset }) {
+export function RouteError({ title, body, eyebrow, resetLabel, reset }) {
   return (
     <section className={styles.section}>
       <div className={styles.pageHeader}>
         <div>
-          <p className={styles.eyebrow}>Route error</p>
+          <p className={styles.eyebrow}>{eyebrow}</p>
           <h1 className={styles.pageTitle}>{title}</h1>
         </div>
       </div>

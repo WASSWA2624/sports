@@ -1,17 +1,18 @@
 "use client";
 
+import { getDictionary } from "../../lib/coreui/dictionaries";
 import { usePreferences } from "./preferences-provider";
 import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 
-const options = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "Auto" },
-];
-
-export function ThemeToggle({ label }) {
+export function ThemeToggle({ label, locale = "en" }) {
   const { theme, setTheme } = usePreferences();
+  const dictionary = getDictionary(locale);
+  const options = [
+    { value: "light", label: dictionary.themeLight },
+    { value: "dark", label: dictionary.themeDark },
+    { value: "system", label: dictionary.themeSystem },
+  ];
 
   return (
     <div className={`${styles.preferenceBlock} ${styles.headerPreferenceBlock}`} role="group" aria-label={label}>

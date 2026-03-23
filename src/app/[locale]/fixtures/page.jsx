@@ -8,8 +8,8 @@ export async function generateMetadata({ params }) {
   const { locale } = await params;
   return buildPageMetadata(
     locale,
-    "Fixtures",
-    "Browse upcoming sports fixtures by league and kickoff time.",
+    getDictionary(locale).metaFixturesTitle,
+    getDictionary(locale).metaFixturesDescription,
     "/fixtures"
   );
 }

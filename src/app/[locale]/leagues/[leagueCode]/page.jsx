@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
-import { getDictionary } from "../../../../lib/coreui/dictionaries";
+import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getLeagueDetail } from "../../../../lib/coreui/read";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import styles from "../../../../components/coreui/styles.module.css";
@@ -9,15 +9,21 @@ import styles from "../../../../components/coreui/styles.module.css";
 export async function generateMetadata({ params }) {
   const { locale, leagueCode } = await params;
   const league = await getLeagueDetail(leagueCode);
+  const dictionary = getDictionary(locale);
 
   if (!league) {
-    return buildPageMetadata(locale, "League", "League coverage page.", `/leagues/${leagueCode}`);
+    return buildPageMetadata(
+      locale,
+      dictionary.metaLeagueFallbackTitle,
+      dictionary.metaLeagueFallbackDescription,
+      `/leagues/${leagueCode}`
+    );
   }
 
   return buildPageMetadata(
     locale,
     league.name,
-    `Standings, fixtures, and team directory for ${league.name}.`,
+    formatDictionaryText(dictionary.metaLeagueDescription, { name: league.name }),
     `/leagues/${leagueCode}`
   );
 }
@@ -37,7 +43,7 @@ export default async function LeagueDetailPage({ params }) {
     <section className={styles.section}>
       <header className={styles.pageHeader}>
         <div>
-          <p className={styles.eyebrow}>{league.country || "International"}</p>
+          <p className={styles.eyebrow}>{league.country || dictionary.international}</p>
           <h1 className={styles.pageTitle}>{league.name}</h1>
         </div>
         <Link href={`/${locale}/tables`} className={styles.actionLink}>
@@ -54,10 +60,10 @@ export default async function LeagueDetailPage({ params }) {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Team</th>
-                  <th>P</th>
-                  <th>Pts</th>
+                  <th>{dictionary.tablePosition}</th>
+                  <th>{dictionary.tableTeam}</th>
+                  <th>{dictionary.tablePlayed}</th>
+                  <th>{dictionary.tablePoints}</th>
                 </tr>
               </thead>
               <tbody>

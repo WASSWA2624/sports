@@ -10,6 +10,7 @@ import { ShellSearch } from "./shell-search";
 import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 import { SCORES_NAV, SPORTS_STRIP, TOP_LEVEL_NAV } from "../../lib/coreui/config";
+import { getScoreViewLabel, getSportLabel } from "../../lib/coreui/dictionaries";
 
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData }) {
   const pathname = usePathname();
@@ -52,6 +53,9 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
   const rankedSports = SPORTS_STRIP.filter(
     (sport) => sport.key !== "favorites" && sport.key !== "more"
   );
+  const menuSports = SPORTS_STRIP.filter((sport) => sport.key !== "more");
+  const countryGroups = shellData?.countryGroups || [];
+  const accountLabel = sessionUser ? dictionary.profile : dictionary.login;
   const primarySports = rankedSports.slice(0, 3);
   const overflowSports = rankedSports.slice(3);
   const visibleScoreViews = SCORES_NAV.filter((item) => {
@@ -77,12 +81,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                   <Link href={`/${locale}`} className={styles.brand}>
                     {dictionary.brand}
                   </Link>
-                  <p className={styles.brandTag}>Live scores and standings</p>
+                  <p className={styles.brandTag}>{dictionary.brandTag}</p>
                 </div>
               </div>
             </div>
 
-            <nav className={styles.topModeNav} aria-label="Browse">
+            <nav className={styles.topModeNav} aria-label={dictionary.browse}>
               {TOP_LEVEL_NAV.map((item) => {
                 const href = `/${locale}${item.href}`;
                 const active =
@@ -122,11 +126,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 className={styles.mobileMenuButton}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-shell-menu"
-                aria-label="Menu"
+                aria-label={dictionary.menu}
                 onClick={() => setMobileMenuOpen((current) => !current)}
               >
                 <ShellIcon name="menu" className={styles.controlIcon} />
-                <span className={styles.mobileMenuButtonLabel}>Menu</span>
+                <span className={styles.mobileMenuButtonLabel}>{dictionary.menu}</span>
               </button>
             </div>
           </div>
@@ -147,18 +151,18 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                       href={href}
                       className={active ? styles.navLinkActive : styles.navLink}
                     >
-                      {item.label}
+                      {getScoreViewLabel(item.key, dictionary)}
                     </Link>
                   );
                 })}
               </nav>
 
-              <nav className={styles.sportsStrip} aria-label="Sports">
+              <nav className={styles.sportsStrip} aria-label={dictionary.sports}>
                 {favoriteSport ? (
                   <button key={favoriteSport.key} type="button" className={styles.sportsChipDisabled}>
                     <span className={styles.sportLinkContent}>
                       <ShellIcon name={favoriteSport.key} className={styles.sportIcon} />
-                      <span>{favoriteSport.label}</span>
+                      <span>{getSportLabel(favoriteSport.key, dictionary)}</span>
                     </span>
                     <span className={styles.sportsCount}>{watchCount}</span>
                   </button>
@@ -174,7 +178,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                       >
                         <span className={styles.sportLinkContent}>
                           <ShellIcon name={sport.key} className={styles.sportIcon} />
-                          <span>{sport.label}</span>
+                          <span>{getSportLabel(sport.key, dictionary)}</span>
                         </span>
                       </Link>
                     );
@@ -184,7 +188,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                     <button key={sport.key} type="button" className={styles.sportsChipDisabled}>
                       <span className={styles.sportLinkContent}>
                         <ShellIcon name={sport.key} className={styles.sportIcon} />
-                        <span>{sport.label}</span>
+                        <span>{getSportLabel(sport.key, dictionary)}</span>
                       </span>
                     </button>
                   );
@@ -195,7 +199,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                     <summary className={styles.sportsMoreSummary}>
                       <span className={styles.sportLinkContent}>
                         <ShellIcon name={moreSport.key} className={styles.sportIcon} />
-                        <span>{moreSport.label}</span>
+                        <span>{getSportLabel(moreSport.key, dictionary)}</span>
                       </span>
                     </summary>
 
@@ -204,7 +208,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                         const content = (
                           <span className={styles.sportLinkContent}>
                             <ShellIcon name={sport.key} className={styles.sportIcon} />
-                            <span>{sport.label}</span>
+                            <span>{getSportLabel(sport.key, dictionary)}</span>
                           </span>
                         );
 
@@ -247,185 +251,247 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             onClick={(event) => event.stopPropagation()}
           >
             <div className={styles.mobileMenuHeader}>
-              <strong>Menu</strong>
+              <div className={styles.mobileMenuHeaderIntro}>
+                <div className={styles.mobileMenuHeaderLockup}>
+                  <div className={styles.brandMark} aria-hidden="true">
+                    SP
+                  </div>
+                  <div className={styles.mobileMenuHeaderCopy}>
+                    <strong>{dictionary.menu}</strong>
+                    <span>{dictionary.brandTag}</span>
+                  </div>
+                </div>
+
+                <div className={styles.mobileMenuHeaderStats}>
+                  <div className={styles.mobileMenuStat}>
+                    <span>{dictionary.watchlist}</span>
+                    <strong>{watchCount}</strong>
+                  </div>
+                  <div className={styles.mobileMenuStat}>
+                    <span>{dictionary.sports}</span>
+                    <strong>{menuSports.length}</strong>
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="button"
                 className={styles.mobileMenuClose}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <ShellIcon name="close" className={styles.controlIcon} />
-                <span>Close</span>
+                <span>{dictionary.close}</span>
               </button>
             </div>
 
             <div className={styles.mobileMenuBody}>
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>Browse</h2>
-                <div className={styles.mobileMenuList}>
-                  {TOP_LEVEL_NAV.map((item) => {
-                    const href = `/${locale}${item.href}`;
-                    const active =
-                      item.key === "news"
-                        ? isNewsMode
-                        : !isNewsMode && (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
+              <div className={styles.mobileMenuSectionsGrid}>
+                <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionFeatured}`}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.browse}</h2>
+                    <span className={styles.mobileMenuSectionCount}>{TOP_LEVEL_NAV.length}</span>
+                  </div>
 
-                    return (
-                      <Link
-                        key={item.key}
-                        href={href}
-                        className={active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {item.key === "scores" ? dictionary.scores : dictionary.news}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
+                  <div className={`${styles.mobileMenuList} ${styles.mobileMenuQuickGrid}`}>
+                    {TOP_LEVEL_NAV.map((item) => {
+                      const href = `/${locale}${item.href}`;
+                      const active =
+                        item.key === "news"
+                          ? isNewsMode
+                          : !isNewsMode &&
+                            (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
 
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>Account</h2>
-                <div className={styles.mobileMenuList}>
-                  <Link
-                    href="/profile"
-                    className={styles.mobileMenuLink}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {sessionUser ? dictionary.profile : dictionary.login}
-                  </Link>
-                </div>
-              </section>
-
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.scoreViews}</h2>
-                <div className={styles.mobileMenuList}>
-                  {SCORES_NAV.map((item) => {
-                    const href = `/${locale}${item.href}`;
-                    const active =
-                      item.href === ""
-                        ? pathname === `/${locale}`
-                        : pathname === href || pathname.startsWith(`${href}/`);
-
-                    return (
-                      <Link
-                        key={item.key}
-                        href={href}
-                        className={active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.pinnedCompetitions}</h2>
-                <div className={styles.mobileMenuList}>
-                  {pinnedCompetitions.length ? (
-                    pinnedCompetitions.map((competition) => (
-                      <Link
-                        key={competition.code}
-                        href={`/${locale}/leagues/${competition.code}`}
-                        className={styles.mobileMenuLink}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {competition.name}
-                      </Link>
-                    ))
-                  ) : (
-                    <p className={styles.railMuted}>{dictionary.watchlistEmpty}</p>
-                  )}
-                </div>
-              </section>
-
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.myTeams}</h2>
-                <div className={styles.mobileMenuList}>
-                  {savedTeams.length ? (
-                    savedTeams.map((team) => (
-                      <Link
-                        key={team.id}
-                        href={`/${locale}/teams/${team.id}`}
-                        className={styles.mobileMenuLink}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {team.name}
-                      </Link>
-                    ))
-                  ) : (
-                    <p className={styles.railMuted}>Save teams to surface them here.</p>
-                  )}
-                </div>
-              </section>
-
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>{dictionary.countries}</h2>
-                <div className={styles.mobileMenuList}>
-                  {(shellData?.countryGroups || []).map((group) => (
-                    <div key={group.country} className={styles.mobileMenuCountryRow}>
-                      <span>{group.country}</span>
-                      <span className={styles.badge}>{group.leagues.length}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>Sports</h2>
-                <div className={styles.mobileMenuList}>
-                  {SPORTS_STRIP.filter((sport) => sport.key !== "more").map((sport) => {
-                    const content = (
-                      <span className={styles.mobileMenuSportContent}>
-                        <ShellIcon name={sport.key} className={styles.sportIcon} />
-                        <span>{sport.label}</span>
-                      </span>
-                    );
-
-                    if (sport.key === "favorites") {
-                      return (
-                        <div key={sport.key} className={styles.mobileMenuSportRow}>
-                          {content}
-                          <span className={styles.badge}>{watchCount}</span>
-                        </div>
-                      );
-                    }
-
-                    if (sport.enabled) {
                       return (
                         <Link
-                          key={sport.key}
-                          href={`/${locale}${sport.href}`}
+                          key={item.key}
+                          href={href}
+                          className={active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <span className={styles.mobileMenuItemContent}>
+                            <ShellIcon name={item.key} className={styles.controlIcon} />
+                            <span>{item.key === "scores" ? dictionary.scores : dictionary.news}</span>
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionCompact}`}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.account}</h2>
+                    <span className={styles.mobileMenuSectionCount}>1</span>
+                  </div>
+
+                  <div className={`${styles.mobileMenuList} ${styles.mobileMenuQuickGrid}`}>
+                    <Link
+                      href="/profile"
+                      className={styles.mobileMenuLink}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className={styles.mobileMenuItemContent}>
+                        <ShellIcon name="profile" className={styles.controlIcon} />
+                        <span>{accountLabel}</span>
+                      </span>
+                    </Link>
+                  </div>
+                </section>
+
+                <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionWide}`}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.scoreViews}</h2>
+                    <span className={styles.mobileMenuSectionCount}>{SCORES_NAV.length}</span>
+                  </div>
+
+                  <div className={`${styles.mobileMenuList} ${styles.mobileMenuScoreGrid}`}>
+                    {SCORES_NAV.map((item) => {
+                      const href = `/${locale}${item.href}`;
+                      const active =
+                        item.href === ""
+                          ? pathname === `/${locale}`
+                          : pathname === href || pathname.startsWith(`${href}/`);
+
+                      return (
+                        <Link
+                          key={item.key}
+                          href={href}
+                          className={active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {getScoreViewLabel(item.key, dictionary)}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionWide}`}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.sports}</h2>
+                    <span className={styles.mobileMenuSectionCount}>{menuSports.length}</span>
+                  </div>
+
+                  <div className={`${styles.mobileMenuList} ${styles.mobileMenuSportsGrid}`}>
+                    {menuSports.map((sport) => {
+                      const content = (
+                        <span className={styles.mobileMenuItemContent}>
+                          <ShellIcon name={sport.key} className={styles.sportIcon} />
+                          <span>{getSportLabel(sport.key, dictionary)}</span>
+                        </span>
+                      );
+
+                      if (sport.key === "favorites") {
+                        return (
+                          <div key={sport.key} className={styles.mobileMenuSportRow}>
+                            {content}
+                            <span className={styles.badge}>{watchCount}</span>
+                          </div>
+                        );
+                      }
+
+                      if (sport.enabled) {
+                        return (
+                          <Link
+                            key={sport.key}
+                            href={`/${locale}${sport.href}`}
+                            className={styles.mobileMenuLink}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {content}
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <div key={sport.key} className={`${styles.mobileMenuLink} ${styles.mobileMenuLinkMuted}`}>
+                          {content}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionWide}`}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.preferences}</h2>
+                  </div>
+
+                  <div className={styles.mobileMenuPreferences}>
+                    <LocaleSwitcher locale={locale} label={dictionary.locale} />
+                    <ThemeToggle label={dictionary.theme} locale={locale} />
+                    <div className={`${styles.watchPill} ${styles.mobileMenuWatchPill}`}>
+                      <ShellIcon name="favorites" className={styles.controlIcon} />
+                      <span>{dictionary.watchlist}</span>
+                      <strong className={styles.watchValue}>{watchCount}</strong>
+                    </div>
+                  </div>
+                </section>
+
+                <section className={styles.mobileMenuSection}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.pinnedCompetitions}</h2>
+                    <span className={styles.mobileMenuSectionCount}>{pinnedCompetitions.length}</span>
+                  </div>
+
+                  <div className={styles.mobileMenuList}>
+                    {pinnedCompetitions.length ? (
+                      pinnedCompetitions.map((competition) => (
+                        <Link
+                          key={competition.code}
+                          href={`/${locale}/leagues/${competition.code}`}
                           className={styles.mobileMenuLink}
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          {content}
+                          {competition.name}
                         </Link>
-                      );
-                    }
-
-                    return (
-                      <div key={sport.key} className={`${styles.mobileMenuLink} ${styles.mobileMenuLinkMuted}`}>
-                        {content}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className={styles.mobileMenuSection}>
-                <h2 className={styles.mobileMenuSectionTitle}>Preferences</h2>
-                <div className={styles.mobileMenuPreferences}>
-                  <LocaleSwitcher locale={locale} label={dictionary.locale} />
-                  <ThemeToggle label={dictionary.theme} />
-                  <div className={`${styles.watchPill} ${styles.headerWatchPill}`}>
-                    <ShellIcon name="favorites" className={styles.controlIcon} />
-                    <span>{dictionary.watchlist}</span>
-                    <strong className={styles.watchValue}>{watchCount}</strong>
+                      ))
+                    ) : (
+                      <p className={styles.railMuted}>{dictionary.watchlistEmpty}</p>
+                    )}
                   </div>
-                </div>
-              </section>
+                </section>
+
+                <section className={styles.mobileMenuSection}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.myTeams}</h2>
+                    <span className={styles.mobileMenuSectionCount}>{savedTeams.length}</span>
+                  </div>
+
+                  <div className={styles.mobileMenuList}>
+                    {savedTeams.length ? (
+                      savedTeams.map((team) => (
+                        <Link
+                          key={team.id}
+                          href={`/${locale}/teams/${team.id}`}
+                          className={styles.mobileMenuLink}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {team.name}
+                        </Link>
+                      ))
+                    ) : (
+                      <p className={styles.railMuted}>{dictionary.saveTeamsPrompt}</p>
+                    )}
+                  </div>
+                </section>
+
+                <section className={styles.mobileMenuSection}>
+                  <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.countries}</h2>
+                    <span className={styles.mobileMenuSectionCount}>{countryGroups.length}</span>
+                  </div>
+
+                  <div className={styles.mobileMenuList}>
+                    {countryGroups.map((group) => (
+                      <div key={group.country} className={styles.mobileMenuCountryRow}>
+                        <span>{group.country}</span>
+                        <span className={styles.badge}>{group.leagues.length}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
             </div>
           </div>
         </div>
@@ -451,7 +517,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                         href={href}
                         className={active ? styles.railLinkActive : styles.railLink}
                       >
-                        {item.label}
+                        {getScoreViewLabel(item.key, dictionary)}
                       </Link>
                     );
                   })}
@@ -491,7 +557,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                       </Link>
                     ))
                   ) : (
-                    <p className={styles.railMuted}>Save teams to surface them here.</p>
+                    <p className={styles.railMuted}>{dictionary.saveTeamsPrompt}</p>
                   )}
                 </div>
               </div>
@@ -518,27 +584,21 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             <section className={styles.railCard}>
               <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.adSlot}</h2>
-                <div className={styles.adSlot}>300 x 250 support slot</div>
+                <div className={styles.adSlot}>{dictionary.adSlotCopy}</div>
               </div>
             </section>
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.consent}</h2>
-                <p className={styles.railMuted}>
-                  Consent, privacy, and regulated-content notices land in this rail without breaking the
-                  scores layout.
-                </p>
+                <p className={styles.railMuted}>{dictionary.consentBody}</p>
               </div>
             </section>
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.supportRail}</h2>
-                <p className={styles.railMuted}>
-                  Right-rail modules stay optional so the main scores board remains readable when ads are
-                  unavailable.
-                </p>
+                <p className={styles.railMuted}>{dictionary.supportRailBody}</p>
               </div>
             </section>
           </aside>
@@ -547,7 +607,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <p>Live, fixtures, results, tables, leagues, teams.</p>
+          <p>{dictionary.footerSummary}</p>
         </div>
       </footer>
     </div>

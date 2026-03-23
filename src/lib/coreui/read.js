@@ -206,27 +206,28 @@ export const getShellSnapshot = unstable_cache(
       ]);
 
       const countryGroups = [...leagues.reduce((accumulator, league) => {
-        const country = league.country || "International";
-        if (!accumulator.has(country)) {
-          accumulator.set(country, {
-            country,
+        const countryKey = league.country || "";
+
+        if (!accumulator.has(countryKey)) {
+          accumulator.set(countryKey, {
+            country: league.country || null,
             leagues: [],
           });
         }
 
-        accumulator.get(country).leagues.push({
+        accumulator.get(countryKey).leagues.push({
           code: league.code,
           name: league.name,
         });
         return accumulator;
       }, new Map()).values()]
-        .sort((left, right) => left.country.localeCompare(right.country))
+        .sort((left, right) => (left.country || "").localeCompare(right.country || ""))
         .slice(0, 10);
 
       const featuredCompetitions = leagues.slice(0, 8).map((league) => ({
         code: league.code,
         name: league.name,
-        country: league.country || "International",
+        country: league.country || null,
       }));
 
       const teamDirectory = teams.map((team) => ({
