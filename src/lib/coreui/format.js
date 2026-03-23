@@ -31,3 +31,26 @@ export function formatScore(snapshot) {
 
   return `${snapshot.homeScore} - ${snapshot.awayScore}`;
 }
+
+export function formatMatchday(date, locale) {
+  if (!date) {
+    return "Matchday";
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
+}
+
+export function formatSnapshotTime(date, locale) {
+  if (!date) {
+    return "Snapshot pending";
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(date));
+}

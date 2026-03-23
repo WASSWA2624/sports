@@ -6,6 +6,10 @@ import {
 } from "../normalize";
 import { requireSportsApiKey } from "../config";
 
+const FIXTURE_LIST_INCLUDES = "league;season;participants;state;scores;venue;round";
+const FIXTURE_DETAIL_INCLUDES =
+  "league;season;participants;state;scores;venue;round;events;events.type;statistics;statistics.type;lineups;formations;periods";
+
 function buildUrl(baseUrl, path, params = {}) {
   const normalizedBase = baseUrl.replace(/\/$/, "");
   const normalizedPath = path.replace(/^\//, "");
@@ -61,7 +65,7 @@ export class SportsMonksProvider {
     const payload = await this.request(
       `fixtures/between/${toDateString(startDate)}/${toDateString(endDate)}`,
       {
-        include: "league;season;participants;state;scores;venue;round",
+        include: FIXTURE_LIST_INCLUDES,
       }
     );
 
@@ -70,10 +74,19 @@ export class SportsMonksProvider {
 
   async fetchLivescores() {
     const payload = await this.request("livescores/inplay", {
-      include: "league;season;participants;state;scores;venue;round",
+      include: FIXTURE_DETAIL_INCLUDES,
     });
 
     return normalizeSportsMonksFixtures(payload.data || payload);
+  }
+
+  async fetchFixtureDetail({ fixtureExternalRef }) {
+    const payload = await this.request(`fixtures/${fixtureExternalRef}`, {
+      include: FIXTURE_DETAIL_INCLUDES,
+    });
+
+    const fixtures = normalizeSportsMonksFixtures(payload.data || payload);
+    return fixtures[0] || null;
   }
 
   async fetchStandings({ seasonExternalRef }) {

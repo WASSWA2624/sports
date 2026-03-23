@@ -1,0 +1,14 @@
+{
+  "watch": [
+    "src",
+    "prisma",
+    "next.config.js",
+    "package.json"
+  ],
+  "ext": "js,jsx,json,css,prisma",
+  "ignore": [
+    ".next",
+    "node_modules"
+  ],
+  "exec": "next dev"
+}

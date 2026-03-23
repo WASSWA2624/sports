@@ -1,17 +1,17 @@
 # 004-auth
 
 ## Goal
-Ship authentication, RBAC, and protected route policy.
+Ship login, preferences, and favorites sync for Flashscore-style personalization.
 
 ## Build
-1. Implement email/password auth and session lifecycle.
-2. Add optional social auth hooks (can be disabled via env in MVP).
-3. Enforce RBAC middleware for user/creator/moderator/admin endpoints.
-4. Implement profile page with preferences and locale/theme settings.
-5. Add step-up verification for sensitive actions (payout/profile-security/admin actions).
-6. Log auth-sensitive events to AuditLog.
+1. Implement email/password auth and session lifecycle with optional social hooks behind env flags.
+2. Support guest-local favorites plus account-backed sync for matches, teams, and competitions.
+3. Add settings for locale, timezone, favorite sports, alert preferences, and theme.
+4. Protect editor and admin routes with role-aware middleware.
+5. Add audit logging for account-sensitive actions and admin sign-in events.
+6. Support favorite and alert actions from any core page without breaking anonymous browsing.
 
 ## Done When
-- Users can sign up/login/logout reliably.
-- Protected APIs reject unauthorized roles.
-- Security-sensitive actions require re-auth as specified.
+- Users can sign up, log in, and keep favorites across sessions.
+- Guests can still browse everything without forced auth.
+- Protected editor and admin routes reject unauthorized access.

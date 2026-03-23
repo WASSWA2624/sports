@@ -21,6 +21,12 @@ function addDays(date, amount) {
   return next;
 }
 
+function addHours(date, amount) {
+  const next = new Date(date);
+  next.setUTCHours(next.getUTCHours() + amount);
+  return next;
+}
+
 async function runTrackedSeasonJobs(provider, seasonRefs, syncJobId, config) {
   let recordsProcessed = 0;
 
@@ -81,6 +87,56 @@ async function runLivescores(provider, syncJobId, config) {
     syncJobId,
     cursor: new Date().toISOString(),
     payload: { fixtures: fixtures.length },
+    success: true,
+  });
+
+  return recordsProcessed;
+}
+
+async function runActiveFixtureDetails(provider, syncJobId, config) {
+  const now = new Date();
+  const fixtureRefs = (
+    await db.fixture.findMany({
+      where: {
+        externalRef: { not: null },
+        OR: [
+          { status: "LIVE" },
+          {
+            startsAt: {
+              gte: addHours(now, -6),
+              lte: addHours(now, 2),
+            },
+          },
+        ],
+      },
+      orderBy: { startsAt: "asc" },
+      take: 20,
+      select: { externalRef: true },
+    })
+  )
+    .map((fixture) => fixture.externalRef)
+    .filter(Boolean);
+
+  let recordsProcessed = 0;
+
+  for (const fixtureExternalRef of fixtureRefs) {
+    const fixture = await provider.fetchFixtureDetail({ fixtureExternalRef });
+    if (!fixture) {
+      continue;
+    }
+
+    recordsProcessed += await persistFixtureBatch([fixture]);
+  }
+
+  await saveCheckpoint({
+    provider: config.provider,
+    key: "fixtures:active-detail",
+    syncJobId,
+    cursor: now.toISOString(),
+    payload: {
+      fixtures: fixtureRefs.length,
+      hydrated: recordsProcessed,
+    },
     success: true,
   });
 
@@ -156,6 +212,7 @@ export const syncJobRegistry = {
     async run(provider, syncJobId, config) {
       let recordsProcessed = 0;
       recordsProcessed += await runLivescores(provider, syncJobId, config);
+      recordsProcessed += await runActiveFixtureDetails(provider, syncJobId, config);
       recordsProcessed += await runOdds(provider, syncJobId, config);
       return recordsProcessed;
     },

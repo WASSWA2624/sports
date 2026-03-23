@@ -17,6 +17,11 @@ copy .env.example .env
 npm run dev
 ```
 
+Optional nodemon wrapper:
+```bash
+npm run dev:nodemon
+```
+
 App URL: [http://localhost:3000](http://localhost:3000)  
 Health endpoint: [http://localhost:3000/api/health](http://localhost:3000/api/health)
 

@@ -1,17 +1,17 @@
 # 014-scale
 
 ## Goal
-Harden platform and prepare expansion.
+Harden the platform for real-time load and multi-sport expansion.
 
 ## Build
-1. Add advanced caching and queue backpressure controls.
-2. Add observability dashboards (latency, errors, sync lag, conversion funnel).
-3. Add search capability for leagues/teams/creators/slips.
-4. Add provider expansion framework for multi-sport future.
-5. Add legal/compliance readiness checklist per market.
-6. Run full perf, security, and disaster recovery drills.
+1. Add advanced caching and queue backpressure controls for live match windows.
+2. Add observability dashboards for latency, sync lag, stale data rates, cache hit rates, and page errors.
+3. Add provider expansion patterns for additional sports and backup feeds.
+4. Add asset, image, and CDN strategy for logos, competition marks, and article media.
+5. Run failure drills for provider outage, delayed live feed, search degradation, and cache invalidation issues.
+6. Document SLOs and operational playbooks for peak traffic windows.
 
 ## Done When
-- Platform meets target SLOs.
-- Expansion path is technically ready.
-- Operational playbooks are documented and tested.
+- The app can handle peak live traffic reliably.
+- Multi-sport expansion is technically prepared.
+- Operations have tested runbooks for the main failure modes.

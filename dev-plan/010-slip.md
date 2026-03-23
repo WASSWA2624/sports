@@ -1,16 +1,17 @@
-# 010-slip
+# 010-competition-pages
 
 ## Goal
-Implement betting slip builder and publication workflow.
+Build country, competition, team, and archive page coverage.
 
 ## Build
-1. Build slip builder state (selections, pricing, metadata, validation).
-2. Implement create/edit/publish APIs with role checks.
-3. Add public slip discovery and slip detail pages.
-4. Add slip performance snapshots and settlement hooks.
-5. Add creator trust signals (recent performance, ratings shell).
+1. Build country pages that list competitions for the selected sport.
+2. Build competition hubs with tabs for summary, odds, news, results, fixtures, standings, and archive.
+3. Build standings views with overall, home, away, form, and live variants when data exists.
+4. Build team pages with fixtures, results, squad or roster data, linked competitions, and news modules where supported.
+5. Add season selectors and archive navigation across competitions.
+6. Add internal linking between sport, country, competition, team, and match routes for SEO and navigation parity.
 
 ## Done When
-- Creators can build and publish slips.
-- Public users can browse slips with clear metadata.
-- Slip status transitions are auditable.
+- Users can navigate from sport to country to competition to team without dead ends.
+- Competition pages match the Flashscore tab structure.
+- Archive and season navigation work across supported competitions.

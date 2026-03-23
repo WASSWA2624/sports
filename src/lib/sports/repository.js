@@ -1,5 +1,9 @@
 import { db } from "../db";
 
+function isTerminalStatus(status) {
+  return ["FINISHED", "POSTPONED", "CANCELLED"].includes(status);
+}
+
 function toStringOrNull(value) {
   return value == null ? null : String(value);
 }
@@ -188,6 +192,13 @@ export async function persistFixtureBatch(fixtures) {
 
   for (const fixture of fixtures) {
     await db.$transaction(async (tx) => {
+      const existingFixture = fixture.externalRef
+        ? await tx.fixture.findUnique({
+            where: { externalRef: fixture.externalRef },
+            include: { resultSnapshot: true },
+          })
+        : null;
+
       const league = await ensureLeague(tx, fixture.league);
       const season = await ensureSeason(tx, fixture.season, league.id);
       const homeTeam = await ensureTeam(tx, fixture.homeTeam, league.id);
@@ -226,24 +237,31 @@ export async function persistFixtureBatch(fixtures) {
         },
       });
 
-      await tx.resultSnapshot.upsert({
-        where: { fixtureId: storedFixture.id },
-        update: {
-          homeScore: fixture.resultSnapshot.homeScore,
-          awayScore: fixture.resultSnapshot.awayScore,
-          statusText: fixture.resultSnapshot.statusText,
-          payload: fixture.resultSnapshot.payload,
-          capturedAt: new Date(),
-        },
-        create: {
-          fixtureId: storedFixture.id,
-          homeScore: fixture.resultSnapshot.homeScore,
-          awayScore: fixture.resultSnapshot.awayScore,
-          statusText: fixture.resultSnapshot.statusText,
-          payload: fixture.resultSnapshot.payload,
-          capturedAt: new Date(),
-        },
-      });
+      const shouldKeepFrozenSnapshot =
+        existingFixture?.resultSnapshot &&
+        isTerminalStatus(existingFixture.status) &&
+        existingFixture.status === fixture.status;
+
+      if (!shouldKeepFrozenSnapshot) {
+        await tx.resultSnapshot.upsert({
+          where: { fixtureId: storedFixture.id },
+          update: {
+            homeScore: fixture.resultSnapshot.homeScore,
+            awayScore: fixture.resultSnapshot.awayScore,
+            statusText: fixture.resultSnapshot.statusText,
+            payload: fixture.resultSnapshot.payload,
+            capturedAt: new Date(),
+          },
+          create: {
+            fixtureId: storedFixture.id,
+            homeScore: fixture.resultSnapshot.homeScore,
+            awayScore: fixture.resultSnapshot.awayScore,
+            statusText: fixture.resultSnapshot.statusText,
+            payload: fixture.resultSnapshot.payload,
+            capturedAt: new Date(),
+          },
+        });
+      }
     });
 
     processed += 1;

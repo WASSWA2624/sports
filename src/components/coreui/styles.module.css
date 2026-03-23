@@ -489,6 +489,357 @@
   background: var(--surface-muted);
 }
 
+.inlineBadgeRow,
+.fixtureActionRow,
+.filterRow,
+.linkList,
+.coverageItem,
+.lineupRow,
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.inlineBadgeRow,
+.fixtureActionRow,
+.filterRow,
+.linkList {
+  flex-wrap: wrap;
+}
+
+.fixtureFootnotes,
+.filterStack,
+.lineupSection,
+.timeline,
+.statRows,
+.skeletonHeaderStack {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.fixtureActionRow {
+  justify-content: space-between;
+  margin-top: 0.8rem;
+}
+
+.snapshotNote {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.summaryValue {
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  line-height: 1;
+}
+
+.filterChip,
+.filterChipActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.filterChip:hover,
+.filterChipActive {
+  transform: translateY(-1px);
+  border-color: rgba(33, 109, 255, 0.18);
+  background: var(--surface-strong);
+}
+
+.filterChipActive {
+  box-shadow: var(--shadow-card);
+}
+
+.filterCount {
+  display: inline-flex;
+  min-width: 1.5rem;
+  justify-content: center;
+  padding: 0.15rem 0.35rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.scoreboard,
+.analysisGrid,
+.coverageGrid,
+.eventGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.scoreboard {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  margin: 0.9rem 0;
+}
+
+.scoreboardTeam {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--surface-muted);
+}
+
+.scoreboardTeam strong {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 0.9;
+}
+
+.scoreboardDivider {
+  font-size: 1.4rem;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.analysisGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.coverageGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.9rem;
+}
+
+.coverageItem {
+  justify-content: space-between;
+  padding: 0.75rem 0.8rem;
+  border-radius: 0.9rem;
+  background: var(--surface-muted);
+}
+
+.coverageAvailable {
+  color: var(--success);
+}
+
+.coverageMissing {
+  color: var(--warning);
+}
+
+.eventGrid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.homeMarker,
+.awayMarker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.homeMarker {
+  background: rgba(33, 109, 255, 0.14);
+  color: var(--accent);
+}
+
+.awayMarker {
+  background: rgba(15, 157, 106, 0.14);
+  color: var(--success);
+}
+
+.timeline {
+  position: relative;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 3rem;
+  width: 1px;
+  background: var(--border);
+}
+
+.timelineItem {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.timelineMinute {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  padding: 0.35rem;
+  border-radius: 0.8rem;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.timelineBody {
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.9rem;
+}
+
+.statRows {
+  gap: 0.9rem;
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: minmax(2.2rem, auto) minmax(0, 1fr) minmax(2.2rem, auto);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.statValue {
+  font-weight: 700;
+  text-align: center;
+}
+
+.statMeter {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.statBars {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.4rem;
+}
+
+.statBarHome,
+.statBarAway {
+  display: block;
+  height: 0.4rem;
+  border-radius: 999px;
+}
+
+.statBarHome {
+  justify-self: end;
+  background: var(--accent);
+}
+
+.statBarAway {
+  background: var(--success);
+}
+
+.lineupList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.lineupRow {
+  justify-content: flex-start;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.9rem;
+  background: var(--surface-muted);
+}
+
+.jerseyBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.actionButton {
+  margin-top: 1rem;
+  padding: 0.65rem 0.92rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.skeletonBlock,
+.skeletonBlockTall,
+.skeletonPill,
+.skeletonPillShort,
+.skeletonPillWide,
+.skeletonTitle {
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
+    var(--surface-muted);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+.skeletonBlock,
+.skeletonBlockTall,
+.skeletonTitle {
+  border-radius: 1rem;
+}
+
+.skeletonBlock {
+  min-height: 1rem;
+}
+
+.skeletonBlockTall {
+  min-height: 5.5rem;
+}
+
+.skeletonPill {
+  width: 7rem;
+  min-height: 2rem;
+}
+
+.skeletonPillShort {
+  width: 4rem;
+  min-height: 1rem;
+}
+
+.skeletonPillWide {
+  width: 10rem;
+  min-height: 2rem;
+}
+
+.skeletonTitle {
+  width: min(100%, 14rem);
+  min-height: 2rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .favoriteButton,
 .favoriteButtonActive,
 .actionLink,
@@ -580,7 +931,8 @@
   }
 
   .heroGrid,
-  .detailGrid {
+  .detailGrid,
+  .analysisGrid {
     grid-template-columns: 1fr;
   }
 
@@ -632,6 +984,15 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .coverageGrid,
+  .scoreboard {
+    grid-template-columns: 1fr;
+  }
+
+  .scoreboardDivider {
+    display: none;
+  }
+
   .footerInner {
     grid-template-columns: 1fr;
   }
@@ -641,6 +1002,10 @@
   .fixtureCardTop,
   .cardHeader {
     flex-direction: column;
+  }
+
+  .fixtureActionRow {
+    align-items: stretch;
   }
 }
 
@@ -694,11 +1059,23 @@
 
   .actionLink,
   .secondaryAction,
-  .sectionAction {
+  .sectionAction,
+  .filterChip,
+  .filterChipActive,
+  .actionButton {
     width: 100%;
   }
 
   .heroActionGrid {
     grid-template-columns: 1fr;
+  }
+
+  .timelineItem,
+  .statRow {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline::before {
+    display: none;
   }
 }

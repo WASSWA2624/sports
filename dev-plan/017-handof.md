@@ -1,17 +1,17 @@
-# 017-handof
+# 017-handoff
 
 ## Goal
-Complete long-term maintainability handoff for the shipped app.
+Complete maintainability handoff for the shipped live scores platform.
 
 ## Build
-1. Finalize technical docs: architecture, schema, API contracts, job schedules, runbooks.
-2. Finalize operational docs: incident playbooks, moderation SOPs, payout dispute handling.
-3. Create backlog for Phase 3/4 growth features with priority and dependency mapping.
-4. Define quarterly maintenance tasks: dependency upgrades, security review, data retention checks.
-5. Conduct handoff walkthrough with engineering, product, and operations owners.
-6. Archive baseline metrics for future regression comparison.
+1. Finalize technical docs for architecture, schema, route map, provider adapters, sync schedules, caching, and search.
+2. Finalize operational docs for incident response, provider outage handling, stale-data triage, editorial workflows, and release procedures.
+3. Capture backlog items for additional sports, deeper match data, richer alerts, and parity gaps against the March 23, 2026 reference.
+4. Define recurring maintenance tasks for dependency updates, feed audits, SEO checks, and performance reviews.
+5. Conduct handoff walkthroughs with engineering, product, editorial, and operations owners.
+6. Archive baseline metrics for future parity and regression comparisons.
 
 ## Done When
-- Ownership is explicit for product and operations.
-- Reproducible docs cover build, run, deploy, and recover.
-- Post-launch roadmap is ready and prioritized.
+- Ownership is explicit for engineering, editorial, and operations.
+- Build, run, deploy, and recover procedures are documented.
+- The next parity roadmap is ready and prioritized.

@@ -1,17 +1,17 @@
 # 005-sync
 
 ## Goal
-Integrate SportsMonks through a provider abstraction and sync jobs.
+Build the provider abstraction and sync pipeline needed for Flashscore-style live coverage.
 
 ## Build
-1. Create `sportsProvider` interface (`fetchFixtures`, `fetchLivescores`, `fetchStandings`, `fetchOdds`, `fetchTeams`).
-2. Implement SportsMonks adapter and payload normalizers.
-3. Build scheduled jobs for static-ish, daily, and high-frequency buckets.
-4. Persist sync metadata/checkpoints and job outcomes.
-5. Add graceful fallback states for missing/plan-limited data.
-6. Add cache layer for league/match read paths.
+1. Define provider interfaces for taxonomy, fixtures, live states, standings, odds, news, and media metadata.
+2. Implement the first football adapter with SportsMonks while keeping room for additional sport-specific adapters.
+3. Create scheduled sync jobs for static reference data, daily fixture updates, and high-frequency live refresh windows.
+4. Normalize provider payloads into stable internal read models and snapshot tables.
+5. Store sync metadata, checkpoints, stale markers, and failure details for observability.
+6. Add cache strategy for hot pages such as scores board, match center, competition summary, and standings.
 
 ## Done When
-- Fixtures/live/tables/odds ingest successfully.
-- Sync failures are visible and recoverable.
-- Provider abstraction allows future provider swap.
+- Fixtures, live states, standings, and supported odds ingest successfully.
+- Sync failures are visible, retryable, and do not crash public pages.
+- The platform can add more providers without rewriting the app domain layer.

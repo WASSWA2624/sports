@@ -1,17 +1,17 @@
 # 013-grow
 
 ## Goal
-Add retention and monetization growth features.
+Add discovery, SEO, and retention loops that strengthen Flashscore-style usage.
 
 ## Build
-1. Add personalized feed ranking inputs.
-2. Add leaderboards and creator reputation scoring.
-3. Add creator analytics dashboards.
-4. Add subscription tiers and entitlement checks.
-5. Add push notifications and lifecycle campaigns.
-6. Add SEO programmatic landing pages.
+1. Implement global search for teams, competitions, matches, players where available, and news articles.
+2. Add structured SEO templates and metadata for sport, country, competition, standings, team, match, and article pages.
+3. Add onboarding to choose favorite sports, competitions, and teams for faster first-run personalization.
+4. Add internal discovery modules such as top competitions, related matches, related news, and recent items.
+5. Add notification and reminder entry points for favorite-driven return visits.
+6. Add product analytics for search success, return sessions, favorites depth, and news engagement.
 
 ## Done When
-- Key growth loops are measurable.
-- Subscription gating works across app surfaces.
-- SEO pages are indexed with clean metadata.
+- Search is useful across the core entities.
+- SEO coverage is systematic and measurable.
+- The app has strong repeat-visit loops without changing the base reference layout.

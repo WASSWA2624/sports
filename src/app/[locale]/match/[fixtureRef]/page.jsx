@@ -2,20 +2,29 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
 import { getDictionary } from "../../../../lib/coreui/dictionaries";
-import { formatFixtureStatus, formatKickoff } from "../../../../lib/coreui/format";
-import { getFixtureDetail } from "../../../../lib/coreui/read";
+import {
+  formatFixtureStatus,
+  formatKickoff,
+  formatSnapshotTime,
+} from "../../../../lib/coreui/format";
+import { getLiveMatchDetail } from "../../../../lib/coreui/live-read";
 import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
+import { LiveRefresh } from "../../../../components/coreui/live-refresh";
 import styles from "../../../../components/coreui/styles.module.css";
+
+function coverageTone(state) {
+  return state === "available" ? styles.coverageAvailable : styles.coverageMissing;
+}
 
 export async function generateMetadata({ params }) {
   const { locale, fixtureRef } = await params;
-  const fixture = await getFixtureDetail(fixtureRef);
+  const fixture = await getLiveMatchDetail(fixtureRef);
 
   return buildPageMetadata(
     locale,
     fixture ? `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}` : "Match",
     fixture
-      ? `Match detail for ${fixture.homeTeam.name} vs ${fixture.awayTeam.name}.`
+      ? `Live match centre for ${fixture.homeTeam.name} vs ${fixture.awayTeam.name}.`
       : "Sports match detail page.",
     `/match/${fixtureRef}`
   );
@@ -24,20 +33,43 @@ export async function generateMetadata({ params }) {
 export default async function MatchDetailPage({ params }) {
   const { locale, fixtureRef } = await params;
   const dictionary = getDictionary(locale);
-  const fixture = await getFixtureDetail(fixtureRef);
+  const fixture = await getLiveMatchDetail(fixtureRef);
 
   if (!fixture) {
     notFound();
   }
 
+  const detail = fixture.detail;
+  const coverage = [
+    { label: "Timeline", state: detail.coverage.timeline },
+    { label: "Stats", state: detail.coverage.statistics },
+    { label: "Lineups", state: detail.coverage.lineups },
+    { label: "Key events", state: detail.coverage.keyEvents },
+  ];
+  const hasLineups =
+    detail.lineups.home.starters.length ||
+    detail.lineups.home.bench.length ||
+    detail.lineups.away.starters.length ||
+    detail.lineups.away.bench.length;
+
   return (
     <section className={styles.section}>
+      <LiveRefresh
+        enabled={detail.refresh.enabled}
+        intervalMs={detail.refresh.intervalMs}
+        until={detail.refresh.until}
+      />
+
       <header className={styles.pageHeader}>
         <div>
           <p className={styles.eyebrow}>{fixture.league.name}</p>
           <h1 className={styles.pageTitle}>
             {fixture.homeTeam.name} vs {fixture.awayTeam.name}
           </h1>
+          <p className={styles.pageLead}>
+            Match centre with live pulse, team stats, event timeline, lineups, and the stored result
+            snapshot.
+          </p>
         </div>
         <FavoriteToggle itemId={`fixture:${fixture.id}`} locale={locale} />
       </header>
@@ -50,21 +82,39 @@ export default async function MatchDetailPage({ params }) {
               {formatFixtureStatus(fixture.status, locale)}
             </span>
           </div>
-          <div className={styles.scoreLine}>
-            <div>
+
+          <div className={styles.scoreboard}>
+            <div className={styles.scoreboardTeam}>
               <span>{fixture.homeTeam.name}</span>
               <strong>{fixture.resultSnapshot?.homeScore ?? "-"}</strong>
             </div>
-            <div>
+            <div className={styles.scoreboardDivider}>-</div>
+            <div className={styles.scoreboardTeam}>
               <span>{fixture.awayTeam.name}</span>
               <strong>{fixture.resultSnapshot?.awayScore ?? "-"}</strong>
             </div>
           </div>
+
+          <div className={styles.metaChips}>
+            {detail.liveState.minuteLabel ? (
+              <span className={styles.liveBadge}>{detail.liveState.minuteLabel}</span>
+            ) : null}
+            {detail.liveState.statusText ? <span className={styles.badge}>{detail.liveState.statusText}</span> : null}
+            {detail.resultFreeze.isFrozen ? (
+              <span className={styles.badge}>
+                Snapshot frozen {formatSnapshotTime(detail.resultFreeze.frozenAt, locale)}
+              </span>
+            ) : null}
+            {!detail.resultFreeze.isFrozen && detail.refresh.label ? (
+              <span className={styles.badge}>{detail.refresh.label}</span>
+            ) : null}
+          </div>
+
           <div className={styles.detailMeta}>
             <span>{formatKickoff(fixture.startsAt, locale)}</span>
             {fixture.venue ? <span>{fixture.venue}</span> : null}
             {fixture.round ? <span>{fixture.round}</span> : null}
-            {fixture.resultSnapshot?.statusText ? <span>{fixture.resultSnapshot.statusText}</span> : null}
+            {detail.liveState.reason ? <span>{detail.liveState.reason}</span> : null}
           </div>
         </article>
 
@@ -72,7 +122,8 @@ export default async function MatchDetailPage({ params }) {
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Competition</h2>
           </div>
-          <div className={styles.section}>
+
+          <div className={styles.linkList}>
             <Link href={`/${locale}/leagues/${fixture.league.code}`} className={styles.actionLink}>
               {fixture.league.name}
             </Link>
@@ -83,8 +134,219 @@ export default async function MatchDetailPage({ params }) {
               {fixture.awayTeam.name}
             </Link>
           </div>
+
+          <div className={styles.coverageGrid}>
+            {coverage.map((entry) => (
+              <div key={entry.label} className={styles.coverageItem}>
+                <span>{entry.label}</span>
+                <strong className={coverageTone(entry.state)}>
+                  {entry.state === "available" ? "Ready" : "Waiting"}
+                </strong>
+              </div>
+            ))}
+          </div>
         </article>
       </div>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <p className={styles.eyebrow}>Highlights</p>
+            <h2 className={styles.sectionTitle}>Key events</h2>
+          </div>
+          <span className={styles.badge}>{detail.keyEvents.length}</span>
+        </div>
+
+        {detail.keyEvents.length ? (
+          <div className={styles.eventGrid}>
+            {detail.keyEvents.map((event) => (
+              <article key={event.id} className={styles.panel}>
+                <div className={styles.cardHeader}>
+                  <span
+                    className={
+                      event.side === "home"
+                        ? styles.homeMarker
+                        : event.side === "away"
+                          ? styles.awayMarker
+                          : styles.badge
+                    }
+                  >
+                    {event.side || "match"}
+                  </span>
+                  {event.minuteLabel ? <span className={styles.badge}>{event.minuteLabel}</span> : null}
+                </div>
+                <h3 className={styles.cardTitle}>{event.title}</h3>
+                {event.actor ? <p className={styles.muted}>{event.actor}</p> : null}
+                {event.secondaryActor ? (
+                  <p className={styles.muted}>With {event.secondaryActor}</p>
+                ) : null}
+                <p className={styles.fixtureSummary}>{event.description}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            Key event coverage will appear here for fixtures that have detailed provider data.
+          </div>
+        )}
+      </section>
+
+      <div className={styles.analysisGrid}>
+        <article className={styles.detailCard}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Timeline</h2>
+            <span className={styles.badge}>{detail.timeline.length}</span>
+          </div>
+
+          {detail.timeline.length ? (
+            <div className={styles.timeline}>
+              {detail.timeline.map((event) => (
+                <div key={event.id} className={styles.timelineItem}>
+                  <div className={styles.timelineMinute}>{event.minuteLabel || "Play"}</div>
+                  <div className={styles.timelineBody}>
+                    <div className={styles.cardHeader}>
+                      <strong>{event.title}</strong>
+                      <span
+                        className={
+                          event.side === "home"
+                            ? styles.homeMarker
+                            : event.side === "away"
+                              ? styles.awayMarker
+                              : styles.badge
+                        }
+                      >
+                        {event.side || "match"}
+                      </span>
+                    </div>
+                    {event.actor ? <p className={styles.muted}>{event.actor}</p> : null}
+                    {event.secondaryActor ? (
+                      <p className={styles.muted}>Related: {event.secondaryActor}</p>
+                    ) : null}
+                    <p className={styles.fixtureSummary}>{event.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              No detailed event timeline is stored for this fixture yet.
+            </div>
+          )}
+        </article>
+
+        <article className={styles.detailCard}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Statistics</h2>
+            <span className={styles.badge}>{detail.statistics.length}</span>
+          </div>
+
+          {detail.statistics.length ? (
+            <div className={styles.statRows}>
+              {detail.statistics.map((entry) => (
+                <div key={entry.key} className={styles.statRow}>
+                  <span className={styles.statValue}>{entry.home || "-"}</span>
+                  <div className={styles.statMeter}>
+                    <strong>{entry.label}</strong>
+                    <div className={styles.statBars}>
+                      <span
+                        className={styles.statBarHome}
+                        style={{ width: `${entry.homeShare}%` }}
+                      />
+                      <span
+                        className={styles.statBarAway}
+                        style={{ width: `${entry.awayShare}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className={styles.statValue}>{entry.away || "-"}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              Team statistics are not available for this fixture yet.
+            </div>
+          )}
+        </article>
+      </div>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <p className={styles.eyebrow}>Squads</p>
+            <h2 className={styles.sectionTitle}>Lineups</h2>
+          </div>
+          <span className={styles.badge}>
+            {detail.lineups.home.starters.length + detail.lineups.away.starters.length}
+          </span>
+        </div>
+
+        {hasLineups ? (
+          <div className={styles.analysisGrid}>
+            {[
+              {
+                key: "home",
+                team: fixture.homeTeam.name,
+                lineup: detail.lineups.home,
+                markerClass: styles.homeMarker,
+              },
+              {
+                key: "away",
+                team: fixture.awayTeam.name,
+                lineup: detail.lineups.away,
+                markerClass: styles.awayMarker,
+              },
+            ].map((entry) => (
+              <article key={entry.key} className={styles.detailCard}>
+                <div className={styles.cardHeader}>
+                  <div>
+                    <h3 className={styles.cardTitle}>{entry.team}</h3>
+                    <p className={styles.muted}>
+                      {entry.lineup.formation ? `Formation ${entry.lineup.formation}` : "Formation pending"}
+                    </p>
+                  </div>
+                  <span className={entry.markerClass}>{entry.key}</span>
+                </div>
+
+                <div className={styles.lineupSection}>
+                  <strong>Starting XI</strong>
+                  <div className={styles.lineupList}>
+                    {entry.lineup.starters.map((player) => (
+                      <div key={player.id} className={styles.lineupRow}>
+                        <span className={styles.jerseyBadge}>{player.jerseyNumber}</span>
+                        <div>
+                          <strong>{player.name}</strong>
+                          {player.formationField ? (
+                            <p className={styles.muted}>Slot {player.formationField}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {entry.lineup.bench.length ? (
+                  <div className={styles.lineupSection}>
+                    <strong>Bench</strong>
+                    <div className={styles.lineupList}>
+                      {entry.lineup.bench.map((player) => (
+                        <div key={player.id} className={styles.lineupRow}>
+                          <span className={styles.jerseyBadge}>{player.jerseyNumber}</span>
+                          <strong>{player.name}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            Detailed lineups are not available for this fixture yet.
+          </div>
+        )}
+      </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
@@ -93,6 +355,7 @@ export default async function MatchDetailPage({ params }) {
             <h2 className={styles.sectionTitle}>Markets</h2>
           </div>
         </div>
+
         {fixture.oddsMarkets.length ? (
           <div className={styles.grid}>
             {fixture.oddsMarkets.map((market) => (

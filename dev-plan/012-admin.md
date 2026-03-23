@@ -1,16 +1,17 @@
 # 012-admin
 
 ## Goal
-Deliver moderation and admin operations baseline.
+Deliver editorial and operational control for a live scores platform.
 
 ## Build
-1. Build admin modules for users, reports, moderation actions, feature flags.
-2. Build moderator console for queue triage and action history.
-3. Build operations dashboard: sync status, failed jobs, cache health, spikes, purchase anomalies.
-4. Add role-based admin APIs and immutable audit trails.
-5. Add emergency controls (feature flag kill-switches, rate-limit tightening).
+1. Build admin modules for users, providers, sync jobs, feature flags, ad slots, and consent text.
+2. Build editor tools for article management, article-to-entity linking, and homepage news curation.
+3. Build operations dashboards for sync lag, failed jobs, stale data, cache health, and route error spikes.
+4. Add role-based admin APIs with immutable audit trails.
+5. Add emergency controls to disable a provider, hide an odds surface, or remove a broken module without redeploying.
+6. Add issue triage workflows for data disputes, wrong scores, and broken article content.
 
 ## Done When
-- Moderators can handle reports at scale.
-- Admins can observe platform health and act safely.
-- All critical actions are traceable.
+- Editors can manage news safely.
+- Admins can observe live platform health and act quickly.
+- Critical control-plane actions are traceable.
