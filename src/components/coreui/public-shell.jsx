@@ -17,6 +17,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
   const { sessionUser, watchlist, watchlistCount } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
+  const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const watchCount = watchlistCount || watchlistItems.length;
   const allCompetitions = [
     ...(shellData?.featuredCompetitions || []),
@@ -327,7 +328,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                   <div className={`${styles.mobileMenuList} ${styles.mobileMenuQuickGrid}`}>
                     <Link
                       href="/profile"
-                      className={styles.mobileMenuLink}
+                      className={isProfilePage ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span className={styles.mobileMenuItemContent}>

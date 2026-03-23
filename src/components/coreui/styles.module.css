@@ -3595,6 +3595,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.mobileMenuSectionCompact .mobileMenuQuickGrid {
+  grid-template-columns: 1fr;
+}
+
 .mobileMenuItemContent,
 .mobileMenuSportContent {
   gap: 0.58rem;
