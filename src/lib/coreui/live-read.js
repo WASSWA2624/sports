@@ -1,4 +1,9 @@
 import { db } from "../db";
+import { getPublicSurfaceFlags } from "./feature-flags";
+import {
+  buildFixtureBroadcastModule,
+  buildFixtureOddsModule,
+} from "./odds-broadcast";
 import {
   buildFeedRefreshProfile,
   buildFixtureDetailModules,
@@ -77,6 +82,9 @@ function buildFixtureDetailInclude() {
       include: { selections: true },
       orderBy: [{ bookmaker: "asc" }, { marketType: "asc" }],
       take: 8,
+    },
+    broadcastChannels: {
+      orderBy: [{ territory: "asc" }, { name: "asc" }],
     },
   };
 }
@@ -271,7 +279,7 @@ export async function getResultsFeed({ locale = "en", status, leagueCode } = {})
   };
 }
 
-export async function getLiveMatchDetail(reference, locale = "en") {
+export async function getLiveMatchDetail(reference, locale = "en", viewerTerritory) {
   return safely(async () => {
     const fixture = await db.fixture.findFirst({
       where: {
@@ -285,10 +293,21 @@ export async function getLiveMatchDetail(reference, locale = "en") {
     }
 
     const detail = buildFixtureDetailModules(fixture, locale);
+    const flags = await getPublicSurfaceFlags();
 
     return {
       ...fixture,
       detail,
+      odds: buildFixtureOddsModule(fixture, {
+        locale,
+        viewerTerritory,
+        enabled: flags.odds,
+      }),
+      broadcast: buildFixtureBroadcastModule(fixture, {
+        locale,
+        viewerTerritory,
+        enabled: flags.broadcast,
+      }),
     };
   }, null);
 }

@@ -635,3 +635,42 @@ export async function persistOddsBatch(markets) {
 
   return processed;
 }
+
+export async function replaceBroadcastChannels(fixtureExternalRef, channels) {
+  const normalizedFixtureRef = toStringOrNull(fixtureExternalRef);
+  if (!normalizedFixtureRef) {
+    return 0;
+  }
+
+  return db.$transaction(async (tx) => {
+    const fixture = await tx.fixture.findUnique({
+      where: { externalRef: normalizedFixtureRef },
+    });
+
+    if (!fixture) {
+      throw new Error(`Fixture ${normalizedFixtureRef} must exist before broadcast sync.`);
+    }
+
+    await tx.broadcastChannel.deleteMany({
+      where: { fixtureId: fixture.id },
+    });
+
+    if (!channels.length) {
+      return 0;
+    }
+
+    await tx.broadcastChannel.createMany({
+      data: channels.map((channel) => ({
+        fixtureId: fixture.id,
+        name: channel.name,
+        territory: channel.territory,
+        channelType: channel.channelType,
+        url: channel.url,
+        isActive: channel.isActive,
+        metadata: channel.metadata,
+      })),
+    });
+
+    return channels.length;
+  });
+}

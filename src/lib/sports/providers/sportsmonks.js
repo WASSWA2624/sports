@@ -1,6 +1,7 @@
 import {
   normalizeSportsMonksFixtures,
   normalizeSportsMonksOdds,
+  normalizeSportsMonksBroadcastChannels,
   normalizeSportsMonksStandings,
   normalizeSportsMonksTeams,
 } from "../normalize";
@@ -119,7 +120,11 @@ export class SportsMonksProvider {
     return [];
   }
 
-  async fetchMediaMetadata() {
-    return [];
+  async fetchMediaMetadata({ fixtureExternalRef }) {
+    const payload = await this.request(`tv-stations/fixtures/${fixtureExternalRef}`, {
+      include: "countries",
+    });
+
+    return normalizeSportsMonksBroadcastChannels(payload.data || payload, fixtureExternalRef);
   }
 }

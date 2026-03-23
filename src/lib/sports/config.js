@@ -32,6 +32,7 @@ export function getSportsSyncConfig() {
       DEFAULT_FIXTURE_DAYS_AHEAD
     ),
     oddsEnabled: (process.env.SPORTS_SYNC_ODDS_ENABLED || "true") !== "false",
+    broadcastEnabled: (process.env.SPORTS_SYNC_BROADCAST_ENABLED || "true") !== "false",
   };
 }
 

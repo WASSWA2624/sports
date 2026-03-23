@@ -6,6 +6,7 @@ import {
   persistOddsBatch,
   persistStandingsBatch,
   persistTeamBatch,
+  replaceBroadcastChannels,
 } from "../sports/repository";
 import {
   completeSyncJob,
@@ -208,6 +209,46 @@ async function runOdds(provider, syncJobId, config) {
   return recordsProcessed;
 }
 
+async function runBroadcasts(provider, syncJobId, config) {
+  if (!config.broadcastEnabled) {
+    return 0;
+  }
+
+  const fixtureRefs = (
+    await db.fixture.findMany({
+      where: {
+        externalRef: { not: null },
+        OR: [{ status: "LIVE" }, { startsAt: { gte: new Date() } }],
+      },
+      orderBy: { startsAt: "asc" },
+      take: 20,
+      select: { externalRef: true },
+    })
+  )
+    .map((fixture) => fixture.externalRef)
+    .filter(Boolean);
+
+  let recordsProcessed = 0;
+
+  for (const fixtureExternalRef of fixtureRefs) {
+    const channels = await provider.fetchMediaMetadata({
+      fixtureExternalRef,
+    });
+    recordsProcessed += await replaceBroadcastChannels(fixtureExternalRef, channels);
+
+    await saveCheckpoint({
+      provider: config.provider,
+      key: `broadcast:${fixtureExternalRef}`,
+      syncJobId,
+      cursor: fixtureExternalRef,
+      payload: { channels: channels.length },
+      success: true,
+    });
+  }
+
+  return recordsProcessed;
+}
+
 export const syncJobRegistry = {
   "static-ish": {
     bucket: "static-ish",
@@ -236,6 +277,7 @@ export const syncJobRegistry = {
       recordsProcessed += await runLivescores(provider, syncJobId, config);
       recordsProcessed += await runActiveFixtureDetails(provider, syncJobId, config);
       recordsProcessed += await runOdds(provider, syncJobId, config);
+      recordsProcessed += await runBroadcasts(provider, syncJobId, config);
       return recordsProcessed;
     },
   },

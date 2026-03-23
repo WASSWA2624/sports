@@ -1,5 +1,11 @@
 import { unstable_cache } from "next/cache";
 import { db } from "../db";
+import { getPublicSurfaceFlags } from "./feature-flags";
+import {
+  buildCompetitionOddsModule,
+  buildFixtureBroadcastModule,
+  buildFixtureOddsModule,
+} from "./odds-broadcast";
 
 async function safely(query, fallback) {
   try {
@@ -268,10 +274,16 @@ export const getShellSnapshot = unstable_cache(
   { revalidate: 300, tags: ["coreui:shell"] }
 );
 
-export async function getLeagueDetail(reference) {
-  return safely(
-    () =>
-      db.league.findFirst({
+export async function getLeagueDetail(
+  reference,
+  { locale = "en", viewerTerritory } = {}
+) {
+  const league = await safely(
+    () => {
+      const recentWindow = new Date();
+      recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+
+      return db.league.findFirst({
         where: {
           OR: [{ id: reference }, { code: reference }],
         },
@@ -281,9 +293,26 @@ export async function getLeagueDetail(reference) {
             take: 24,
           },
           fixtures: {
-            orderBy: { startsAt: "asc" },
+            where: {
+              OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
+            },
+            orderBy: [{ startsAt: "asc" }],
             take: 12,
-            include: fixtureInclude(),
+            include: {
+              league: true,
+              season: true,
+              homeTeam: true,
+              awayTeam: true,
+              resultSnapshot: true,
+              oddsMarkets: {
+                include: { selections: true },
+                orderBy: [{ marketType: "asc" }, { bookmaker: "asc" }],
+                take: 12,
+              },
+              broadcastChannels: {
+                orderBy: [{ territory: "asc" }, { name: "asc" }],
+              },
+            },
           },
           seasons: {
             where: { isCurrent: true },
@@ -296,9 +325,25 @@ export async function getLeagueDetail(reference) {
             },
           },
         },
-      }),
+      });
+    },
     null
   );
+
+  if (!league) {
+    return null;
+  }
+
+  const flags = await getPublicSurfaceFlags();
+
+  return {
+    ...league,
+    competitionOdds: buildCompetitionOddsModule(league, {
+      locale,
+      viewerTerritory,
+      enabled: flags.odds,
+    }),
+  };
 }
 
 export const getTeamDirectory = unstable_cache(
@@ -352,10 +397,13 @@ export async function getTeamDetail(reference) {
   );
 }
 
-export async function getFixtureDetail(reference) {
-  return safely(
-    () =>
-      db.fixture.findFirst({
+export async function getFixtureDetail(
+  reference,
+  { locale = "en", viewerTerritory } = {}
+) {
+  const fixture = await safely(
+    () => {
+      return db.fixture.findFirst({
         where: {
           OR: [{ id: reference }, { externalRef: reference }],
         },
@@ -367,9 +415,34 @@ export async function getFixtureDetail(reference) {
           resultSnapshot: true,
           oddsMarkets: {
             include: { selections: true },
+            orderBy: [{ marketType: "asc" }, { bookmaker: "asc" }],
+          },
+          broadcastChannels: {
+            orderBy: [{ territory: "asc" }, { name: "asc" }],
           },
         },
-      }),
+      });
+    },
     null
   );
+
+  if (!fixture) {
+    return null;
+  }
+
+  const flags = await getPublicSurfaceFlags();
+
+  return {
+    ...fixture,
+    odds: buildFixtureOddsModule(fixture, {
+      locale,
+      viewerTerritory,
+      enabled: flags.odds,
+    }),
+    broadcast: buildFixtureBroadcastModule(fixture, {
+      locale,
+      viewerTerritory,
+      enabled: flags.broadcast,
+    }),
+  };
 }

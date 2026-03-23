@@ -5,7 +5,10 @@ function buildCoverageFlags(entity) {
   return {
     fixtures: entity.fixtures?.length ? "available" : "missing",
     standings: entity.seasons?.some((season) => season.standings?.length) ? "available" : "missing",
-    odds: entity.fixtures?.some((fixture) => fixture.oddsMarkets?.length) ? "available" : "plan_limited",
+    odds: entity.fixtures?.some((fixture) => fixture.oddsMarkets?.length) ? "available" : "unavailable",
+    broadcast: entity.fixtures?.some((fixture) => fixture.broadcastChannels?.length)
+      ? "available"
+      : "unavailable",
   };
 }
 
@@ -27,6 +30,9 @@ export async function getLeagueReadModel(code) {
               awayTeam: true,
               oddsMarkets: {
                 include: { selections: true },
+                take: 3,
+              },
+              broadcastChannels: {
                 take: 3,
               },
             },
@@ -73,6 +79,7 @@ export async function getFixtureReadModel(reference) {
           oddsMarkets: {
             include: { selections: true },
           },
+          broadcastChannels: true,
         },
       }),
     [`fixture-read:${reference}`],
@@ -88,7 +95,8 @@ export async function getFixtureReadModel(reference) {
     ...fixture,
     coverage: {
       live: fixture.status === "LIVE" ? "available" : "stale",
-      odds: fixture.oddsMarkets.length ? "available" : "plan_limited",
+      odds: fixture.oddsMarkets.length ? "available" : "unavailable",
+      broadcast: fixture.broadcastChannels.length ? "available" : "unavailable",
       result: fixture.resultSnapshot ? "available" : "pending",
     },
   };

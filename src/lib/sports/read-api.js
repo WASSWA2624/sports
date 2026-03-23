@@ -8,7 +8,8 @@ export async function getLeagueWithFallback(code) {
       coverage: {
         fixtures: "missing",
         standings: "missing",
-        odds: "plan_limited",
+        odds: "unavailable",
+        broadcast: "unavailable",
       },
     }
   );
@@ -21,7 +22,8 @@ export async function getFixtureWithFallback(reference) {
       id: reference,
       coverage: {
         live: "missing",
-        odds: "plan_limited",
+        odds: "unavailable",
+        broadcast: "unavailable",
         result: "missing",
       },
     }

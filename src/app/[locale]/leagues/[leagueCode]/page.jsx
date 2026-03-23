@@ -1,10 +1,31 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
-import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
-import { getLeagueDetail } from "../../../../lib/coreui/read";
+import { CompetitionOddsTabs } from "../../../../components/coreui/competition-odds-tabs";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
+import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
+import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
 import styles from "../../../../components/coreui/styles.module.css";
+import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
+import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
+import { getLeagueDetail } from "../../../../lib/coreui/read";
+
+function surfaceTone(state) {
+  if (state === "available") {
+    return styles.surfaceStateAvailable;
+  }
+
+  if (state === "stale") {
+    return styles.surfaceStateStale;
+  }
+
+  if (state === "region_restricted") {
+    return styles.surfaceStateRestricted;
+  }
+
+  return styles.surfaceStateUnavailable;
+}
 
 export async function generateMetadata({ params }) {
   const { locale, leagueCode } = await params;
@@ -28,16 +49,58 @@ export async function generateMetadata({ params }) {
   );
 }
 
-export default async function LeagueDetailPage({ params }) {
+export default async function LeagueDetailPage({ params, searchParams }) {
   const { locale, leagueCode } = await params;
+  const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const league = await getLeagueDetail(leagueCode);
+  const viewerTerritory = resolveViewerTerritory({
+    territory: filters?.territory,
+    headers: await headers(),
+  });
+  const league = await getLeagueDetail(leagueCode, {
+    locale,
+    viewerTerritory,
+  });
 
   if (!league) {
     notFound();
   }
 
   const standings = league.seasons[0]?.standings || [];
+  const oddsSurface = league.competitionOdds;
+  const shouldGateOdds = oddsSurface.enabled && oddsSurface.tabs.length > 0;
+
+  const oddsContent = (
+    <div className={styles.surfaceStack}>
+      <div className={styles.surfaceSummary}>
+        <span className={styles.badge}>
+          {formatDictionaryText(dictionary.oddsSummaryFixtures, {
+            count: oddsSurface.summary.fixtureCount,
+          })}
+        </span>
+        <span className={styles.badge}>
+          {dictionary.oddsSourcesLabel}: {oddsSurface.summary.bookmakerCount}
+        </span>
+        <span className={styles.badge}>{viewerTerritory}</span>
+      </div>
+
+      {oddsSurface.message ? <div className={styles.infoBanner}>{oddsSurface.message}</div> : null}
+
+      {oddsSurface.tabs.length ? (
+        <CompetitionOddsTabs tabs={oddsSurface.tabs} locale={locale} />
+      ) : (
+        <div className={styles.emptyState}>{oddsSurface.message || dictionary.oddsUnavailable}</div>
+      )}
+
+      <div className={styles.legalStack}>
+        {oddsSurface.legal.legalLines.map((line) => (
+          <span key={line} className={styles.legalChip}>
+            {line}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <section className={styles.section}>
@@ -100,6 +163,45 @@ export default async function LeagueDetailPage({ params }) {
           )}
         </article>
       </div>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <p className={styles.eyebrow}>{dictionary.markets}</p>
+            <h2 className={styles.sectionTitle}>{dictionary.competitionOdds}</h2>
+            <p className={styles.sectionLead}>{dictionary.competitionOddsLead}</p>
+          </div>
+          <div className={styles.inlineBadgeRow}>
+            <span className={surfaceTone(oddsSurface.state)}>{oddsSurface.stateLabel}</span>
+            <span className={styles.badge}>{oddsSurface.summary.fixtureCount}</span>
+          </div>
+        </div>
+
+        <ModuleEngagementTracker
+          moduleType="competition_odds"
+          entityType="league"
+          entityId={league.id}
+          surface="league-detail"
+          metadata={{
+            leagueCode: league.code,
+            viewerTerritory,
+          }}
+        >
+          {shouldGateOdds ? (
+            <RegulatedContentGate
+              storageKey={`sports:age-gate:league:${league.id}:odds`}
+              title={oddsSurface.legal.gateTitle}
+              body={oddsSurface.legal.gateBody}
+              confirmLabel={oddsSurface.legal.gateConfirmLabel}
+              legalLines={oddsSurface.legal.legalLines}
+            >
+              {oddsContent}
+            </RegulatedContentGate>
+          ) : (
+            oddsContent
+          )}
+        </ModuleEngagementTracker>
+      </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>

@@ -234,6 +234,27 @@ export function normalizeOdds(rawOdds, fixtureExternalRef) {
   };
 }
 
+export function normalizeBroadcastChannel(rawChannel, fixtureExternalRef) {
+  const countries = asArray(rawChannel.countries || rawChannel.country);
+
+  return {
+    fixtureExternalRef: pickId(fixtureExternalRef),
+    name: String(pickFirst(rawChannel.name, rawChannel.channel_name, "Unknown Channel")),
+    territory: pickFirst(
+      countries[0]?.iso2,
+      countries[0]?.iso_2,
+      countries[0]?.code,
+      countries[0]?.name,
+      rawChannel.territory,
+      rawChannel.country_name
+    ),
+    channelType: pickFirst(rawChannel.type, rawChannel.channel_type, rawChannel.kind, null),
+    url: pickFirst(rawChannel.url, rawChannel.website, null),
+    isActive: !Boolean(rawChannel.stopped || rawChannel.inactive),
+    metadata: rawChannel,
+  };
+}
+
 export function normalizeSportsMonksFixtures(payload) {
   return asArray(payload).map(normalizeFixture).filter((fixture) => fixture.externalRef);
 }
@@ -255,4 +276,10 @@ export function normalizeSportsMonksOdds(payload, fixtureExternalRef) {
   return asArray(payload)
     .map((entry) => normalizeOdds(entry, fixtureExternalRef))
     .filter((market) => market.externalRef || market.selections.length > 0);
+}
+
+export function normalizeSportsMonksBroadcastChannels(payload, fixtureExternalRef) {
+  return asArray(payload)
+    .map((entry) => normalizeBroadcastChannel(entry, fixtureExternalRef))
+    .filter((channel) => channel.fixtureExternalRef && channel.name);
 }

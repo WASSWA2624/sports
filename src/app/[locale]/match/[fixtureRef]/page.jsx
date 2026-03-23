@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
+import { LiveRefresh } from "../../../../components/coreui/live-refresh";
+import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
+import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
+import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import {
   formatFixtureStatus,
@@ -8,12 +13,39 @@ import {
   formatSnapshotTime,
 } from "../../../../lib/coreui/format";
 import { getLiveMatchDetail } from "../../../../lib/coreui/live-read";
-import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
-import { LiveRefresh } from "../../../../components/coreui/live-refresh";
-import styles from "../../../../components/coreui/styles.module.css";
+import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 
 function coverageTone(state) {
-  return state === "available" ? styles.coverageAvailable : styles.coverageMissing;
+  if (state === "available") {
+    return styles.coverageAvailable;
+  }
+
+  if (state === "stale") {
+    return styles.surfaceStateStale;
+  }
+
+  if (state === "region_restricted") {
+    return styles.surfaceStateRestricted;
+  }
+
+  return styles.coverageMissing;
+}
+
+function coverageLabel(state, dictionary) {
+  if (state === "available") {
+    return dictionary.coverageReady;
+  }
+
+  if (state === "stale") {
+    return dictionary.coverageStale;
+  }
+
+  if (state === "region_restricted") {
+    return dictionary.coverageRestricted;
+  }
+
+  return dictionary.coverageUnavailable;
 }
 
 function getSideLabel(side, dictionary) {
@@ -46,27 +78,107 @@ export async function generateMetadata({ params }) {
   );
 }
 
-export default async function MatchDetailPage({ params }) {
+export default async function MatchDetailPage({ params, searchParams }) {
   const { locale, fixtureRef } = await params;
+  const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const fixture = await getLiveMatchDetail(fixtureRef, locale);
+  const viewerTerritory = resolveViewerTerritory({
+    territory: filters?.territory,
+    headers: await headers(),
+  });
+  const fixture = await getLiveMatchDetail(fixtureRef, locale, viewerTerritory);
 
   if (!fixture) {
     notFound();
   }
 
   const detail = fixture.detail;
+  const odds = fixture.odds;
+  const broadcast = fixture.broadcast;
   const coverage = [
-    { label: dictionary.timeline, state: detail.coverage.timeline },
-    { label: dictionary.statistics, state: detail.coverage.statistics },
-    { label: dictionary.lineups, state: detail.coverage.lineups },
-    { label: dictionary.keyEvents, state: detail.coverage.keyEvents },
+    { label: dictionary.timeline, state: detail.coverage.timeline === "available" ? "available" : "unavailable" },
+    { label: dictionary.statistics, state: detail.coverage.statistics === "available" ? "available" : "unavailable" },
+    { label: dictionary.lineups, state: detail.coverage.lineups === "available" ? "available" : "unavailable" },
+    { label: dictionary.keyEvents, state: detail.coverage.keyEvents === "available" ? "available" : "unavailable" },
+    { label: dictionary.fixtureOdds, state: odds.state },
+    { label: dictionary.broadcastGuide, state: broadcast.state },
   ];
   const hasLineups =
     detail.lineups.home.starters.length ||
     detail.lineups.home.bench.length ||
     detail.lineups.away.starters.length ||
     detail.lineups.away.bench.length;
+  const shouldGateOdds = odds.enabled && odds.groups.length > 0;
+
+  const oddsContent = (
+    <div className={styles.surfaceStack}>
+      <div className={styles.surfaceSummary}>
+        <span className={styles.badge}>
+          {dictionary.oddsSourcesLabel}: {odds.summary.bookmakerCount}
+        </span>
+        <span className={styles.badge}>{viewerTerritory}</span>
+        {odds.lastUpdatedAt ? (
+          <span className={styles.badge}>
+            {formatDictionaryText(dictionary.oddsLastUpdated, {
+              time: formatSnapshotTime(odds.lastUpdatedAt, locale),
+            })}
+          </span>
+        ) : null}
+      </div>
+
+      {odds.message ? <div className={styles.infoBanner}>{odds.message}</div> : null}
+
+      {odds.groups.length ? (
+        <div className={styles.surfaceRows}>
+          {odds.groups.map((group) => (
+            <article key={group.id} className={styles.detailCard}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <h3 className={styles.cardTitle}>{group.label}</h3>
+                  <p className={styles.muted}>{group.sources.join(" · ")}</p>
+                </div>
+                <span className={styles.badge}>{group.markets.length}</span>
+              </div>
+
+              <div className={styles.surfaceRowsCompact}>
+                {group.markets.map((market) => (
+                  <div key={market.id} className={styles.surfacePanel}>
+                    <div className={styles.cardHeader}>
+                      <strong>{market.bookmaker}</strong>
+                      <span className={styles.badge}>
+                        {market.suspended ? dictionary.marketSuspended : dictionary.marketOpen}
+                      </span>
+                    </div>
+                    <div className={styles.selectionGrid}>
+                      {market.selections.map((selection) => (
+                        <div key={selection.id} className={styles.selectionCard}>
+                          <strong>{selection.label}</strong>
+                          {selection.line ? <span className={styles.muted}>{selection.lineLabel}</span> : null}
+                          <span className={selection.isActive ? styles.summaryValue : styles.muted}>
+                            {selection.priceLabel || "-"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.emptyState}>{odds.message || dictionary.oddsUnavailable}</div>
+      )}
+
+      <div className={styles.legalStack}>
+        {odds.legal.legalLines.map((line) => (
+          <span key={line} className={styles.legalChip}>
+            {line}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <section className={styles.section}>
@@ -154,9 +266,7 @@ export default async function MatchDetailPage({ params }) {
             {coverage.map((entry) => (
               <div key={entry.label} className={styles.coverageItem}>
                 <span>{entry.label}</span>
-                <strong className={coverageTone(entry.state)}>
-                  {entry.state === "available" ? dictionary.coverageReady : dictionary.coverageWaiting}
-                </strong>
+                <strong className={coverageTone(entry.state)}>{coverageLabel(entry.state, dictionary)}</strong>
               </div>
             ))}
           </div>
@@ -370,38 +480,130 @@ export default async function MatchDetailPage({ params }) {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <p className={styles.eyebrow}>{dictionary.matchDetail}</p>
-            <h2 className={styles.sectionTitle}>{dictionary.markets}</h2>
+            <p className={styles.eyebrow}>{dictionary.markets}</p>
+            <h2 className={styles.sectionTitle}>{dictionary.fixtureOdds}</h2>
+            <p className={styles.sectionLead}>{dictionary.fixtureOddsLead}</p>
+          </div>
+          <div className={styles.inlineBadgeRow}>
+            <span className={coverageTone(odds.state)}>{odds.stateLabel}</span>
+            <span className={styles.badge}>{odds.summary.marketCount}</span>
           </div>
         </div>
 
-        {fixture.oddsMarkets.length ? (
-          <div className={styles.grid}>
-            {fixture.oddsMarkets.map((market) => (
-              <article key={market.id} className={styles.detailCard}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <h3 className={styles.cardTitle}>{market.marketType}</h3>
-                    <p className={styles.muted}>{market.bookmaker}</p>
-                  </div>
-                  <span className={styles.badge}>
-                    {market.suspended ? dictionary.marketSuspended : dictionary.marketOpen}
-                  </span>
-                </div>
-                <div className={styles.grid}>
-                  {market.selections.map((selection) => (
-                    <div key={selection.id} className={styles.panel}>
-                      <strong>{selection.label}</strong>
-                      <p className={styles.muted}>{selection.priceDecimal.toString()}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
+        <ModuleEngagementTracker
+          moduleType="fixture_odds"
+          entityType="fixture"
+          entityId={fixture.id}
+          surface="match-detail"
+          metadata={{ viewerTerritory }}
+        >
+          {shouldGateOdds ? (
+            <RegulatedContentGate
+              storageKey={`sports:age-gate:fixture:${fixture.id}:odds`}
+              title={odds.legal.gateTitle}
+              body={odds.legal.gateBody}
+              confirmLabel={odds.legal.gateConfirmLabel}
+              legalLines={odds.legal.legalLines}
+            >
+              {oddsContent}
+            </RegulatedContentGate>
+          ) : (
+            oddsContent
+          )}
+        </ModuleEngagementTracker>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <p className={styles.eyebrow}>{dictionary.broadcastGuide}</p>
+            <h2 className={styles.sectionTitle}>{dictionary.broadcastGuide}</h2>
+            <p className={styles.sectionLead}>{dictionary.broadcastLead}</p>
           </div>
-        ) : (
-          <div className={styles.emptyState}>{dictionary.oddsPending}</div>
-        )}
+          <div className={styles.inlineBadgeRow}>
+            <span className={coverageTone(broadcast.state)}>{broadcast.stateLabel}</span>
+            <span className={styles.badge}>{broadcast.summary.channelCount}</span>
+          </div>
+        </div>
+
+        <ModuleEngagementTracker
+          moduleType="fixture_broadcast"
+          entityType="fixture"
+          entityId={fixture.id}
+          surface="match-detail"
+          metadata={{ viewerTerritory }}
+        >
+          <div className={styles.surfaceStack}>
+            <div className={styles.surfaceSummary}>
+              <span className={styles.badge}>
+                {dictionary.broadcastTelevision}: {broadcast.summary.televisionCount}
+              </span>
+              <span className={styles.badge}>
+                {dictionary.broadcastStreaming}: {broadcast.summary.streamingCount}
+              </span>
+              <span className={styles.badge}>{viewerTerritory}</span>
+              {broadcast.lastUpdatedAt ? (
+                <span className={styles.badge}>
+                  {formatDictionaryText(dictionary.oddsLastUpdated, {
+                    time: formatSnapshotTime(broadcast.lastUpdatedAt, locale),
+                  })}
+                </span>
+              ) : null}
+            </div>
+
+            {broadcast.message ? <div className={styles.infoBanner}>{broadcast.message}</div> : null}
+
+            {broadcast.channels.length ? (
+              <div className={styles.channelGrid}>
+                {broadcast.channels.map((channel) => (
+                  <article key={channel.id} className={styles.channelCard}>
+                    <div className={styles.cardHeader}>
+                      <div>
+                        <h3 className={styles.cardTitle}>{channel.name}</h3>
+                        <p className={styles.muted}>{channel.channelTypeLabel}</p>
+                      </div>
+                      {channel.territory ? <span className={styles.badge}>{channel.territory}</span> : null}
+                    </div>
+
+                    {channel.territories.length > 1 ? (
+                      <p className={styles.muted}>
+                        {formatDictionaryText(dictionary.broadcastAvailableIn, {
+                          territories: channel.territories.join(", "),
+                        })}
+                      </p>
+                    ) : null}
+
+                    {channel.url ? (
+                      <a
+                        href={channel.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.channelLink}
+                        data-analytics-action={`channel:${channel.name}`}
+                      >
+                        {dictionary.openChannel}
+                      </a>
+                    ) : (
+                      <span className={styles.badge}>{dictionary.channelListingOnly}</span>
+                    )}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>{broadcast.message || dictionary.broadcastUnavailable}</div>
+            )}
+
+            {broadcast.restrictedTerritories.length ? (
+              <div className={styles.territoryList}>
+                {broadcast.restrictedTerritories.map((territory) => (
+                  <span key={territory} className={styles.legalChip}>
+                    {territory}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </ModuleEngagementTracker>
       </section>
     </section>
   );
