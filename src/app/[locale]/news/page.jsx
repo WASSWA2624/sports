@@ -4,6 +4,7 @@ import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getCurrentUserFromServer } from "../../../lib/auth";
 import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
 import { getNewsHubSnapshot } from "../../../lib/coreui/news-read";
+import { NewsEngagementTracker } from "../../../components/coreui/news-engagement-tracker";
 import { NewsCard } from "../../../components/coreui/news-card";
 import sharedStyles from "../../../components/coreui/styles.module.css";
 import styles from "./news.module.css";
@@ -55,6 +56,10 @@ export default async function NewsPage({ params }) {
 
   return (
     <section className={sharedStyles.section}>
+      <NewsEngagementTracker
+        surface="news-hub"
+        articleIds={hub.items.map((article) => article.id)}
+      >
       <header className={sharedStyles.pageHeader}>
         <div>
           <p className={sharedStyles.eyebrow}>{dictionary.news}</p>
@@ -71,7 +76,11 @@ export default async function NewsPage({ params }) {
       {hub.hero ? (
         <section className={styles.hubHero}>
           <article className={`${sharedStyles.panel} ${styles.heroPanel}`}>
-            <Link href={`/${locale}/news/${hub.hero.slug}`} className={styles.heroLink}>
+            <Link
+              href={`/${locale}/news/${hub.hero.slug}`}
+              className={styles.heroLink}
+              data-news-article-id={hub.hero.id}
+            >
               <div className={styles.heroVisual}>
                 <span className={sharedStyles.badge}>{hub.hero.topicLabel}</span>
                 <strong className={styles.heroTitle}>{hub.hero.title}</strong>
@@ -113,7 +122,11 @@ export default async function NewsPage({ params }) {
                       <span>{article.topicLabel}</span>
                       <span>{article.readingTimeMinutes} min read</span>
                     </div>
-                    <Link href={`/${locale}/news/${article.slug}`} className={styles.latestLink}>
+                    <Link
+                      href={`/${locale}/news/${article.slug}`}
+                      className={styles.latestLink}
+                      data-news-article-id={article.id}
+                    >
                       <strong className={sharedStyles.cardTitle}>{article.title}</strong>
                     </Link>
                     <p className={sharedStyles.muted}>{article.excerpt}</p>
@@ -190,6 +203,7 @@ export default async function NewsPage({ params }) {
                       key={article.id}
                       href={`/${locale}/news/${article.slug}`}
                       className={styles.inlineLink}
+                      data-news-article-id={article.id}
                     >
                       <strong className={sharedStyles.cardTitle}>{article.title}</strong>
                       <span className={sharedStyles.muted}>{article.excerpt}</span>
@@ -203,6 +217,7 @@ export default async function NewsPage({ params }) {
           <div className={sharedStyles.emptyState}>{dictionary.newsEmpty}</div>
         )}
       </section>
+      </NewsEngagementTracker>
     </section>
   );
 }

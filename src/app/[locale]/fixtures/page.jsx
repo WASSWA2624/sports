@@ -73,6 +73,7 @@ export default async function FixturesPage({ params }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="fixtures-news-strip"
         />
       ) : null}
     </section>

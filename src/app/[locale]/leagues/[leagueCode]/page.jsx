@@ -9,6 +9,7 @@ import { ModuleEngagementTracker } from "../../../../components/coreui/module-en
 import { NewsModule } from "../../../../components/coreui/news-module";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
+import { StructuredData } from "../../../../components/coreui/structured-data";
 import styles from "../../../../components/coreui/styles.module.css";
 import {
   formatDictionaryText,
@@ -16,7 +17,12 @@ import {
   getStandingViewLabel,
 } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildCollectionPageStructuredData,
+  buildPageMetadata,
+  buildSportsOrganizationStructuredData,
+} from "../../../../lib/coreui/metadata";
 import { getCompetitionNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import { getLeagueDetail } from "../../../../lib/coreui/read";
@@ -172,7 +178,15 @@ export async function generateMetadata({ params }) {
     locale,
     league.name,
     formatDictionaryText(dictionary.metaLeagueDescription, { name: league.name }),
-    `/leagues/${leagueCode}`
+    `/leagues/${leagueCode}`,
+    {
+      keywords: [
+        league.name,
+        league.country,
+        league.sport?.name || league.competition?.sport?.name,
+        dictionary.standings,
+      ].filter(Boolean),
+    }
   );
 }
 
@@ -227,6 +241,30 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     personalization,
     (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
   );
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      ...(sportHref ? [{ name: sport?.name, path: sportHref }] : []),
+      ...(countryHref ? [{ name: country?.name, path: countryHref }] : []),
+      { name: league.name, path: `/${locale}/leagues/${league.code}` },
+    ]),
+    buildSportsOrganizationStructuredData({
+      path: `/${locale}/leagues/${league.code}`,
+      name: league.name,
+      sport: sport?.name,
+      country: league.country,
+      description: formatDictionaryText(dictionary.metaLeagueDescription, { name: league.name }),
+    }),
+    buildCollectionPageStructuredData({
+      path: `/${locale}/leagues/${league.code}`,
+      name: league.name,
+      description: formatDictionaryText(dictionary.metaLeagueDescription, { name: league.name }),
+      items: prioritizedTeams.slice(0, 10).map((team) => ({
+        name: team.name,
+        path: buildTeamHref(locale, team),
+      })),
+    }),
+  ];
 
   const oddsContent = (
     <div className={styles.surfaceStack}>
@@ -262,6 +300,8 @@ export default async function LeagueDetailPage({ params, searchParams }) {
 
   return (
     <section className={styles.section}>
+      <StructuredData data={structuredData} />
+
       <RecentViewTracker
         itemId={`competition:${league.code}`}
         label={league.name}
@@ -500,6 +540,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
               href="/news"
               actionLabel={dictionary.browseAll}
               emptyLabel={dictionary.newsEmpty}
+              trackingSurface="league-news-module"
             />
           ) : null}
         </>
@@ -557,6 +598,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             href="/news"
             actionLabel={dictionary.browseAll}
             emptyLabel={dictionary.newsEmpty}
+            trackingSurface="league-news-tab"
           />
         ) : (
           <div className={styles.emptyState}>{dictionary.newsHubDisabled}</div>

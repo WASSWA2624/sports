@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./onboarding-panel.module.css";
 import { usePreferences } from "./preferences-provider";
 import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
@@ -26,7 +26,16 @@ export function OnboardingPanel({
     setFavoriteSports,
     addFavoriteItems,
   } = usePreferences();
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissedByStorage, setDismissedByStorage] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    return (
+      window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1" ||
+      window.localStorage.getItem(ONBOARDING_DISMISS_KEY) === "1"
+    );
+  });
   const [saving, setSaving] = useState(false);
   const [selectedSports, setSelectedSports] = useState(favoriteSports || []);
   const [selectedCompetitions, setSelectedCompetitions] = useState(
@@ -39,14 +48,8 @@ export function OnboardingPanel({
       .filter((itemId) => itemId.startsWith("team:"))
       .map((itemId) => itemId.split(":")[1])
   );
-
-  useEffect(() => {
-    const hasStoredCompletion = window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1";
-    const hasStoredDismissal = window.localStorage.getItem(ONBOARDING_DISMISS_KEY) === "1";
-    const hasPersonalization = Boolean((watchlist || []).length || (favoriteSports || []).length);
-
-    setDismissed(hasStoredCompletion || hasStoredDismissal || hasPersonalization);
-  }, [favoriteSports, watchlist]);
+  const dismissed =
+    dismissedByStorage || Boolean((watchlist || []).length || (favoriteSports || []).length);
 
   if (dismissed) {
     return null;
@@ -77,12 +80,12 @@ export function OnboardingPanel({
     });
 
     setSaving(false);
-    setDismissed(true);
+    setDismissedByStorage(true);
   }
 
   function handleDismiss() {
     window.localStorage.setItem(ONBOARDING_DISMISS_KEY, "1");
-    setDismissed(true);
+    setDismissedByStorage(true);
   }
 
   return (

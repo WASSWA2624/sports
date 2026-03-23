@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertSubscriptionControl } from "../../../../components/coreui/alert-subscription-control";
+import { StructuredData } from "../../../../components/coreui/structured-data";
 import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { NewsModule } from "../../../../components/coreui/news-module";
@@ -8,7 +9,11 @@ import { RecentViewTracker } from "../../../../components/coreui/recent-view-tra
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildPageMetadata,
+  buildSportsTeamStructuredData,
+} from "../../../../lib/coreui/metadata";
 import { getTeamNewsModule } from "../../../../lib/coreui/news-read";
 import { getTeamDetail } from "../../../../lib/coreui/read";
 import {
@@ -28,7 +33,10 @@ export async function generateMetadata({ params }) {
     team
       ? formatDictionaryText(dictionary.metaTeamDescription, { name: team.name })
       : dictionary.metaTeamFallbackDescription,
-    `/teams/${teamId}`
+    `/teams/${teamId}`,
+    {
+      keywords: [team?.name, team?.league?.name, team?.sport?.name].filter(Boolean),
+    }
   );
 }
 
@@ -48,9 +56,29 @@ export default async function TeamDetailPage({ params }) {
       ? buildCountryHref(locale, team.league.countryRecord, team.sport)
       : null;
   const primaryCompetition = team.linkedCompetitions[0] || null;
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      ...(sportHref ? [{ name: team.sport.name, path: sportHref }] : []),
+      ...(primaryCompetition
+        ? [{ name: primaryCompetition.name, path: buildCompetitionHref(locale, primaryCompetition) }]
+        : []),
+      { name: team.name, path: `/${locale}/teams/${team.id}` },
+    ]),
+    buildSportsTeamStructuredData({
+      path: `/${locale}/teams/${team.id}`,
+      name: team.name,
+      sport: team.sport?.name,
+      country: team.country,
+      league: primaryCompetition?.name || team.league?.name,
+      description: formatDictionaryText(dictionary.metaTeamDescription, { name: team.name }),
+    }),
+  ];
 
   return (
     <section className={styles.section}>
+      <StructuredData data={structuredData} />
+
       <RecentViewTracker
         itemId={`team:${team.id}`}
         label={team.name}
@@ -252,6 +280,7 @@ export default async function TeamDetailPage({ params }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="team-news-module"
         />
       ) : null}
     </section>

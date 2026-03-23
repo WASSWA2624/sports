@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
@@ -91,13 +91,23 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
   const trackedQueryRef = useRef("");
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
-  const [loading, setLoading] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const recentItems = useMemo(
     () => mapRecentItems(locale, shellData, recentViews),
     [locale, recentViews, shellData]
   );
   const topCompetitions = (shellData?.featuredCompetitions || []).slice(0, 6);
+  const normalizedQuery = deferredQuery.trim();
+  const loading =
+    searchOpen &&
+    normalizedQuery.length >= 2 &&
+    searchResults?.query !== normalizedQuery;
+
+  const resetSearch = useCallback(() => {
+    setQuery("");
+    setSearchResults(null);
+    trackedQueryRef.current = "";
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -113,6 +123,7 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
           ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k"))
       ) {
         event.preventDefault();
+        resetSearch();
         dispatch(openSearch());
         return;
       }
@@ -128,18 +139,12 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [dispatch, searchOpen]);
+  }, [dispatch, resetSearch, searchOpen]);
 
   useEffect(() => {
-    if (!searchOpen) {
-      setQuery("");
-      setSearchResults(null);
-      setLoading(false);
-      trackedQueryRef.current = "";
-      return;
+    if (searchOpen) {
+      searchInputRef.current?.focus();
     }
-
-    searchInputRef.current?.focus();
   }, [searchOpen]);
 
   useEffect(() => {
@@ -147,16 +152,12 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
       return undefined;
     }
 
-    const normalizedQuery = deferredQuery.trim();
     if (normalizedQuery.length < 2) {
-      setSearchResults(null);
-      setLoading(false);
       trackedQueryRef.current = "";
       return undefined;
     }
 
     const controller = new AbortController();
-    setLoading(true);
 
     fetch(
       `/api/search?q=${encodeURIComponent(normalizedQuery)}&locale=${encodeURIComponent(locale)}&limit=5`,
@@ -166,6 +167,10 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
     )
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+
         if (!payload) {
           return;
         }
@@ -194,11 +199,10 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
           }
         }
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
 
     return () => controller.abort();
-  }, [deferredQuery, locale, searchOpen]);
+  }, [locale, normalizedQuery, searchOpen]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -212,7 +216,13 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
     dispatch(closeSearch());
   }
 
+  function handleOpen() {
+    resetSearch();
+    dispatch(openSearch());
+  }
+
   function handleClose() {
+    resetSearch();
     dispatch(closeSearch());
   }
 
@@ -222,7 +232,7 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
         type="button"
         aria-label={dictionary.search}
         className={`${styles.sectionAction} ${styles.headerAction}`}
-        onClick={() => dispatch(openSearch())}
+        onClick={handleOpen}
       >
         <ShellIcon name="search" className={styles.controlIcon} />
         <span className={styles.headerActionLabel}>{dictionary.search}</span>

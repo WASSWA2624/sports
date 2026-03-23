@@ -5,18 +5,29 @@ import { AlertSubscriptionControl } from "../../../../components/coreui/alert-su
 import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { LiveRefresh } from "../../../../components/coreui/live-refresh";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
+import { NewsModule } from "../../../../components/coreui/news-module";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
+import { StructuredData } from "../../../../components/coreui/structured-data";
+import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
+import { getRelatedMatchesModule } from "../../../../lib/coreui/discovery";
+import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
 import {
   formatFixtureStatus,
   formatKickoff,
   formatSnapshotTime,
 } from "../../../../lib/coreui/format";
 import { getLiveMatchDetail } from "../../../../lib/coreui/live-read";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildPageMetadata,
+  buildSportsEventStructuredData,
+} from "../../../../lib/coreui/metadata";
+import { getFixtureNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
+import { getPersonalizationSnapshot, sortFixturesByPersonalization } from "../../../../lib/personalization";
 
 function coverageTone(state) {
   if (state === "available") {
@@ -76,7 +87,14 @@ export async function generateMetadata({ params }) {
           away: fixture.awayTeam.name,
         })
       : dictionary.metaMatchFallbackDescription,
-    `/match/${fixtureRef}`
+    `/match/${fixtureRef}`,
+    {
+      keywords: [
+        fixture?.homeTeam?.name,
+        fixture?.awayTeam?.name,
+        fixture?.league?.name,
+      ].filter(Boolean),
+    }
   );
 }
 
@@ -88,11 +106,42 @@ export default async function MatchDetailPage({ params, searchParams }) {
     territory: filters?.territory,
     headers: await headers(),
   });
-  const fixture = await getLiveMatchDetail(fixtureRef, locale, viewerTerritory);
+  const [fixture, flags, personalization] = await Promise.all([
+    getLiveMatchDetail(fixtureRef, locale, viewerTerritory),
+    getPublicSurfaceFlags(),
+    getPersonalizationSnapshot(),
+  ]);
 
   if (!fixture) {
     notFound();
   }
+
+  const [relatedMatchesRaw, relatedNews] = await Promise.all([
+    getRelatedMatchesModule(
+      {
+        fixtureId: fixture.id,
+        leagueId: fixture.leagueId,
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+      },
+      6
+    ),
+    flags.news
+      ? getFixtureNewsModule(
+          {
+            fixtureId: fixture.id,
+            competitionId: fixture.competitionId,
+            teamIds: [fixture.homeTeamId, fixture.awayTeamId],
+          },
+          4
+        )
+      : Promise.resolve({ articles: [], total: 0 }),
+  ]);
+  const relatedMatches = sortFixturesByPersonalization(
+    relatedMatchesRaw,
+    personalization,
+    (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+  );
 
   const detail = fixture.detail;
   const odds = fixture.odds;
@@ -119,6 +168,27 @@ export default async function MatchDetailPage({ params, searchParams }) {
     "FINAL_RESULT",
   ].filter(Boolean);
   const fixtureLabel = `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`;
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      { name: fixture.league.name, path: `/${locale}/leagues/${fixture.league.code}` },
+      { name: fixtureLabel, path: `/${locale}/match/${fixture.externalRef || fixture.id}` },
+    ]),
+    buildSportsEventStructuredData({
+      path: `/${locale}/match/${fixture.externalRef || fixture.id}`,
+      name: fixtureLabel,
+      description: formatDictionaryText(dictionary.metaMatchDescription, {
+        home: fixture.homeTeam.name,
+        away: fixture.awayTeam.name,
+      }),
+      startDate: fixture.startsAt,
+      status: fixture.status,
+      competition: fixture.league.name,
+      homeTeam: fixture.homeTeam,
+      awayTeam: fixture.awayTeam,
+      location: fixture.venue,
+    }),
+  ];
 
   const oddsContent = (
     <div className={styles.surfaceStack}>
@@ -192,6 +262,8 @@ export default async function MatchDetailPage({ params, searchParams }) {
 
   return (
     <section className={styles.section}>
+      <StructuredData data={structuredData} />
+
       <LiveRefresh
         enabled={detail.refresh.enabled}
         intervalMs={detail.refresh.intervalMs}
@@ -334,6 +406,41 @@ export default async function MatchDetailPage({ params, searchParams }) {
           </div>
         </article>
       </div>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <p className={styles.eyebrow}>{dictionary.match}</p>
+            <h2 className={styles.sectionTitle}>{dictionary.relatedMatchesTitle}</h2>
+            <p className={styles.sectionLead}>{dictionary.relatedMatchesLead}</p>
+          </div>
+          <span className={styles.badge}>{relatedMatches.length}</span>
+        </div>
+
+        {relatedMatches.length ? (
+          <div className={styles.fixtureGrid}>
+            {relatedMatches.map((relatedFixture) => (
+              <FixtureCard key={relatedFixture.id} fixture={relatedFixture} locale={locale} />
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>{dictionary.noData}</div>
+        )}
+      </section>
+
+      {flags.news ? (
+        <NewsModule
+          locale={locale}
+          eyebrow={dictionary.news}
+          title={dictionary.relatedNewsTitle}
+          lead={dictionary.relatedNewsLead}
+          articles={relatedNews.articles}
+          href="/news"
+          actionLabel={dictionary.browseAll}
+          emptyLabel={dictionary.newsEmpty}
+          trackingSurface="match-news-module"
+        />
+      ) : null}
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>

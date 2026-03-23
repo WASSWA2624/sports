@@ -333,6 +333,64 @@ export async function getTeamNewsModule(teamId, take = 4) {
   };
 }
 
+export async function getFixtureNewsModule(
+  { fixtureId, competitionId, teamIds = [] } = {},
+  take = 4
+) {
+  const predicates = [
+    fixtureId
+      ? {
+          entityLinks: {
+            some: {
+              entityType: "FIXTURE",
+              entityId: fixtureId,
+            },
+          },
+        }
+      : null,
+    competitionId
+      ? {
+          entityLinks: {
+            some: {
+              entityType: "COMPETITION",
+              entityId: competitionId,
+            },
+          },
+        }
+      : null,
+    ...teamIds
+      .filter(Boolean)
+      .map((teamId) => ({
+        entityLinks: {
+          some: {
+            entityType: "TEAM",
+            entityId: teamId,
+          },
+        },
+      })),
+  ].filter(Boolean);
+
+  if (!predicates.length) {
+    return { articles: [], total: 0 };
+  }
+
+  const articles = await safely(
+    () =>
+      fetchArticles({
+        where: {
+          OR: predicates,
+        },
+        take,
+      }),
+    []
+  );
+
+  return {
+    articles,
+    total: articles.length,
+  };
+}
+
 export async function getNewsArticleDetail(slug, { includeUnpublished = false } = {}) {
   const article = await safely(
     () =>

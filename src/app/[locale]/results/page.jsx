@@ -189,6 +189,7 @@ export default async function ResultsPage({ params, searchParams }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="results-news-strip"
         />
       ) : null}
     </section>

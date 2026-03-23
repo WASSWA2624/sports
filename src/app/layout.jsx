@@ -9,6 +9,7 @@ import {
 } from "../lib/coreui/preferences";
 import { getDictionary } from "../lib/coreui/dictionaries";
 import { getPreferredLocale } from "../lib/coreui/preferences-server";
+import { getSiteOrigin } from "../lib/coreui/site";
 
 const bodyFont = Space_Grotesk({
   variable: "--font-sans",
@@ -32,6 +33,7 @@ export async function generateMetadata() {
   const dictionary = getDictionary(locale);
 
   return {
+    metadataBase: new URL(getSiteOrigin()),
     title: {
       default: dictionary.brand,
       template: `%s | ${dictionary.brand}`,

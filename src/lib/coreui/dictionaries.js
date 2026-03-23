@@ -3,7 +3,14 @@ import { dictionaries, SUPPORTED_DICTIONARY_LOCALES } from "./i18n";
 export { SUPPORTED_DICTIONARY_LOCALES };
 
 export function getDictionary(locale) {
-  return dictionaries[locale] || dictionaries.en;
+  if (locale === "en") {
+    return dictionaries.en;
+  }
+
+  return {
+    ...dictionaries.en,
+    ...(dictionaries[locale] || {}),
+  };
 }
 
 export function formatDictionaryText(template, values = {}) {

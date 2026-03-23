@@ -3,10 +3,15 @@ import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { notFound } from "next/navigation";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { NewsModule } from "../../../../components/coreui/news-module";
+import { StructuredData } from "../../../../components/coreui/structured-data";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildCollectionPageStructuredData,
+  buildPageMetadata,
+} from "../../../../lib/coreui/metadata";
 import { getSportNewsModule } from "../../../../lib/coreui/news-read";
 import { getSportHub } from "../../../../lib/coreui/read";
 import {
@@ -32,7 +37,10 @@ export async function generateMetadata({ params }) {
           name: sportHub.sport.name,
         })
       : dictionary.metaSportFallbackDescription,
-    `/sports/${sportSlug}`
+    `/sports/${sportSlug}`,
+    {
+      keywords: [sportHub?.sport?.name, dictionary.leagues, dictionary.teams].filter(Boolean),
+    }
   );
 }
 
@@ -62,9 +70,32 @@ export default async function SportHubPage({ params }) {
     personalization,
     (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
   );
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      { name: sportHub.sport.name, path: `/${locale}/sports/${sportHub.sport.slug}` },
+    ]),
+    buildCollectionPageStructuredData({
+      path: `/${locale}/sports/${sportHub.sport.slug}`,
+      name: sportHub.sport.name,
+      description: formatDictionaryText(dictionary.metaSportDescription, {
+        name: sportHub.sport.name,
+      }),
+      items: prioritizedCompetitions.slice(0, 8).map((competition) => ({
+        name: competition.name,
+        path: buildCompetitionHref(locale, competition),
+      })),
+      about: {
+        "@type": "Thing",
+        name: sportHub.sport.name,
+      },
+    }),
+  ];
 
   return (
     <section className={styles.section}>
+      <StructuredData data={structuredData} />
+
       <header className={styles.pageHeader}>
         <div>
           <p className={styles.eyebrow}>{dictionary.sports}</p>
@@ -209,6 +240,7 @@ export default async function SportHubPage({ params }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="sport-news-module"
         />
       ) : null}
     </section>

@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { AlertSubscriptionControl } from "../../../components/coreui/alert-subscription-control";
+import {
+  FavoriteReminderPanel,
+  RecentItemsPanel,
+} from "../../../components/coreui/discovery-panels";
 import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { FixtureCard } from "../../../components/coreui/fixture-card";
 import { PersonalizationUsageTracker } from "../../../components/coreui/personalization-usage-tracker";
 import styles from "../../../components/coreui/styles.module.css";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
-import { buildCompetitionHref, buildTeamHref } from "../../../lib/coreui/routes";
+import { getRecentItemsModule } from "../../../lib/coreui/discovery";
+import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../../lib/coreui/routes";
 import {
   getFavoritesPageData,
   getPersonalizationSnapshot,
@@ -30,8 +35,39 @@ export default async function FavoritesPage({ params }) {
   const dictionary = getDictionary(locale);
   const personalization = await getPersonalizationSnapshot();
   const usage = getPersonalizationUsage(personalization);
-  const favorites = await getFavoritesPageData(personalization);
+  const [favorites, recentItems] = await Promise.all([
+    getFavoritesPageData(personalization),
+    getRecentItemsModule(personalization, { locale }),
+  ]);
   const alertItemCount = Object.keys(personalization.alertSettings || {}).length;
+  const reminderItems = [
+    ...favorites.fixtures.map((fixture) => ({
+      itemId: `fixture:${fixture.id}`,
+      title: `${fixture.homeTeam?.name || dictionary.match} vs ${fixture.awayTeam?.name || dictionary.match}`,
+      subtitle: fixture.league?.name || dictionary.match,
+      href: buildMatchHref(locale, fixture),
+      supportedTypes: ["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT"],
+      surface: "favorites-reminders",
+    })),
+    ...favorites.teams.map((team) => ({
+      itemId: `team:${team.id}`,
+      title: team.name,
+      subtitle: team.league?.name || dictionary.teams,
+      href: buildTeamHref(locale, team),
+      supportedTypes: ["KICKOFF", "FINAL_RESULT"],
+      surface: "favorites-reminders",
+    })),
+    ...favorites.competitions.map((competition) => ({
+      itemId: `competition:${competition.code}`,
+      title: competition.name,
+      subtitle: competition.country || dictionary.competition,
+      href: buildCompetitionHref(locale, competition),
+      supportedTypes: ["KICKOFF", "FINAL_RESULT"],
+      surface: "favorites-reminders",
+    })),
+  ]
+    .filter((item) => !(personalization.alertSettings?.[item.itemId] || []).length)
+    .slice(0, 4);
 
   return (
     <section className={styles.section}>
@@ -61,6 +97,9 @@ export default async function FavoritesPage({ params }) {
       {!usage.favoriteCount ? (
         <div className={styles.emptyState}>{dictionary.favoritesEmpty}</div>
       ) : null}
+
+      <RecentItemsPanel dictionary={dictionary} items={recentItems} />
+      <FavoriteReminderPanel locale={locale} dictionary={dictionary} items={reminderItems} />
 
       {favorites.competitions.length ? (
         <section className={styles.section}>

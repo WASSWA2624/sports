@@ -61,7 +61,6 @@ export function SearchResultsSection({
               <div className={styles.resultCopy}>
                 <div className={styles.resultTitleRow}>
                   <strong className={styles.resultTitle}>{result.title}</strong>
-                  {result.score ? <span className={styles.resultScore}>{result.score}</span> : null}
                 </div>
                 {result.subtitle ? <p className={styles.resultSubtitle}>{result.subtitle}</p> : null}
               </div>

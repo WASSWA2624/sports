@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
+import { NewsEngagementTracker } from "../../../../components/coreui/news-engagement-tracker";
 import { NewsCard } from "../../../../components/coreui/news-card";
+import { StructuredData } from "../../../../components/coreui/structured-data";
 import sharedStyles from "../../../../components/coreui/styles.module.css";
-import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildNewsArticleStructuredData,
+  buildPageMetadata,
+} from "../../../../lib/coreui/metadata";
 import { getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getNewsArticleDetail } from "../../../../lib/coreui/news-read";
 import styles from "../news.module.css";
@@ -35,7 +41,15 @@ export async function generateMetadata({ params }) {
 
   const title = detail.article.seoTitle || detail.article.title;
   const description = detail.article.seoDescription || detail.article.excerpt;
-  const metadata = buildPageMetadata(locale, title, description, `/news/${slug}`);
+  const metadata = buildPageMetadata(locale, title, description, `/news/${slug}`, {
+    keywords: [
+      title,
+      detail.article.topicLabel,
+      detail.article.primaryCompetition?.name,
+      detail.article.primaryTeam?.name,
+    ].filter(Boolean),
+    openGraphType: "article",
+  });
 
   return {
     ...metadata,
@@ -57,9 +71,31 @@ export default async function NewsArticlePage({ params }) {
   }
 
   const { article, relatedArticles } = detail;
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      { name: dictionary.news, path: `/${locale}/news` },
+      { name: article.title, path: `/${locale}/news/${article.slug}` },
+    ]),
+    buildNewsArticleStructuredData({
+      path: `/${locale}/news/${article.slug}`,
+      title: article.seoTitle || article.title,
+      description: article.seoDescription || article.excerpt,
+      publishedAt: article.publishedAt,
+      updatedAt: article.updatedAt,
+      image: article.imageUrl,
+      section: article.topicLabel,
+    }),
+  ];
 
   return (
     <section className={sharedStyles.section}>
+      <StructuredData data={structuredData} />
+      <NewsEngagementTracker
+        surface="news-article-page"
+        articleId={article.id}
+        articleIds={relatedArticles.map((relatedArticle) => relatedArticle.id)}
+      >
       <header className={sharedStyles.pageHeader}>
         <div>
           <p className={sharedStyles.eyebrow}>{article.topicLabel}</p>
@@ -236,6 +272,7 @@ export default async function NewsArticlePage({ params }) {
           <div className={sharedStyles.emptyState}>{dictionary.newsEmpty}</div>
         )}
       </section>
+      </NewsEngagementTracker>
     </section>
   );
 }

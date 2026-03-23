@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { StructuredData } from "../../../components/coreui/structured-data";
 import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
-import { buildPageMetadata } from "../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildCollectionPageStructuredData,
+  buildPageMetadata,
+} from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getTablesOverview } from "../../../lib/coreui/read";
 import { getPersonalizationSnapshot, sortCompetitionsByPersonalization } from "../../../lib/personalization";
@@ -12,7 +17,10 @@ export async function generateMetadata({ params }) {
     locale,
     getDictionary(locale).metaTablesTitle,
     getDictionary(locale).metaTablesDescription,
-    "/tables"
+    "/tables",
+    {
+      keywords: [getDictionary(locale).standings, getDictionary(locale).leagues],
+    }
   );
 }
 
@@ -28,9 +36,26 @@ export default async function TablesPage({ params }) {
     personalization,
     (left, right) => left.name.localeCompare(right.name)
   );
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      { name: dictionary.standings, path: `/${locale}/tables` },
+    ]),
+    buildCollectionPageStructuredData({
+      path: `/${locale}/tables`,
+      name: dictionary.standings,
+      description: dictionary.metaTablesDescription,
+      items: prioritizedLeagues.slice(0, 12).map((league) => ({
+        name: league.name,
+        path: `/${locale}/leagues/${league.code}`,
+      })),
+    }),
+  ];
 
   return (
     <section className={styles.section}>
+      <StructuredData data={structuredData} />
+
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{dictionary.standings}</h1>
         <div className={styles.sectionTools}>

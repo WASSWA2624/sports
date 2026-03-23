@@ -274,6 +274,7 @@ export default async function LivePage({ params, searchParams }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="live-news-strip"
         />
       ) : null}
     </section>

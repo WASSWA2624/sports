@@ -3,10 +3,15 @@ import { FavoriteToggle } from "../../../../../../components/coreui/favorite-tog
 import { notFound } from "next/navigation";
 import { FixtureCard } from "../../../../../../components/coreui/fixture-card";
 import { NewsModule } from "../../../../../../components/coreui/news-module";
+import { StructuredData } from "../../../../../../components/coreui/structured-data";
 import styles from "../../../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../../../lib/coreui/feature-flags";
-import { buildPageMetadata } from "../../../../../../lib/coreui/metadata";
+import {
+  buildBreadcrumbStructuredData,
+  buildCollectionPageStructuredData,
+  buildPageMetadata,
+} from "../../../../../../lib/coreui/metadata";
 import { getCountryNewsModule } from "../../../../../../lib/coreui/news-read";
 import { getCountryDetail } from "../../../../../../lib/coreui/read";
 import {
@@ -33,7 +38,10 @@ export async function generateMetadata({ params }) {
           sport: countryDetail.sport.name,
         })
       : dictionary.metaCountryFallbackDescription,
-    `/sports/${sportSlug}/countries/${countrySlug}`
+    `/sports/${sportSlug}/countries/${countrySlug}`,
+    {
+      keywords: [countryDetail?.country?.name, countryDetail?.sport?.name, dictionary.leagues].filter(Boolean),
+    }
   );
 }
 
@@ -63,9 +71,37 @@ export default async function CountryHubPage({ params }) {
     personalization,
     (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
   );
+  const structuredData = [
+    buildBreadcrumbStructuredData([
+      { name: dictionary.home, path: `/${locale}` },
+      { name: countryDetail.sport.name, path: buildSportHref(locale, countryDetail.sport) },
+      {
+        name: countryDetail.country.name,
+        path: `/${locale}/sports/${countryDetail.sport.slug}/countries/${countryDetail.country.slug}`,
+      },
+    ]),
+    buildCollectionPageStructuredData({
+      path: `/${locale}/sports/${countryDetail.sport.slug}/countries/${countryDetail.country.slug}`,
+      name: countryDetail.country.name,
+      description: formatDictionaryText(dictionary.metaCountryDescription, {
+        name: countryDetail.country.name,
+        sport: countryDetail.sport.name,
+      }),
+      items: prioritizedCompetitions.slice(0, 8).map((competition) => ({
+        name: competition.name,
+        path: buildCompetitionHref(locale, competition),
+      })),
+      about: {
+        "@type": "Country",
+        name: countryDetail.country.name,
+      },
+    }),
+  ];
 
   return (
     <section className={styles.section}>
+      <StructuredData data={structuredData} />
+
       <header className={styles.pageHeader}>
         <div>
           <div className={styles.linkList}>
@@ -185,6 +221,7 @@ export default async function CountryHubPage({ params }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="country-news-module"
         />
       ) : null}
     </section>
