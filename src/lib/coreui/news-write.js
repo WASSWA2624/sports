@@ -1,7 +1,7 @@
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "../db";
 import { logAuditEvent } from "../audit";
+import { revalidateTagsWithAudit } from "../cache";
 import { slugifyArticleTitle } from "./news";
 
 const articleEntityLinkSchema = z.object({
@@ -32,6 +32,7 @@ export const newsArticleInputSchema = z.object({
   topicLabel: z.string().max(80).optional().nullable(),
   hero: z.boolean().default(false),
   homepagePlacement: z.boolean().default(false),
+  homepageRank: z.number().int().min(1).max(12).optional().nullable(),
   moderationNotes: z.string().max(500).optional().nullable(),
   entityLinks: z.array(articleEntityLinkSchema).max(24).default([]),
 });
@@ -99,6 +100,7 @@ function buildArticleMetadata(existingMetadata, payload, actorUserId) {
       : base.topicSlug || null,
     hero: Boolean(payload.hero),
     homepagePlacement: Boolean(payload.homepagePlacement),
+    homepageRank: Number.isFinite(payload.homepageRank) ? payload.homepageRank : null,
     moderationNotes: cleanOptionalString(payload.moderationNotes),
     editorial: {
       updatedBy: actorUserId,
@@ -116,8 +118,11 @@ function buildArticleMetadata(existingMetadata, payload, actorUserId) {
   return next;
 }
 
-function revalidateNewsReads() {
-  ["news:hub", "news:articles"].forEach((tag) => revalidateTag(tag));
+async function revalidateNewsReads(actorUserId) {
+  await revalidateTagsWithAudit(["news:hub", "news:articles", "news:homepage", "news:latest"], {
+    actorUserId,
+    source: "news-editorial-write",
+  });
 }
 
 export async function listNewsArticles({ includeUnpublished = false } = {}) {
@@ -187,7 +192,7 @@ export async function createNewsArticle(payload, actorUserId) {
     },
   });
 
-  revalidateNewsReads();
+  await revalidateNewsReads(actorUserId);
   return article;
 }
 
@@ -263,7 +268,7 @@ export async function updateNewsArticle(articleId, payload, actorUserId) {
     },
   });
 
-  revalidateNewsReads();
+  await revalidateNewsReads(actorUserId);
   return article;
 }
 
@@ -301,6 +306,6 @@ export async function archiveNewsArticle(articleId, actorUserId, note = null) {
     },
   });
 
-  revalidateNewsReads();
+  await revalidateNewsReads(actorUserId);
   return { ok: true };
 }

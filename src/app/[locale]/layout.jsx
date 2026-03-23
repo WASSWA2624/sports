@@ -22,7 +22,7 @@ export default async function LocaleLayout({ children, params }) {
 
   const preferences = await getPreferenceSnapshot();
   const dictionary = getDictionary(locale);
-  const shellData = await getShellSnapshot();
+  const shellData = await getShellSnapshot(locale);
 
   return (
     <PublicShell

@@ -264,7 +264,7 @@ export default async function LivePage({ params, searchParams }) {
         <div className={styles.emptyState}>{dictionary.liveFilterEmpty}</div>
       )}
 
-      {flags.news ? (
+      {flags.liveNews ? (
         <NewsModule
           locale={locale}
           eyebrow={dictionary.news}

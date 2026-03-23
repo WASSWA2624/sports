@@ -11,6 +11,7 @@ export default function Error({ reset }) {
 
   return (
     <RouteError
+      boundary="match-page"
       eyebrow={dictionary.routeError}
       title={dictionary.matchPageUnavailable}
       body={dictionary.matchPageUnavailableBody}

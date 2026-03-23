@@ -41,7 +41,7 @@ export default async function TeamDetailPage({ params }) {
     notFound();
   }
 
-  const teamNews = flags.news ? await getTeamNewsModule(team.id, 4) : { articles: [], total: 0 };
+  const teamNews = flags.teamNews ? await getTeamNewsModule(team.id, 4) : { articles: [], total: 0 };
   const sportHref = team.sport ? buildSportHref(locale, team.sport) : null;
   const countryHref =
     team.country && team.sport && team.league?.countryRecord
@@ -242,7 +242,7 @@ export default async function TeamDetailPage({ params }) {
         )}
       </section>
 
-      {flags.news ? (
+      {flags.teamNews ? (
         <NewsModule
           locale={locale}
           eyebrow={dictionary.news}

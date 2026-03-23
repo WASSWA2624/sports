@@ -11,6 +11,7 @@ export default function Error({ reset }) {
 
   return (
     <RouteError
+      boundary="live-page"
       eyebrow={dictionary.routeError}
       title={dictionary.livePageUnavailable}
       body={dictionary.livePageUnavailableBody}

@@ -93,6 +93,10 @@ export function normalizeNewsMetadata(metadata) {
     topicSlug: topicSlug || (topicLabel ? slugifyArticleTitle(topicLabel) : null),
     hero: Boolean(source.hero),
     homepagePlacement: Boolean(source.homepagePlacement),
+    homepageRank:
+      Number.isFinite(source.homepageRank) && Number(source.homepageRank) > 0
+        ? Number(source.homepageRank)
+        : null,
     moderationNotes,
     seoTitle,
     seoDescription,
@@ -193,6 +197,7 @@ export function decorateNewsArticle(article) {
     topicSlug: metadata.topicSlug || article?.category?.slug || "top-story",
     hero: metadata.hero,
     homepagePlacement: metadata.homepagePlacement,
+    homepageRank: metadata.homepageRank,
     seoTitle: metadata.seoTitle,
     seoDescription: metadata.seoDescription,
     moderationNotes: metadata.moderationNotes,
@@ -262,7 +267,22 @@ export function groupNewsHubArticles(articles) {
     }))
     .sort((left, right) => right.articles.length - left.articles.length);
 
-  const homepage = items.filter((article) => article.homepagePlacement).slice(0, 4);
+  const homepage = items
+    .filter((article) => article.homepagePlacement)
+    .sort((left, right) => {
+      const leftRank = left.homepageRank ?? Number.POSITIVE_INFINITY;
+      const rightRank = right.homepageRank ?? Number.POSITIVE_INFINITY;
+
+      if (leftRank !== rightRank) {
+        return leftRank - rightRank;
+      }
+
+      return (
+        new Date(right.publishedAt || right.updatedAt || 0).getTime() -
+        new Date(left.publishedAt || left.updatedAt || 0).getTime()
+      );
+    })
+    .slice(0, 4);
 
   return {
     items,

@@ -46,6 +46,7 @@ function buildEmptyDraft(categories) {
     topicLabel: "",
     hero: false,
     homepagePlacement: false,
+    homepageRank: "",
     moderationNotes: "",
     entityLinks: [],
   };
@@ -72,6 +73,7 @@ function articleToForm(article, categories) {
     topicLabel: article.topicLabel || "",
     hero: Boolean(article.hero),
     homepagePlacement: Boolean(article.homepagePlacement),
+    homepageRank: article.homepageRank || "",
     moderationNotes: article.moderationNotes || "",
     entityLinks: (article.entityLinks || []).map((entry) => ({
       entityType: entry.entityType,
@@ -191,6 +193,7 @@ export default function NewsEditorClient({
 
     const payload = {
       ...form,
+      homepageRank: form.homepageRank ? Number(form.homepageRank) : null,
       publishedAt: toIsoDateTime(form.publishedAt),
     };
 
@@ -455,6 +458,18 @@ export default function NewsEditorClient({
                 <span>{dictionary.newsManageHomepage}</span>
               </label>
             </div>
+
+            <label className={editorStyles.field}>
+              <span>Homepage rank</span>
+              <input
+                type="number"
+                min="1"
+                max="12"
+                value={form.homepageRank}
+                onChange={(event) => updateField("homepageRank", event.target.value)}
+                placeholder="1"
+              />
+            </label>
           </article>
 
           <article className={sharedStyles.panel}>

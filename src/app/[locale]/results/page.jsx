@@ -179,7 +179,7 @@ export default async function ResultsPage({ params, searchParams }) {
         <div className={styles.emptyState}>{dictionary.resultsFilterEmpty}</div>
       )}
 
-      {flags.news ? (
+      {flags.resultsNews ? (
         <NewsModule
           locale={locale}
           eyebrow={dictionary.news}

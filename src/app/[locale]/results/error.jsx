@@ -11,6 +11,7 @@ export default function Error({ reset }) {
 
   return (
     <RouteError
+      boundary="results-page"
       eyebrow={dictionary.routeError}
       title={dictionary.resultsPageUnavailable}
       body={dictionary.resultsPageUnavailableBody}

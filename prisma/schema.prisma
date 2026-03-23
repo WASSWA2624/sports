@@ -63,6 +63,26 @@ enum SyncJobStatus {
   FAILED
 }
 
+enum OpsIssueType {
+  DATA_DISPUTE
+  WRONG_SCORE
+  BROKEN_ARTICLE_CONTENT
+}
+
+enum OpsIssueStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum OpsIssuePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 model User {
   id                        String                   @id @default(cuid())
   email                     String                   @unique
@@ -80,6 +100,8 @@ model User {
   notificationSubscriptions NotificationSubscription[]
   recentViews               RecentView[]
   auditLogs                 AuditLog[]
+  reportedIssues            OpsIssue[]               @relation("ReportedIssues")
+  assignedIssues            OpsIssue[]               @relation("AssignedIssues")
 }
 
 model Session {
@@ -434,6 +456,7 @@ model Fixture {
   broadcastChannels BroadcastChannel[]
   oddsMarkets       OddsMarket[]
   resultSnapshot    ResultSnapshot?
+  issues            OpsIssue[]
 
   @@index([status, startsAt])
   @@index([leagueId, seasonId, startsAt])
@@ -649,6 +672,7 @@ model NewsArticle {
   updatedAt   DateTime          @updatedAt
   category    NewsCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   entityLinks ArticleEntityLink[]
+  issues      OpsIssue[]
 
   @@index([status, publishedAt])
 }
@@ -672,11 +696,18 @@ model AuditLog {
   action      String
   entityType  String
   entityId    String
+  requestId   String?
+  actorRoles  Json?
+  ipAddress   String?
+  userAgent   String?
+  previousHash String?
+  eventHash   String?  @unique
   metadata    Json?
   createdAt   DateTime @default(now())
   actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
 }
 
 model FeatureFlag {
@@ -723,4 +754,93 @@ model SyncCheckpoint {
 
   @@unique([provider, key])
   @@index([provider, updatedAt])
+}
+
+model ShellModule {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  name              String
+  location          String
+  description       String?
+  isEnabled         Boolean  @default(true)
+  emergencyDisabled Boolean  @default(false)
+  emergencyReason   String?  @db.Text
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([location, isEnabled])
+}
+
+model AdSlot {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  placement String
+  size      String?
+  copy      String?  @db.Text
+  ctaLabel  String?
+  ctaUrl    String?
+  isEnabled Boolean  @default(true)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([placement, isEnabled])
+}
+
+model ConsentText {
+  id        String   @id @default(cuid())
+  key       String
+  locale    String   @default("en")
+  title     String
+  body      String   @db.Text
+  version   Int      @default(1)
+  isActive  Boolean  @default(true)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+  @@index([locale, isActive])
+}
+
+model RouteErrorEvent {
+  id        String   @id @default(cuid())
+  route     String
+  boundary  String
+  digest    String?
+  message   String?  @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([route, createdAt])
+  @@index([createdAt])
+}
+
+model OpsIssue {
+  id                String           @id @default(cuid())
+  issueType         OpsIssueType
+  status            OpsIssueStatus   @default(OPEN)
+  priority          OpsIssuePriority @default(MEDIUM)
+  title             String
+  description       String           @db.Text
+  entityType        String?
+  entityId          String?
+  fixtureId         String?
+  articleId         String?
+  reporterUserId    String?
+  assigneeUserId    String?
+  resolutionSummary String?          @db.Text
+  metadata          Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  resolvedAt        DateTime?
+  fixture           Fixture?         @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  article           NewsArticle?     @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  reporter          User?            @relation("ReportedIssues", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  assignee          User?            @relation("AssignedIssues", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, priority, createdAt])
+  @@index([entityType, entityId])
 }

@@ -201,7 +201,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     notFound();
   }
 
-  const competitionNews = flags.news
+  const competitionNews = flags.leagueNews
     ? await getCompetitionNewsModule(league.competitionId, activeTab === "news" ? 8 : 4)
     : { articles: [], total: 0 };
   const sport = league.sport || league.competition?.sport || null;
@@ -490,7 +490,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             )}
           </section>
 
-          {flags.news ? (
+          {flags.leagueNews ? (
             <NewsModule
               locale={locale}
               eyebrow={dictionary.news}
@@ -547,7 +547,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
       ) : null}
 
       {activeTab === "news" ? (
-        flags.news ? (
+        flags.leagueNews ? (
           <NewsModule
             locale={locale}
             eyebrow={dictionary.news}

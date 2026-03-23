@@ -63,7 +63,7 @@ export default async function FixturesPage({ params }) {
         <div className={styles.emptyState}>{dictionary.noData}</div>
       )}
 
-      {flags.news ? (
+      {flags.liveNews ? (
         <NewsModule
           locale={locale}
           eyebrow={dictionary.news}

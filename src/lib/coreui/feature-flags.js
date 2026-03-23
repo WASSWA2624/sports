@@ -1,10 +1,22 @@
 import { unstable_cache } from "next/cache";
-import { db } from "../db";
+import { getPublicControlState } from "../control-plane";
 
 const DEFAULT_PUBLIC_SURFACE_FLAGS = {
   news: true,
+  homeNews: true,
+  leagueNews: true,
+  teamNews: true,
+  liveNews: true,
+  resultsNews: true,
   odds: true,
+  fixtureOdds: true,
+  competitionOdds: true,
   broadcast: true,
+  fixtureBroadcast: true,
+  shellAdSlot: true,
+  shellConsent: true,
+  shellSupport: true,
+  moduleMap: {},
 };
 
 async function safely(query, fallback) {
@@ -17,27 +29,7 @@ async function safely(query, fallback) {
 
 export const getPublicSurfaceFlags = unstable_cache(
   async () =>
-    safely(async () => {
-      const flags = await db.featureFlag.findMany({
-        where: {
-          key: {
-            in: ["news_hub_enabled", "odds_surfaces_enabled", "broadcast_surfaces_enabled"],
-          },
-        },
-        select: {
-          key: true,
-          enabled: true,
-        },
-      });
-
-      const byKey = Object.fromEntries(flags.map((flag) => [flag.key, flag.enabled]));
-
-      return {
-        news: byKey.news_hub_enabled ?? DEFAULT_PUBLIC_SURFACE_FLAGS.news,
-        odds: byKey.odds_surfaces_enabled ?? DEFAULT_PUBLIC_SURFACE_FLAGS.odds,
-        broadcast: byKey.broadcast_surfaces_enabled ?? DEFAULT_PUBLIC_SURFACE_FLAGS.broadcast,
-      };
-    }, DEFAULT_PUBLIC_SURFACE_FLAGS),
+    safely(() => getPublicControlState(), DEFAULT_PUBLIC_SURFACE_FLAGS),
   ["coreui:public-surface-flags"],
-  { revalidate: 300, tags: ["feature-flags"] }
+  { revalidate: 300, tags: ["feature-flags", "coreui:shell"] }
 );

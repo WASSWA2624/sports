@@ -73,6 +73,171 @@ async function seed() {
 
     await connection.query(
       `
+      INSERT INTO ShellModule (
+        id, \`key\`, name, location, description, isEnabled, emergencyDisabled, emergencyReason, metadata, createdAt, updatedAt
+      )
+      VALUES
+        (
+          UUID(), 'news_hub', 'News hub', 'news',
+          'Top-level editorial hub and downstream linked modules.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'news'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'homepage_news_module', 'Homepage news module', 'home',
+          'Compact homepage editorial strip.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'home'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'league_news_module', 'League news module', 'league',
+          'Competition-linked news module.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'league'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'team_news_module', 'Team news module', 'team',
+          'Team-linked news module.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'team'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'live_news_strip', 'Live news strip', 'live',
+          'Latest news strip on the live scores board.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'live'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'results_news_strip', 'Results news strip', 'results',
+          'Latest news strip on the results page.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'results'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'fixture_odds', 'Fixture odds', 'match',
+          'Match-detail odds surface.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'match'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'competition_odds', 'Competition odds', 'league',
+          'League-level odds tabs.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'league'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'fixture_broadcast', 'Fixture broadcast', 'match',
+          'Match-detail broadcast guide.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'match'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'shell_right_rail_ad_slot', 'Right rail ad slot', 'shell',
+          'Support slot in the public right rail.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'shell-right-rail'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'shell_right_rail_consent', 'Right rail consent', 'shell',
+          'Consent and privacy copy in the public shell.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'shell-right-rail'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'shell_right_rail_support', 'Right rail support copy', 'shell',
+          'Operational support explainer in the public shell.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'shell-right-rail'),
+          NOW(), NOW()
+        )
+      ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        location = VALUES(location),
+        description = VALUES(description),
+        isEnabled = VALUES(isEnabled),
+        emergencyDisabled = VALUES(emergencyDisabled),
+        emergencyReason = VALUES(emergencyReason),
+        metadata = VALUES(metadata),
+        updatedAt = NOW()
+      `
+    );
+
+    await connection.query(
+      `
+      INSERT INTO AdSlot (
+        id, \`key\`, name, placement, size, copy, ctaLabel, ctaUrl, isEnabled, metadata, createdAt, updatedAt
+      )
+      VALUES
+        (
+          UUID(), 'shell_right_rail_primary', 'Right rail support slot', 'shell:right-rail', '300x250',
+          'Sponsor-safe support placement for promos, house campaigns, or fallback inventory.',
+          'View sponsor guide', 'https://example.com/sponsor-guide', true,
+          JSON_OBJECT('tone', 'house'),
+          NOW(), NOW()
+        )
+      ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        placement = VALUES(placement),
+        size = VALUES(size),
+        copy = VALUES(copy),
+        ctaLabel = VALUES(ctaLabel),
+        ctaUrl = VALUES(ctaUrl),
+        isEnabled = VALUES(isEnabled),
+        metadata = VALUES(metadata),
+        updatedAt = NOW()
+      `
+    );
+
+    await connection.query(
+      `
+      INSERT INTO ConsentText (
+        id, \`key\`, locale, title, body, version, isActive, metadata, createdAt, updatedAt
+      )
+      VALUES
+        (
+          UUID(), 'shell_right_rail', 'en', 'Consent',
+          'Consent, privacy, and regulated-content notices land in this rail without breaking the scores layout.',
+          1, true,
+          JSON_OBJECT('region', 'global'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'shell_right_rail', 'fr', 'Consentement',
+          'Les mentions de consentement, de confidentialite et de contenu reglemente apparaissent ici sans casser la mise en page des scores.',
+          1, true,
+          JSON_OBJECT('region', 'global'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'shell_right_rail', 'sw', 'Idhini',
+          'Ridhaa, faragha, na matangazo ya maudhui yaliyodhibitiwa yanaweza kuonekana hapa bila kuvunja mpangilio wa alama.',
+          1, true,
+          JSON_OBJECT('region', 'global'),
+          NOW(), NOW()
+        )
+      ON DUPLICATE KEY UPDATE
+        title = VALUES(title),
+        body = VALUES(body),
+        version = VALUES(version),
+        isActive = VALUES(isActive),
+        metadata = VALUES(metadata),
+        updatedAt = NOW()
+      `
+    );
+
+    await connection.query(
+      `
       INSERT INTO SourceProvider (id, code, name, kind, isActive, createdAt, updatedAt)
       VALUES
         (UUID(), 'SPORTSMONKS', 'SportsMonks', 'football-feed', true, NOW(), NOW())
@@ -645,6 +810,47 @@ async function seed() {
 
         transferWatchArticleId, sportId,
         transferWatchArticleId, chelseaId,
+      ]
+    );
+
+    await connection.query(
+      `
+      DELETE FROM OpsIssue
+      WHERE title IN (
+        'Live score dispute for Arsenal vs Chelsea',
+        'Archived transfer-watch brief needs follow-up'
+      )
+      `
+    );
+
+    await connection.query(
+      `
+      INSERT INTO OpsIssue (
+        id, issueType, status, priority, title, description, entityType, entityId, fixtureId, articleId, metadata, createdAt, updatedAt, resolvedAt
+      )
+      VALUES
+        (
+          UUID(), 'WRONG_SCORE', 'OPEN', 'HIGH',
+          'Live score dispute for Arsenal vs Chelsea',
+          'Operations flagged a disagreement between the provider feed and an editorial monitor on the live Arsenal v Chelsea scoreline.',
+          'Fixture', ?, ?, NULL,
+          JSON_OBJECT('queue', 'scores', 'reportedSource', 'ops-seed'),
+          NOW(), NOW(), NULL
+        ),
+        (
+          UUID(), 'BROKEN_ARTICLE_CONTENT', 'INVESTIGATING', 'MEDIUM',
+          'Archived transfer-watch brief needs follow-up',
+          'The archived transfer-watch article remains in the editorial history and should stay linked to takedown notes until review closes.',
+          'NewsArticle', ?, NULL, ?,
+          JSON_OBJECT('queue', 'content', 'reportedSource', 'ops-seed'),
+          NOW(), NOW(), NULL
+        )
+      `,
+      [
+        liveFixtureId,
+        liveFixtureId,
+        transferWatchArticleId,
+        transferWatchArticleId,
       ]
     );
 

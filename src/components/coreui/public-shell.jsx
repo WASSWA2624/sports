@@ -20,6 +20,15 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isFavoritesPage = pathname === `/${locale}/favorites` || pathname.startsWith(`/${locale}/favorites/`);
   const watchCount = watchlistCount || watchlistItems.length;
+  const shellChrome = shellData?.chrome || {};
+  const shellModuleMap = shellChrome.shellModuleMap || {};
+  const adSlotEnabled = shellModuleMap.shell_right_rail_ad_slot ?? true;
+  const consentEnabled = shellModuleMap.shell_right_rail_consent ?? true;
+  const supportEnabled = shellModuleMap.shell_right_rail_support ?? true;
+  const adSlotCopy =
+    shellChrome.adSlot?.copy || shellChrome.adSlot?.name || dictionary.adSlotCopy;
+  const consentTitle = shellChrome.consentText?.title || dictionary.consent;
+  const consentBody = shellChrome.consentText?.body || dictionary.consentBody;
   const allCompetitions = [
     ...(shellData?.featuredCompetitions || []),
     ...((shellData?.countryGroups || []).flatMap((group) =>
@@ -637,26 +646,32 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
           <div className={styles.centerRail}>{children}</div>
 
           <aside className={styles.rightRail}>
-            <section className={styles.railCard}>
-              <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.adSlot}</h2>
-                <div className={styles.adSlot}>{dictionary.adSlotCopy}</div>
-              </div>
-            </section>
+            {adSlotEnabled ? (
+              <section className={styles.railCard}>
+                <div className={styles.railSection}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.adSlot}</h2>
+                  <div className={styles.adSlot}>{adSlotCopy}</div>
+                </div>
+              </section>
+            ) : null}
 
-            <section className={styles.railCard}>
-              <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.consent}</h2>
-                <p className={styles.railMuted}>{dictionary.consentBody}</p>
-              </div>
-            </section>
+            {consentEnabled ? (
+              <section className={styles.railCard}>
+                <div className={styles.railSection}>
+                  <h2 className={styles.railSectionTitle}>{consentTitle}</h2>
+                  <p className={styles.railMuted}>{consentBody}</p>
+                </div>
+              </section>
+            ) : null}
 
-            <section className={styles.railCard}>
-              <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.supportRail}</h2>
-                <p className={styles.railMuted}>{dictionary.supportRailBody}</p>
-              </div>
-            </section>
+            {supportEnabled ? (
+              <section className={styles.railCard}>
+                <div className={styles.railSection}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.supportRail}</h2>
+                  <p className={styles.railMuted}>{dictionary.supportRailBody}</p>
+                </div>
+              </section>
+            ) : null}
           </aside>
         </div>
       </main>

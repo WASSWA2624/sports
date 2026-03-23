@@ -279,7 +279,7 @@ export default async function LocaleHomePage({ params }) {
         </section>
       </div>
 
-      {flags.news ? (
+      {flags.homeNews ? (
         <NewsModule
           locale={locale}
           eyebrow={dictionary.news}

@@ -301,12 +301,12 @@ export async function getLiveMatchDetail(reference, locale = "en", viewerTerrito
       odds: buildFixtureOddsModule(fixture, {
         locale,
         viewerTerritory,
-        enabled: flags.odds,
+        enabled: flags.fixtureOdds,
       }),
       broadcast: buildFixtureBroadcastModule(fixture, {
         locale,
         viewerTerritory,
-        enabled: flags.broadcast,
+        enabled: flags.fixtureBroadcast,
       }),
     };
   }, null);

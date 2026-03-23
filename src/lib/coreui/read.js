@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db } from "../db";
+import { getShellChromeContent } from "../control-plane";
 import { buildStandingTable } from "./competition-standings";
 import { getPublicSurfaceFlags } from "./feature-flags";
 import {
@@ -348,9 +349,9 @@ export const getLeagueDirectory = unstable_cache(
 );
 
 export const getShellSnapshot = unstable_cache(
-  async () =>
+  async (locale = "en") =>
     safely(async () => {
-      const [leagues, teams] = await Promise.all([
+      const [leagues, teams, shellChrome] = await Promise.all([
         db.league.findMany({
           where: { isActive: true },
           orderBy: [{ country: "asc" }, { name: "asc" }],
@@ -392,6 +393,7 @@ export const getShellSnapshot = unstable_cache(
             },
           },
         }),
+        getShellChromeContent(locale),
       ]);
 
       const countryGroups = [...leagues.reduce((accumulator, league) => {
@@ -464,12 +466,18 @@ export const getShellSnapshot = unstable_cache(
         countryGroups,
         teamDirectory,
         searchShortcuts,
+        chrome: shellChrome,
       };
     }, {
       featuredCompetitions: [],
       countryGroups: [],
       teamDirectory: [],
       searchShortcuts: [],
+      chrome: {
+        adSlot: null,
+        consentText: null,
+        shellModuleMap: {},
+      },
     }),
   ["coreui:shell"],
   { revalidate: 300, tags: ["coreui:shell"] }
@@ -868,7 +876,7 @@ export async function getLeagueDetail(
     competitionOdds: buildCompetitionOddsModule({ ...league, fixtures: league.oddsFixtures }, {
       locale,
       viewerTerritory,
-      enabled: flags.odds,
+      enabled: flags.competitionOdds,
     }),
   };
 }
@@ -1045,12 +1053,12 @@ export async function getFixtureDetail(
     odds: buildFixtureOddsModule(fixture, {
       locale,
       viewerTerritory,
-      enabled: flags.odds,
+      enabled: flags.fixtureOdds,
     }),
     broadcast: buildFixtureBroadcastModule(fixture, {
       locale,
       viewerTerritory,
-      enabled: flags.broadcast,
+      enabled: flags.fixtureBroadcast,
     }),
   };
 }
