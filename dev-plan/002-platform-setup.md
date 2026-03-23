@@ -1,4 +1,4 @@
-# 002-setup
+# 002-platform-setup
 
 ## Goal
 Create the runnable platform baseline for a Flashscore-style web app.

@@ -1,4 +1,4 @@
-# 016-ship
+# 016-production-release
 
 ## Goal
 Deploy the Flashscore-style app safely to production with rollback readiness.

@@ -1,4 +1,4 @@
-# 014-scale
+# 014-scale-and-multi-sport
 
 ## Goal
 Harden the platform for real-time load and multi-sport expansion.

@@ -1,4 +1,4 @@
-# 001-scope
+# 001-parity-scope
 
 ## Goal
 Lock the app to Flashscore-style public web parity as defined in `app-write-up.md`.

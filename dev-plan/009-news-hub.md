@@ -1,4 +1,4 @@
-# 009-news
+# 009-news-hub
 
 ## Goal
 Ship the Flashscore-style news hub and article system.

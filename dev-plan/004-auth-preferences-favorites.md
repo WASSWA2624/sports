@@ -1,4 +1,4 @@
-# 004-auth
+# 004-auth-preferences-favorites
 
 ## Goal
 Ship login, preferences, and favorites sync for Flashscore-style personalization.

@@ -1,4 +1,4 @@
-# 013-grow
+# 013-search-seo-retention
 
 ## Goal
 Add discovery, SEO, and retention loops that strengthen Flashscore-style usage.

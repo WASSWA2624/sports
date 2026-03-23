@@ -1,4 +1,4 @@
-# 012-admin
+# 012-admin-and-editor-ops
 
 ## Goal
 Deliver editorial and operational control for a live scores platform.

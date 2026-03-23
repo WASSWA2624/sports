@@ -1,4 +1,4 @@
-# 005-sync
+# 005-provider-sync-pipeline
 
 ## Goal
 Build the provider abstraction and sync pipeline needed for Flashscore-style live coverage.

@@ -1,4 +1,4 @@
-# 003-model
+# 003-core-data-model
 
 ## Goal
 Implement the core schema for a multi-sport live scores and news product.

@@ -1,4 +1,4 @@
-# 008-odds
+# 008-odds-and-broadcast
 
 ## Goal
 Release odds and broadcast surfaces on competition and match pages.

@@ -1,4 +1,4 @@
-# 007-live
+# 007-live-scores-board
 
 ## Goal
 Implement the daily scores board and live match experience.

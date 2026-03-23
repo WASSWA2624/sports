@@ -1,4 +1,4 @@
-# 011-favorites-alerts
+# 011-favorites-and-alerts
 
 ## Goal
 Deliver favorites, my teams, and alert workflows.

@@ -1,4 +1,4 @@
-# 006-coreui
+# 006-shell-navigation-ui
 
 ## Goal
 Replicate the shared Flashscore-style shell and navigation system.

@@ -1,4 +1,4 @@
-# 017-handoff
+# 017-handoff-and-maintenance
 
 ## Goal
 Complete maintainability handoff for the shipped live scores platform.

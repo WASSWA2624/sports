@@ -1,4 +1,4 @@
-# 010-competition-pages
+# 010-competition-team-archive-pages
 
 ## Goal
 Build country, competition, team, and archive page coverage.
