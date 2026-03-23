@@ -8,14 +8,23 @@ import { buildCompetitionHref } from "../../lib/coreui/routes";
 import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
 import { NewsModule } from "../../components/coreui/news-module";
+import { OnboardingPanel } from "../../components/coreui/onboarding-panel";
 import { PersonalizationUsageTracker } from "../../components/coreui/personalization-usage-tracker";
+import {
+  FavoriteReminderPanel,
+  RecentItemsPanel,
+  TopCompetitionsPanel,
+} from "../../components/coreui/discovery-panels";
 import styles from "../../components/coreui/styles.module.css";
 import {
+  getFavoritesPageData,
   getPersonalizationSnapshot,
   getPersonalizationUsage,
   sortCompetitionsByPersonalization,
   sortFixturesByPersonalization,
 } from "../../lib/personalization";
+import { buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
+import { getRecentItemsModule, getTopCompetitionsModule } from "../../lib/coreui/discovery";
 
 const STATUS_ORDER = {
   LIVE: 0,
@@ -76,6 +85,11 @@ export default async function LocaleHomePage({ params }) {
     getPersonalizationSnapshot(),
   ]);
   const usage = getPersonalizationUsage(personalization);
+  const [topCompetitions, recentItems, favoritePageData] = await Promise.all([
+    getTopCompetitionsModule(),
+    getRecentItemsModule(personalization, { locale }),
+    usage.hasFavorites ? getFavoritesPageData(personalization) : Promise.resolve(null),
+  ]);
   const boardFixtures = sortFixturesByPersonalization(
     dedupeFixtures([
       ...snapshot.liveFixtures,
@@ -105,6 +119,36 @@ export default async function LocaleHomePage({ params }) {
     month: "2-digit",
     weekday: "short",
   }).format(new Date());
+  const reminderItems = favoritePageData
+    ? [
+        ...(favoritePageData.fixtures || []).map((fixture) => ({
+          itemId: `fixture:${fixture.id}`,
+          title: `${fixture.homeTeam?.name || dictionary.match} vs ${fixture.awayTeam?.name || dictionary.match}`,
+          subtitle: fixture.league?.name || dictionary.match,
+          href: buildMatchHref(locale, fixture),
+          supportedTypes: ["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT"],
+          surface: "home-reminders",
+        })),
+        ...(favoritePageData.teams || []).map((team) => ({
+          itemId: `team:${team.id}`,
+          title: team.name,
+          subtitle: team.league?.name || dictionary.teams,
+          href: buildTeamHref(locale, team),
+          supportedTypes: ["KICKOFF", "FINAL_RESULT"],
+          surface: "home-reminders",
+        })),
+        ...(favoritePageData.competitions || []).map((competition) => ({
+          itemId: `competition:${competition.code}`,
+          title: competition.name,
+          subtitle: competition.country || dictionary.competition,
+          href: buildCompetitionHref(locale, competition),
+          supportedTypes: ["KICKOFF", "FINAL_RESULT"],
+          surface: "home-reminders",
+        })),
+      ]
+        .filter((item) => !(personalization.alertSettings?.[item.itemId] || []).length)
+        .slice(0, 3)
+    : [];
 
   return (
     <>
@@ -112,6 +156,20 @@ export default async function LocaleHomePage({ params }) {
         active={usage.hasFavorites || usage.hasRecentViews}
         surface="home-board"
         metadata={usage}
+      />
+
+      <OnboardingPanel
+        locale={locale}
+        dictionary={dictionary}
+        sportOptions={snapshot.leagues[0]?.sport ? [snapshot.leagues[0].sport] : []}
+        competitionOptions={topCompetitions}
+        teamOptions={snapshot.leagues.flatMap((league) =>
+          (league.teams || []).map((team) => ({
+            id: team.id,
+            name: team.name,
+            leagueName: league.name,
+          }))
+        )}
       />
 
       <section className={styles.noticeBanner}>
@@ -279,6 +337,10 @@ export default async function LocaleHomePage({ params }) {
         </section>
       </div>
 
+      <RecentItemsPanel dictionary={dictionary} items={recentItems} />
+      <FavoriteReminderPanel locale={locale} dictionary={dictionary} items={reminderItems} />
+      <TopCompetitionsPanel locale={locale} dictionary={dictionary} competitions={topCompetitions} />
+
       {flags.homeNews ? (
         <NewsModule
           locale={locale}
@@ -289,6 +351,7 @@ export default async function LocaleHomePage({ params }) {
           href="/news"
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
+          trackingSurface="home-news-module"
         />
       ) : null}
     </>
