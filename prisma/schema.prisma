@@ -197,6 +197,10 @@ model League {
   name       String
   country    String?
   code       String   @unique
+  provider   String?
+  externalRef String? @unique
+  logoUrl    String?
+  metadata   Json?
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -211,8 +215,11 @@ model Season {
   id         String   @id @default(cuid())
   leagueId   String
   name       String
+  provider   String?
+  externalRef String? @unique
   startDate  DateTime
   endDate    DateTime
+  metadata   Json?
   isCurrent  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -230,6 +237,10 @@ model Team {
   name       String
   shortName  String?
   code       String?
+  provider   String?
+  externalRef String? @unique
+  logoUrl    String?
+  metadata   Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   league     League?  @relation(fields: [leagueId], references: [id], onDelete: SetNull)
@@ -247,10 +258,15 @@ model Fixture {
   seasonId       String
   homeTeamId     String
   awayTeamId     String
+  provider       String?
   startsAt       DateTime
   status         FixtureStatus  @default(SCHEDULED)
   venue          String?
   externalRef    String?        @unique
+  round          String?
+  stateReason    String?
+  lastSyncedAt   DateTime?
+  metadata       Json?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   league         League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
@@ -291,10 +307,13 @@ model Standing {
 model OddsMarket {
   id            String          @id @default(cuid())
   fixtureId      String
+  provider      String?
+  externalRef   String?         @unique
   bookmaker      String
   marketType     String
   suspended      Boolean         @default(false)
   lastSyncedAt   DateTime?
+  metadata      Json?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   fixture        Fixture         @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
@@ -307,10 +326,12 @@ model OddsMarket {
 model OddsSelection {
   id              String      @id @default(cuid())
   oddsMarketId    String
+  externalRef     String?     @unique
   label           String
   line            Decimal?    @db.Decimal(10, 2)
   priceDecimal    Decimal     @db.Decimal(10, 4)
   isActive        Boolean     @default(true)
+  metadata        Json?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   oddsMarket      OddsMarket  @relation(fields: [oddsMarketId], references: [id], onDelete: Cascade)
@@ -554,7 +575,11 @@ model FeatureFlag {
 
 model SyncJob {
   id            String        @id @default(cuid())
+  provider      String        @default("SPORTSMONKS")
   source        String
+  bucket        String        @default("manual")
+  recordsProcessed Int        @default(0)
+  resultSummary Json?
   status        SyncJobStatus @default(PENDING)
   startedAt     DateTime?
   finishedAt    DateTime?
@@ -564,15 +589,23 @@ model SyncJob {
   checkpoints   SyncCheckpoint[]
 
   @@index([source, status, createdAt])
+  @@index([provider, bucket, createdAt])
 }
 
 model SyncCheckpoint {
-  id          String   @id @default(cuid())
-  syncJobId   String
-  cursor      String
-  payload     Json?
-  createdAt   DateTime @default(now())
-  syncJob     SyncJob  @relation(fields: [syncJobId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  provider      String   @default("SPORTSMONKS")
+  key           String
+  syncJobId     String?
+  cursor        String?
+  payload       Json?
+  errorMessage  String?  @db.Text
+  lastSuccessAt DateTime?
+  lastFailureAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  syncJob       SyncJob? @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
 
-  @@unique([syncJobId, cursor])
+  @@unique([provider, key])
+  @@index([provider, updatedAt])
 }

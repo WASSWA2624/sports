@@ -1,0 +1,100 @@
+import {
+  normalizeSportsMonksFixtures,
+  normalizeSportsMonksOdds,
+  normalizeSportsMonksStandings,
+  normalizeSportsMonksTeams,
+} from "../normalize";
+import { requireSportsApiKey } from "../config";
+
+function buildUrl(baseUrl, path, params = {}) {
+  const normalizedBase = baseUrl.replace(/\/$/, "");
+  const normalizedPath = path.replace(/^\//, "");
+  const url = new URL(`${normalizedBase}/${normalizedPath}`);
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value == null || value === "") {
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => url.searchParams.append(key, entry));
+      continue;
+    }
+
+    url.searchParams.set(key, String(value));
+  }
+
+  return url;
+}
+
+function toDateString(date) {
+  return new Date(date).toISOString().slice(0, 10);
+}
+
+export class SportsMonksProvider {
+  constructor() {
+    this.config = requireSportsApiKey();
+  }
+
+  async request(path, params = {}) {
+    const url = buildUrl(this.config.baseUrl, path, {
+      api_token: this.config.apiKey,
+      ...params,
+    });
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`SportsMonks request failed (${response.status}): ${errorText}`);
+    }
+
+    return response.json();
+  }
+
+  async fetchFixtures({ startDate, endDate }) {
+    const payload = await this.request(
+      `fixtures/between/${toDateString(startDate)}/${toDateString(endDate)}`,
+      {
+        include: "league;season;participants;state;scores;venue;round",
+      }
+    );
+
+    return normalizeSportsMonksFixtures(payload.data || payload);
+  }
+
+  async fetchLivescores() {
+    const payload = await this.request("livescores/inplay", {
+      include: "league;season;participants;state;scores;venue;round",
+    });
+
+    return normalizeSportsMonksFixtures(payload.data || payload);
+  }
+
+  async fetchStandings({ seasonExternalRef }) {
+    const payload = await this.request(`standings/seasons/${seasonExternalRef}`, {
+      include: "participant",
+    });
+
+    return normalizeSportsMonksStandings(payload.data || payload, seasonExternalRef);
+  }
+
+  async fetchOdds({ fixtureExternalRef, bookmakerIds = [] }) {
+    const payload = await this.request(`odds/pre-match/fixtures/${fixtureExternalRef}`, {
+      include: "bookmaker;market;values",
+      ...(bookmakerIds.length ? { filters: `bookmakerId:${bookmakerIds.join(",")}` } : {}),
+    });
+
+    return normalizeSportsMonksOdds(payload.data || payload, fixtureExternalRef);
+  }
+
+  async fetchTeams({ seasonExternalRef }) {
+    const payload = await this.request(`teams/seasons/${seasonExternalRef}`);
+    return normalizeSportsMonksTeams(payload.data || payload);
+  }
+}
