@@ -5,6 +5,7 @@ import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getLiveMatchdayFeed } from "../../../lib/coreui/live-read";
+import { buildCompetitionHref } from "../../../lib/coreui/routes";
 import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
 import { LiveRefresh } from "../../../components/coreui/live-refresh";
 import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
@@ -192,7 +193,15 @@ export default async function LivePage({ params, searchParams }) {
               <summary className={styles.boardGroupSummary}>
                 <div>
                   <p className={styles.eyebrow}>{group.country || dictionary.international}</p>
-                  <h2 className={styles.sectionTitle}>{group.leagueName || dictionary.competition}</h2>
+                  <h2 className={styles.sectionTitle}>
+                    {group.leagueCode ? (
+                      <Link href={buildCompetitionHref(locale, { code: group.leagueCode })}>
+                        {group.leagueName || dictionary.competition}
+                      </Link>
+                    ) : (
+                      group.leagueName || dictionary.competition
+                    )}
+                  </h2>
                 </div>
                 <div className={styles.inlineBadgeRow}>
                   <span className={styles.badge}>{group.fixtures.length}</span>

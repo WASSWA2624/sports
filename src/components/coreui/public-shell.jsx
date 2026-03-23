@@ -497,10 +497,24 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 
                   <div className={styles.mobileMenuList}>
                     {countryGroups.map((group) => (
-                      <div key={group.country} className={styles.mobileMenuCountryRow}>
-                        <span>{group.country}</span>
-                        <span className={styles.badge}>{group.leagues.length}</span>
-                      </div>
+                      group.href ? (
+                        <Link
+                          key={group.country}
+                          href={`/${locale}${group.href}`}
+                          className={styles.mobileMenuLink}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <span className={styles.mobileMenuItemContent}>
+                            <span>{group.country}</span>
+                            <span className={styles.badge}>{group.leagues.length}</span>
+                          </span>
+                        </Link>
+                      ) : (
+                        <div key={group.country} className={styles.mobileMenuCountryRow}>
+                          <span>{group.country}</span>
+                          <span className={styles.badge}>{group.leagues.length}</span>
+                        </div>
+                      )
                     ))}
                   </div>
                 </section>
@@ -581,10 +595,17 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 <h2 className={styles.railSectionTitle}>{dictionary.countries}</h2>
                 <div className={styles.railList}>
                   {(shellData?.countryGroups || []).map((group) => (
-                    <div key={group.country} className={styles.railCountryRow}>
-                      <strong>{group.country}</strong>
-                      <span className={styles.badge}>{group.leagues.length}</span>
-                    </div>
+                    group.href ? (
+                      <Link key={group.country} href={`/${locale}${group.href}`} className={styles.railLink}>
+                        <span>{group.country}</span>
+                        <span className={styles.badge}>{group.leagues.length}</span>
+                      </Link>
+                    ) : (
+                      <div key={group.country} className={styles.railCountryRow}>
+                        <strong>{group.country}</strong>
+                        <span className={styles.badge}>{group.leagues.length}</span>
+                      </div>
+                    )
                   ))}
                 </div>
               </div>

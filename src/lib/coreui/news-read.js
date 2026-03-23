@@ -279,6 +279,33 @@ export async function getCompetitionNewsModule(competitionId, take = 4) {
   };
 }
 
+export async function getCountryNewsModule(countryId, take = 4) {
+  if (!countryId) {
+    return { articles: [], total: 0 };
+  }
+
+  const articles = await safely(
+    () =>
+      fetchArticles({
+        where: {
+          entityLinks: {
+            some: {
+              entityType: "COUNTRY",
+              entityId: countryId,
+            },
+          },
+        },
+        take,
+      }),
+    []
+  );
+
+  return {
+    articles,
+    total: articles.length,
+  };
+}
+
 export async function getTeamNewsModule(teamId, take = 4) {
   if (!teamId) {
     return { articles: [], total: 0 };

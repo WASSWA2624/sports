@@ -43,3 +43,15 @@ export function getSportLabel(key, dictionary) {
 
   return labels[key] || key;
 }
+
+export function getStandingViewLabel(key, dictionary) {
+  const labels = {
+    overall: dictionary.standingOverall,
+    home: dictionary.standingHome,
+    away: dictionary.standingAway,
+    form: dictionary.standingForm,
+    live: dictionary.standingLive,
+  };
+
+  return labels[key] || key;
+}

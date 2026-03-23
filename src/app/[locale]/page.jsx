@@ -4,6 +4,7 @@ import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionari
 import { getPublicSurfaceFlags } from "../../lib/coreui/feature-flags";
 import { getHomepageNewsModule } from "../../lib/coreui/news-read";
 import { getHomeSnapshot } from "../../lib/coreui/read";
+import { buildCompetitionHref } from "../../lib/coreui/routes";
 import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
 import { NewsModule } from "../../components/coreui/news-module";
@@ -142,7 +143,15 @@ export default async function LocaleHomePage({ params }) {
                 <div className={styles.boardGroupSummary}>
                   <div>
                     <p className={styles.eyebrow}>{group.country || dictionary.international}</p>
-                    <h2 className={styles.sectionTitle}>{group.name || dictionary.competition}</h2>
+                    <h2 className={styles.sectionTitle}>
+                      {group.code ? (
+                        <Link href={buildCompetitionHref(locale, { code: group.code })}>
+                          {group.name || dictionary.competition}
+                        </Link>
+                      ) : (
+                        group.name || dictionary.competition
+                      )}
+                    </h2>
                   </div>
                   <div className={styles.inlineBadgeRow}>
                     <span className={styles.badge}>{group.fixtures.length}</span>

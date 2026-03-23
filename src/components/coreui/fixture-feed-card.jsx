@@ -13,15 +13,17 @@ import {
   getFixtureMinute,
   isTerminalStatus,
 } from "../../lib/coreui/live-detail";
+import { buildCompetitionHref, buildMatchHref } from "../../lib/coreui/routes";
 
 export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = true }) {
-  const href = `/${locale}/match/${fixture.externalRef || fixture.id}`;
+  const href = buildMatchHref(locale, fixture);
   const dictionary = getDictionary(locale);
   const minuteLabel = fixture.status === "LIVE" ? getFixtureMinute(fixture) : null;
   const refreshProfile = buildFixtureRefreshProfile(fixture, locale);
   const isFrozen = isTerminalStatus(fixture.status) && fixture.resultSnapshot?.capturedAt;
   const indicators = buildFixtureIncidentIndicators(fixture, locale);
   const statusLabel = minuteLabel || formatFixtureStatus(fixture.status, locale);
+  const competitionHref = fixture.league?.code ? buildCompetitionHref(locale, fixture.league) : null;
 
   return (
     <article className={styles.fixtureFeedRow}>
@@ -32,7 +34,15 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
       </div>
 
       <div className={styles.fixtureFeedMain}>
-        {showLeague ? <p className={styles.eyebrow}>{fixture.league?.name || dictionary.league}</p> : null}
+        {showLeague ? (
+          <p className={styles.eyebrow}>
+            {competitionHref ? (
+              <Link href={competitionHref}>{fixture.league?.name || dictionary.league}</Link>
+            ) : (
+              fixture.league?.name || dictionary.league
+            )}
+          </p>
+        ) : null}
 
         <div className={styles.fixtureFeedTeams}>
           <div className={styles.fixtureFeedTeamRow}>
