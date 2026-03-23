@@ -7,6 +7,7 @@ import {
   formatSnapshotTime,
 } from "../../lib/coreui/format";
 import {
+  buildFixtureIncidentIndicators,
   buildFixtureRefreshProfile,
   getFixtureMinute,
   isTerminalStatus,
@@ -17,6 +18,7 @@ export function FixtureFeedCard({ fixture, locale, mode = "live" }) {
   const minuteLabel = fixture.status === "LIVE" ? getFixtureMinute(fixture) : null;
   const refreshProfile = buildFixtureRefreshProfile(fixture);
   const isFrozen = isTerminalStatus(fixture.status) && fixture.resultSnapshot?.capturedAt;
+  const indicators = buildFixtureIncidentIndicators(fixture);
 
   return (
     <article className={styles.fixtureCard}>
@@ -58,6 +60,16 @@ export function FixtureFeedCard({ fixture, locale, mode = "live" }) {
       <div className={styles.fixtureFootnotes}>
         {fixture.resultSnapshot?.statusText ? (
           <p className={styles.fixtureSummary}>{fixture.resultSnapshot.statusText}</p>
+        ) : null}
+
+        {indicators.length ? (
+          <div className={styles.indicatorRow}>
+            {indicators.map((indicator) => (
+              <span key={indicator} className={styles.indicatorBadge}>
+                {indicator}
+              </span>
+            ))}
+          </div>
         ) : null}
 
         {mode === "live" && refreshProfile.enabled ? (

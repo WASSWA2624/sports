@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useEffect, useState } from "react";
+import { createContext, useContext, useMemo, useEffect, useState, useCallback } from "react";
 import {
   DEFAULT_THEME,
   LOCALE_COOKIE_NAME,
@@ -120,7 +120,7 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
     };
   }, [initialWatchlist]);
 
-  async function toggleWatch(itemId) {
+  const toggleWatch = useCallback(async (itemId) => {
     const shouldSave = !watchlist.includes(itemId);
 
     setWatchlist((current) =>
@@ -154,7 +154,7 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
         ? current.filter((entry) => entry !== itemId)
         : [itemId, ...current].slice(0, 24)
     );
-  }
+  }, [sessionUser, watchlist]);
 
   const value = useMemo(
     () => ({
@@ -168,7 +168,7 @@ export function PreferencesProvider({ children, initialLocale, initialTheme, ini
       isWatched: (itemId) => watchlist.includes(itemId),
       toggleWatch,
     }),
-    [favoritesHydrated, initialLocale, sessionUser, theme, watchlist]
+    [favoritesHydrated, initialLocale, sessionUser, theme, toggleWatch, watchlist]
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

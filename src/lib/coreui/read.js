@@ -172,6 +172,101 @@ export const getLeagueDirectory = unstable_cache(
   { revalidate: 300, tags: ["coreui:leagues"] }
 );
 
+export const getShellSnapshot = unstable_cache(
+  async () =>
+    safely(async () => {
+      const [leagues, teams] = await Promise.all([
+        db.league.findMany({
+          where: { isActive: true },
+          orderBy: [{ country: "asc" }, { name: "asc" }],
+          take: 48,
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            country: true,
+          },
+        }),
+        db.team.findMany({
+          orderBy: [{ name: "asc" }],
+          take: 48,
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            shortName: true,
+            league: {
+              select: {
+                code: true,
+                name: true,
+              },
+            },
+          },
+        }),
+      ]);
+
+      const countryGroups = [...leagues.reduce((accumulator, league) => {
+        const country = league.country || "International";
+        if (!accumulator.has(country)) {
+          accumulator.set(country, {
+            country,
+            leagues: [],
+          });
+        }
+
+        accumulator.get(country).leagues.push({
+          code: league.code,
+          name: league.name,
+        });
+        return accumulator;
+      }, new Map()).values()]
+        .sort((left, right) => left.country.localeCompare(right.country))
+        .slice(0, 10);
+
+      const featuredCompetitions = leagues.slice(0, 8).map((league) => ({
+        code: league.code,
+        name: league.name,
+        country: league.country || "International",
+      }));
+
+      const teamDirectory = teams.map((team) => ({
+        id: team.id,
+        code: team.code,
+        name: team.name,
+        shortName: team.shortName,
+        leagueCode: team.league?.code || null,
+        leagueName: team.league?.name || null,
+      }));
+
+      const searchShortcuts = [
+        ...featuredCompetitions.slice(0, 4).map((competition) => ({
+          label: competition.name,
+          href: `/leagues/${competition.code}`,
+          type: "competition",
+        })),
+        ...teamDirectory.slice(0, 4).map((team) => ({
+          label: team.name,
+          href: `/teams/${team.id}`,
+          type: "team",
+        })),
+      ];
+
+      return {
+        featuredCompetitions,
+        countryGroups,
+        teamDirectory,
+        searchShortcuts,
+      };
+    }, {
+      featuredCompetitions: [],
+      countryGroups: [],
+      teamDirectory: [],
+      searchShortcuts: [],
+    }),
+  ["coreui:shell"],
+  { revalidate: 300, tags: ["coreui:shell"] }
+);
+
 export async function getLeagueDetail(reference) {
   return safely(
     () =>

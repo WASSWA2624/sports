@@ -6,6 +6,7 @@ import {
   normalizeLocale,
 } from "../../lib/coreui/preferences";
 import { getPreferenceSnapshot } from "../../lib/coreui/preferences-server";
+import { getShellSnapshot } from "../../lib/coreui/read";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -21,6 +22,7 @@ export default async function LocaleLayout({ children, params }) {
 
   const preferences = await getPreferenceSnapshot();
   const dictionary = getDictionary(locale);
+  const shellData = await getShellSnapshot();
 
   return (
     <PublicShell
@@ -28,6 +30,7 @@ export default async function LocaleLayout({ children, params }) {
       dictionary={dictionary}
       initialTheme={preferences.theme}
       initialWatchlist={preferences.watchlist}
+      shellData={shellData}
     >
       {children}
     </PublicShell>

@@ -110,4 +110,16 @@ export class SportsMonksProvider {
     const payload = await this.request(`teams/seasons/${seasonExternalRef}`);
     return normalizeSportsMonksTeams(payload.data || payload);
   }
+
+  async fetchTaxonomy() {
+    return [];
+  }
+
+  async fetchNews() {
+    return [];
+  }
+
+  async fetchMediaMetadata() {
+    return [];
+  }
 }

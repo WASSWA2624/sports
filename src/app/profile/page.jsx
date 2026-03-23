@@ -5,6 +5,14 @@ import { useEffect, useState } from "react";
 const defaultPreferences = {
   locale: "en",
   theme: "system",
+  timezone: "UTC",
+  favoriteSports: ["football"],
+  alertPreferences: {
+    goals: true,
+    cards: false,
+    kickoff: true,
+    finalResult: true,
+  },
 };
 
 export default function ProfilePage() {
@@ -34,6 +42,15 @@ export default function ProfilePage() {
           setPreferences({
             locale: prefsJson.locale ?? "en",
             theme: prefsJson.theme ?? "system",
+            timezone: prefsJson.timezone ?? "UTC",
+            favoriteSports: prefsJson.favoriteSports ?? ["football"],
+            alertPreferences:
+              prefsJson.alertPreferences ?? {
+                goals: true,
+                cards: false,
+                kickoff: true,
+                finalResult: true,
+              },
           });
         }
       } finally {
@@ -100,6 +117,59 @@ export default function ProfilePage() {
           <option value="light">Light</option>
           <option value="dark">Dark</option>
         </select>
+
+        <label htmlFor="timezone">Timezone</label>
+        <input
+          id="timezone"
+          value={preferences.timezone}
+          onChange={(event) =>
+            setPreferences((prev) => ({ ...prev, timezone: event.target.value }))
+          }
+          style={{ display: "block", marginTop: 8, marginBottom: 16, width: "100%" }}
+        />
+
+        <label htmlFor="favoriteSports">Favorite sports</label>
+        <input
+          id="favoriteSports"
+          value={preferences.favoriteSports.join(", ")}
+          onChange={(event) =>
+            setPreferences((prev) => ({
+              ...prev,
+              favoriteSports: event.target.value
+                .split(",")
+                .map((value) => value.trim())
+                .filter(Boolean),
+            }))
+          }
+          style={{ display: "block", marginTop: 8, marginBottom: 16, width: "100%" }}
+        />
+
+        <fieldset style={{ marginBottom: 16 }}>
+          <legend>Alerts</legend>
+          {[
+            ["goals", "Goals"],
+            ["cards", "Cards"],
+            ["kickoff", "Kickoff"],
+            ["finalResult", "Final result"],
+          ].map(([key, label]) => (
+            <label key={key} style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <input
+                type="checkbox"
+                checked={Boolean(preferences.alertPreferences[key])}
+                onChange={(event) =>
+                  setPreferences((prev) => ({
+                    ...prev,
+                    alertPreferences: {
+                      ...prev.alertPreferences,
+                      [key]: event.target.checked,
+                    },
+                  }))
+                }
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
 
         <button type="submit">Save preferences</button>
       </form>

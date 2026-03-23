@@ -225,7 +225,9 @@ model Competition {
   country     Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
   leagues     League[]
   seasons     Season[]
+  teams       Team[]
   fixtures    Fixture[]
+  standings   Standing[]
 
   @@index([sportId, countryId, name])
 }
@@ -361,6 +363,7 @@ model Venue {
   fixtures    Fixture[]
 
   @@index([name, city])
+  @@unique([name, city])
 }
 
 model Player {

@@ -15,7 +15,8 @@ function parseInteger(value, fallback) {
 
 export function getSportsSyncConfig() {
   return {
-    provider: "SPORTSMONKS",
+    provider: process.env.SPORTS_DATA_PROVIDER || "SPORTSMONKS",
+    primarySport: process.env.SPORTS_PRIMARY_SPORT || "football",
     baseUrl: process.env.SPORTSMONKS_BASE_URL || "https://api.sportmonks.com/v3/football",
     apiKey: process.env.SPORTSMONKS_API_KEY || "",
     trackedLeagueCodes: parseCsv(process.env.SPORTS_SYNC_LEAGUE_CODES),

@@ -6,11 +6,9 @@ import {
   sortFixturesForLiveFeed,
 } from "./live-detail";
 
-const LIVE_STATUS_FILTERS = ["ALL", "LIVE", "SCHEDULED", "FINISHED", "POSTPONED", "CANCELLED"];
+const LIVE_STATUS_FILTERS = ["ALL", "LIVE", "FINISHED", "SCHEDULED"];
 const RESULT_STATUS_FILTERS = ["ALL", "FINISHED", "POSTPONED", "CANCELLED"];
 const TERMINAL_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED"];
-const LIVE_WINDOW_HOURS_PAST = 18;
-const LIVE_WINDOW_HOURS_AHEAD = 12;
 const RESULTS_WINDOW_DAYS = 5;
 
 function addHours(date, amount) {
@@ -23,6 +21,18 @@ function addDays(date, amount) {
   const next = new Date(date);
   next.setDate(next.getDate() + amount);
   return next;
+}
+
+function startOfDay(value) {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function endOfDay(value) {
+  const date = new Date(value);
+  date.setHours(23, 59, 59, 999);
+  return date;
 }
 
 async function safely(query, fallback) {
@@ -110,35 +120,83 @@ function normalizeLeagueFilter(value, pivots) {
   return pivots.some((pivot) => pivot.code === normalized) ? normalized : "all";
 }
 
-export async function getLiveMatchdayFeed({ status, leagueCode } = {}) {
-  const now = new Date();
-  const fixtures = await safely(
-    () =>
-      db.fixture.findMany({
-        where: {
-          OR: [
-            { status: "LIVE" },
-            {
-              status: "SCHEDULED",
-              startsAt: {
-                gte: addHours(now, -1),
-                lte: addHours(now, LIVE_WINDOW_HOURS_AHEAD),
-              },
-            },
-            {
-              status: { in: TERMINAL_STATUSES },
-              startsAt: {
-                gte: addHours(now, -LIVE_WINDOW_HOURS_PAST),
-              },
-            },
-          ],
+function normalizeBoardDate(dateValue) {
+  const candidate = normalizeSearchValue(dateValue);
+  if (!candidate) {
+    return startOfDay(new Date());
+  }
+
+  const parsed = new Date(candidate);
+  return Number.isNaN(parsed.getTime()) ? startOfDay(new Date()) : startOfDay(parsed);
+}
+
+function buildBoardGroups(fixtures) {
+  const groups = fixtures.reduce((accumulator, fixture) => {
+    const country = fixture.league?.country || "International";
+    const leagueCode = fixture.league?.code || fixture.league?.id || "unknown-league";
+    const key = `${country}::${leagueCode}`;
+
+    if (!accumulator.has(key)) {
+      accumulator.set(key, {
+        key,
+        country,
+        leagueCode,
+        leagueName: fixture.league?.name || "Competition",
+        fixtures: [],
+      });
+    }
+
+    accumulator.get(key).fixtures.push(fixture);
+    return accumulator;
+  }, new Map());
+
+  return [...groups.values()].sort((left, right) => {
+    const countryDifference = left.country.localeCompare(right.country);
+    if (countryDifference !== 0) {
+      return countryDifference;
+    }
+
+    return left.leagueName.localeCompare(right.leagueName);
+  });
+}
+
+function buildSurfaceState(fixtures, degraded) {
+  const liveFixtures = fixtures.filter((fixture) => fixture.status === "LIVE");
+  const staleFixtures = liveFixtures.filter((fixture) => {
+    if (!fixture.lastSyncedAt) {
+      return true;
+    }
+
+    return Date.now() - new Date(fixture.lastSyncedAt).getTime() > 1000 * 60 * 8;
+  });
+
+  return {
+    degraded,
+    stale: staleFixtures.length > 0,
+    staleCount: staleFixtures.length,
+  };
+}
+
+export async function getLiveMatchdayFeed({ status, leagueCode, date } = {}) {
+  const selectedDate = normalizeBoardDate(date);
+  let degraded = false;
+  let fixtures = [];
+
+  try {
+    fixtures = await db.fixture.findMany({
+      where: {
+        startsAt: {
+          gte: startOfDay(selectedDate),
+          lte: endOfDay(selectedDate),
         },
-        orderBy: [{ startsAt: "asc" }],
-        take: 80,
-        include: buildFixtureInclude(),
-      }),
-    []
-  );
+      },
+      orderBy: [{ startsAt: "asc" }],
+      take: 120,
+      include: buildFixtureInclude(),
+    });
+  } catch (error) {
+    degraded = true;
+  }
 
   const selectedStatus = normalizeFilter(status, LIVE_STATUS_FILTERS, "ALL");
   const statusFiltered =
@@ -152,18 +210,22 @@ export async function getLiveMatchdayFeed({ status, leagueCode } = {}) {
     selectedLeague === "all"
       ? statusFiltered
       : statusFiltered.filter((fixture) => fixture.league?.code === selectedLeague);
+  const sortedFixtures = sortFixturesForLiveFeed(leagueFiltered);
 
   return {
-    fixtures: sortFixturesForLiveFeed(leagueFiltered),
+    fixtures: sortedFixtures,
+    groups: buildBoardGroups(sortedFixtures),
     selectedStatus,
     selectedLeague,
+    selectedDate: selectedDate.toISOString().slice(0, 10),
     statusOptions: LIVE_STATUS_FILTERS.map((entry) => ({
       value: entry,
       count: entry === "ALL" ? fixtures.length : fixtures.filter((fixture) => fixture.status === entry).length,
     })),
     leaguePivots,
     summary: buildFixtureWindowSummary(fixtures),
-    refresh: buildFeedRefreshProfile(leagueFiltered),
+    refresh: buildFeedRefreshProfile(sortedFixtures),
+    surfaceState: buildSurfaceState(fixtures, degraded),
   };
 }
 

@@ -7,7 +7,7 @@ export async function GET(request) {
     return error;
   }
 
-  const roleError = requireRoles(userContext, ["USER", "CREATOR", "MODERATOR", "ADMIN"]);
+  const roleError = requireRoles(userContext, ["USER", "EDITOR", "ADMIN"]);
   if (roleError) {
     return roleError;
   }

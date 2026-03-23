@@ -640,3 +640,32 @@ export function buildFixtureDetailModules(fixture) {
     },
   };
 }
+
+export function buildFixtureIncidentIndicators(fixture) {
+  const timeline = buildTimelineItems(fixture, getFixturePayload(fixture));
+  const counts = timeline.reduce(
+    (summary, entry) => {
+      if (entry.typeKey.includes("GOAL")) {
+        summary.goals += 1;
+      }
+      if (entry.typeKey.includes("YELLOW")) {
+        summary.yellowCards += 1;
+      }
+      if (entry.typeKey.includes("RED")) {
+        summary.redCards += 1;
+      }
+      if (entry.typeKey.includes("VAR")) {
+        summary.varChecks += 1;
+      }
+      return summary;
+    },
+    { goals: 0, yellowCards: 0, redCards: 0, varChecks: 0 }
+  );
+
+  return [
+    counts.goals ? `${counts.goals} goals` : null,
+    counts.yellowCards ? `${counts.yellowCards} yellows` : null,
+    counts.redCards ? `${counts.redCards} reds` : null,
+    counts.varChecks ? `${counts.varChecks} VAR` : null,
+  ].filter(Boolean);
+}

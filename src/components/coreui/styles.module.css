@@ -162,6 +162,94 @@
   font-size: 0.8rem;
 }
 
+.headerStack {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.topModeNav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.topModeLink,
+.topModeLinkActive,
+.sportsChip,
+.sportsChipActive,
+.sportsChipDisabled,
+.railLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.topModeLink,
+.topModeLinkActive {
+  min-height: 2.1rem;
+  padding: 0.38rem 0.75rem;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.topModeLinkActive,
+.topModeLink:hover {
+  background: var(--surface-strong);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.sportsStrip {
+  width: min(100% - 2rem, var(--page-max));
+  margin: 0.7rem auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1.35rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.sportsChip,
+.sportsChipActive,
+.sportsChipDisabled {
+  min-height: 2.2rem;
+  padding: 0.42rem 0.72rem;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.sportsChipActive {
+  background: var(--accent);
+  border-color: transparent;
+  color: white;
+}
+
+.sportsChipDisabled {
+  color: var(--text-soft);
+  cursor: default;
+  opacity: 0.82;
+}
+
 .selectControl {
   min-width: 4.9rem;
   border: 0;
@@ -201,6 +289,103 @@
   display: grid;
   gap: 1.35rem;
   padding: 0.8rem 0 3rem;
+}
+
+.shellColumns {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 250px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.leftRail,
+.rightRail,
+.centerRail {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.leftRail,
+.rightRail {
+  position: sticky;
+  top: 8.2rem;
+}
+
+.railCard {
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1.35rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.railSection {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.railSectionTitle {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.railList {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.railLink {
+  justify-content: flex-start;
+  padding: 0.6rem 0.72rem;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.railLink:hover {
+  transform: translateY(-1px);
+  border-color: rgba(33, 109, 255, 0.18);
+}
+
+.railMuted {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.railCountryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.adSlot {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  border: 1px dashed var(--border);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, rgba(33, 109, 255, 0.08), transparent),
+    var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.searchOverlayBody {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem 1.1rem;
 }
 
 .hero {
@@ -521,6 +706,31 @@
 .fixtureActionRow {
   justify-content: space-between;
   margin-top: 0.8rem;
+}
+
+.indicatorRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.indicatorBadge,
+.infoBanner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.infoBanner {
+  width: fit-content;
+  max-width: 100%;
 }
 
 .snapshotNote {
@@ -904,6 +1114,29 @@
   font-size: 0.88rem;
 }
 
+.boardGroup {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1.35rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.boardGroupSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.boardGroupSummary::-webkit-details-marker {
+  display: none;
+}
+
 .footer {
   padding: 0 1rem 2rem;
 }
@@ -936,6 +1169,16 @@
     grid-template-columns: 1fr;
   }
 
+  .shellColumns {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .rightRail {
+    position: static;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .heroActionGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -951,6 +1194,10 @@
     align-items: stretch;
   }
 
+  .sportsStrip {
+    width: min(100% - 1.2rem, var(--page-max));
+  }
+
   .headerControls {
     justify-content: flex-start;
   }
@@ -958,6 +1205,19 @@
   .main,
   .footerInner {
     width: min(100% - 1.2rem, var(--page-max));
+  }
+
+  .shellColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .leftRail,
+  .rightRail {
+    position: static;
+  }
+
+  .rightRail {
+    grid-template-columns: 1fr;
   }
 
   .heroTitle {
@@ -972,6 +1232,11 @@
 @media (max-width: 640px) {
   .nav {
     padding: 0.25rem;
+    border-radius: 1rem;
+  }
+
+  .sportsStrip {
+    padding: 0.75rem;
     border-radius: 1rem;
   }
 
@@ -1000,7 +1265,9 @@
   .pageHeader,
   .sectionHeader,
   .fixtureCardTop,
-  .cardHeader {
+  .cardHeader,
+  .railCountryRow,
+  .boardGroupSummary {
     flex-direction: column;
   }
 
@@ -1025,9 +1292,22 @@
     justify-content: stretch;
   }
 
+  .topModeNav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .inlineControl,
   .preferenceBlock,
   .watchPill {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sportsChip,
+  .sportsChipActive,
+  .sportsChipDisabled,
+  .railLink {
     width: 100%;
     justify-content: space-between;
   }

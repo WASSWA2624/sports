@@ -27,11 +27,16 @@ function hasLocalePrefix(pathname) {
 export function proxy(request) {
   const { pathname } = request.nextUrl;
   const hasSessionCookie = Boolean(request.cookies.get("sports_session")?.value);
+  const requiresAuth =
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/editor") ||
+    pathname.startsWith("/api/profile") ||
+    pathname.startsWith("/api/admin") ||
+    pathname.startsWith("/api/favorites") ||
+    pathname.startsWith("/api/protected");
 
-  if (
-    !hasSessionCookie &&
-    (pathname.startsWith("/profile") || pathname.startsWith("/api/profile"))
-  ) {
+  if (!hasSessionCookie && requiresAuth) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

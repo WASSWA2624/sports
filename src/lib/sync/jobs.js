@@ -21,6 +21,26 @@ function addDays(date, amount) {
   return next;
 }
 
+async function runTaxonomySnapshot(provider, syncJobId, config) {
+  const taxonomy = await provider.fetchTaxonomy({
+    leagueCodes: config.trackedLeagueCodes,
+  });
+
+  await saveCheckpoint({
+    provider: config.provider,
+    key: "taxonomy:snapshot",
+    syncJobId,
+    cursor: new Date().toISOString(),
+    payload: {
+      leagueCodes: config.trackedLeagueCodes,
+      records: Array.isArray(taxonomy) ? taxonomy.length : 0,
+    },
+    success: true,
+  });
+
+  return Array.isArray(taxonomy) ? taxonomy.length : 0;
+}
+
 function addHours(date, amount) {
   const next = new Date(date);
   next.setUTCHours(next.getUTCHours() + amount);
@@ -193,6 +213,7 @@ export const syncJobRegistry = {
     bucket: "static-ish",
     async run(provider, syncJobId, config) {
       let recordsProcessed = 0;
+      recordsProcessed += await runTaxonomySnapshot(provider, syncJobId, config);
       recordsProcessed += await runFixturesWindow(provider, syncJobId, config);
       recordsProcessed += await runTrackedSeasonJobs(provider, config.trackedSeasonRefs, syncJobId, config);
       return recordsProcessed;
@@ -202,6 +223,7 @@ export const syncJobRegistry = {
     bucket: "daily",
     async run(provider, syncJobId, config) {
       let recordsProcessed = 0;
+      recordsProcessed += await runTaxonomySnapshot(provider, syncJobId, config);
       recordsProcessed += await runFixturesWindow(provider, syncJobId, config);
       recordsProcessed += await runTrackedSeasonJobs(provider, config.trackedSeasonRefs, syncJobId, config);
       return recordsProcessed;
