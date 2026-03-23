@@ -1,0 +1,55 @@
+import Link from "next/link";
+import { buildPageMetadata } from "../../../lib/coreui/metadata";
+import { getDictionary } from "../../../lib/coreui/dictionaries";
+import { getLeagueDirectory } from "../../../lib/coreui/read";
+import styles from "../../../components/coreui/styles.module.css";
+
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  return buildPageMetadata(
+    locale,
+    "Leagues",
+    "Explore active leagues, team counts, and the next scheduled competition coverage.",
+    "/leagues"
+  );
+}
+
+export default async function LeaguesPage({ params }) {
+  const { locale } = await params;
+  const dictionary = getDictionary(locale);
+  const leagues = await getLeagueDirectory();
+
+  return (
+    <section className={styles.section}>
+      <header className={styles.pageHeader}>
+        <div>
+          <p className={styles.eyebrow}>{dictionary.leagues}</p>
+          <h1 className={styles.pageTitle}>{dictionary.leagues}</h1>
+          <p className={styles.pageLead}>Competition landing pages ready for public browsing, metadata, and search indexing.</p>
+        </div>
+      </header>
+      {leagues.length ? (
+        <div className={styles.leagueGrid}>
+          {leagues.map((league) => (
+            <article key={league.id} className={styles.leagueCard}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <p className={styles.eyebrow}>{league.country || "International"}</p>
+                  <h2 className={styles.cardTitle}>
+                    <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
+                  </h2>
+                </div>
+                <span className={styles.badge}>{league.teams.length} teams</span>
+              </div>
+              <p className={styles.metaRow}>
+                Next status: {league.fixtures[0]?.status || "Awaiting fixtures"}
+              </p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.emptyState}>{dictionary.noData}</div>
+      )}
+    </section>
+  );
+}

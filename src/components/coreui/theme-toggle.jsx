@@ -1,0 +1,32 @@
+"use client";
+
+import { usePreferences } from "./preferences-provider";
+import styles from "./styles.module.css";
+
+const options = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
+
+export function ThemeToggle({ label }) {
+  const { theme, setTheme } = usePreferences();
+
+  return (
+    <div className={styles.preferenceBlock}>
+      <span className={styles.preferenceLabel}>{label}</span>
+      <div className={styles.segmentedControl}>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={theme === option.value ? styles.segmentActive : styles.segment}
+            onClick={() => setTheme(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
