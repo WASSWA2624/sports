@@ -59,13 +59,20 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
   const accountLabel = sessionUser ? dictionary.profile : dictionary.login;
   const primarySports = rankedSports.slice(0, 3);
   const overflowSports = rankedSports.slice(3);
-  const visibleScoreViews = SCORES_NAV.filter((item) => {
+  const activeSport = rankedSports.find((sport) => sport.enabled) || rankedSports[0] || null;
+  const browseItems = TOP_LEVEL_NAV.map((item) => {
+    const href = `/${locale}${item.href}`;
     const active =
-      item.href === ""
-        ? pathname === `/${locale}`
-        : pathname === `/${locale}${item.href}` || pathname.startsWith(`/${locale}${item.href}/`);
+      item.key === "news"
+        ? isNewsMode
+        : !isNewsMode && (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
 
-    return ["home", "live", "fixtures", "results"].includes(item.key) || active;
+    return {
+      ...item,
+      href,
+      active,
+      label: item.key === "scores" ? dictionary.scores : dictionary.news,
+    };
   });
 
   return (
@@ -88,26 +95,18 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             </div>
 
             <nav className={styles.topModeNav} aria-label={dictionary.browse}>
-              {TOP_LEVEL_NAV.map((item) => {
-                const href = `/${locale}${item.href}`;
-                const active =
-                  item.key === "news"
-                    ? isNewsMode
-                    : !isNewsMode && (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
-
-                return (
-                  <Link
-                    key={item.key}
-                    href={href}
-                    className={active ? styles.topModeLinkActive : styles.topModeLink}
-                  >
-                    <span className={styles.modeLinkContent}>
-                      <ShellIcon name={item.key} className={styles.modeIcon} />
-                      <span>{item.key === "scores" ? dictionary.scores : dictionary.news}</span>
-                    </span>
-                  </Link>
-                );
-              })}
+              {browseItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={item.active ? styles.topModeLinkActive : styles.topModeLink}
+                >
+                  <span className={styles.modeLinkContent}>
+                    <ShellIcon name={item.key} className={styles.modeIcon} />
+                    <span>{item.label}</span>
+                  </span>
+                </Link>
+              ))}
             </nav>
 
             <div className={styles.headerControls}>
@@ -136,28 +135,41 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
             </div>
           </div>
 
-          {!isNewsMode ? (
-            <div className={styles.headerNavRail}>
-              <nav className={styles.nav} aria-label={dictionary.scoreViews}>
-                {visibleScoreViews.map((item) => {
-                  const href = `/${locale}${item.href}`;
-                  const active =
-                    item.href === ""
-                      ? pathname === `/${locale}`
-                      : pathname === href || pathname.startsWith(`${href}/`);
+          <div className={styles.headerNavRail}>
+            <nav className={styles.mobileModeNav} aria-label={dictionary.browse}>
+              {browseItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={item.active ? styles.mobileModeLinkActive : styles.mobileModeLink}
+                >
+                  <span className={styles.modeLinkContent}>
+                    <ShellIcon name={item.key} className={styles.modeIcon} />
+                    <span>{item.label}</span>
+                  </span>
+                </Link>
+              ))}
+            </nav>
 
-                  return (
-                    <Link
-                      key={item.key}
-                      href={href}
-                      className={active ? styles.navLinkActive : styles.navLink}
-                    >
-                      {getScoreViewLabel(item.key, dictionary)}
-                    </Link>
-                  );
-                })}
-              </nav>
+            {!isNewsMode && activeSport ? (
+              activeSport.enabled ? (
+                <Link href={`/${locale}${activeSport.href}`} className={styles.mobileSportPill}>
+                  <span className={styles.sportLinkContent}>
+                    <ShellIcon name={activeSport.key} className={styles.sportIcon} />
+                    <span>{getSportLabel(activeSport.key, dictionary)}</span>
+                  </span>
+                </Link>
+              ) : (
+                <button type="button" className={styles.mobileSportPill}>
+                  <span className={styles.sportLinkContent}>
+                    <ShellIcon name={activeSport.key} className={styles.sportIcon} />
+                    <span>{getSportLabel(activeSport.key, dictionary)}</span>
+                  </span>
+                </button>
+              )
+            ) : null}
 
+            {!isNewsMode ? (
               <nav className={styles.sportsStrip} aria-label={dictionary.sports}>
                 {favoriteSport ? (
                   <button key={favoriteSport.key} type="button" className={styles.sportsChipDisabled}>
@@ -239,8 +251,8 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                   </details>
                 ) : null}
               </nav>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </header>
 
