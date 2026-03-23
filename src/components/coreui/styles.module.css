@@ -21,7 +21,7 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 1.25rem 1rem 0.75rem;
+  padding: 0.9rem 1rem 0.55rem;
   backdrop-filter: blur(20px);
 }
 
@@ -34,44 +34,40 @@
 
 .headerInner {
   display: grid;
-  gap: 1.25rem;
-  padding: 1.2rem 1.35rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.95rem 1.1rem;
   border: 1px solid var(--border);
-  border-radius: 2rem;
+  border-radius: 1.4rem;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 100%),
     var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
-.headerTop {
-  display: flex;
-  justify-content: space-between;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.brandCluster {
+.headerBrand {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .brandKicker {
   color: var(--accent);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .brandBlock {
   display: grid;
-  gap: 0.4rem;
-  max-width: 34rem;
+  gap: 0.2rem;
+  max-width: 20rem;
 }
 
 .brand {
-  font-size: clamp(1.4rem, 2vw, 1.85rem);
+  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -79,45 +75,34 @@
 
 .brandTag {
   color: var(--text-muted);
-  font-size: 0.98rem;
-  line-height: 1.55;
-}
-
-.headerUtilities {
-  display: grid;
-  gap: 0.6rem;
-  justify-items: end;
+  font-size: 0.88rem;
+  line-height: 1.35;
 }
 
 .headerControls {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.55rem;
   align-items: center;
   justify-content: flex-end;
 }
 
-.utilityHint {
-  color: var(--text-soft);
-  font-size: 0.84rem;
-  line-height: 1.5;
-}
-
-.headerBottom {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
-  align-items: center;
-}
-
 .nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  padding: 0.45rem;
+  flex-wrap: nowrap;
+  gap: 0.3rem;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 0.3rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
 }
 
 .navLink,
@@ -125,7 +110,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.78rem 1.05rem;
+  flex: 0 0 auto;
+  padding: 0.66rem 0.9rem;
   border-radius: 999px;
   border: 1px solid transparent;
   color: var(--text-muted);
@@ -145,20 +131,14 @@
   transform: translateY(-1px);
 }
 
-.navNote {
-  color: var(--text-soft);
-  font-size: 0.92rem;
-  text-align: right;
-}
-
 .inlineControl,
 .preferenceBlock,
 .watchPill {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  min-height: 3rem;
-  padding: 0.42rem 0.6rem 0.42rem 0.9rem;
+  min-height: 2.65rem;
+  padding: 0.3rem 0.45rem 0.3rem 0.72rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-strong);
@@ -169,11 +149,11 @@
 .preferenceLabel,
 .watchPill {
   color: var(--text-muted);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
 }
 
 .selectControl {
-  min-width: 6.8rem;
+  min-width: 5.8rem;
   border: 0;
   background: transparent;
   color: var(--text);
@@ -183,14 +163,14 @@
 
 .segmentedControl {
   display: inline-flex;
-  padding: 0.22rem;
+  padding: 0.18rem;
   border-radius: 999px;
   background: var(--surface-muted);
 }
 
 .segment,
 .segmentActive {
-  padding: 0.58rem 0.86rem;
+  padding: 0.48rem 0.74rem;
   border: 0;
   border-radius: 999px;
   color: var(--text-muted);
@@ -611,25 +591,13 @@
 }
 
 @media (max-width: 1120px) {
-  .headerTop,
-  .headerBottom {
-    grid-template-columns: 1fr;
+  .headerInner {
+    grid-template-columns: 1fr auto;
   }
 
-  .headerTop {
-    flex-direction: column;
-  }
-
-  .headerUtilities {
-    justify-items: start;
-  }
-
-  .headerControls {
-    justify-content: flex-start;
-  }
-
-  .navNote {
-    text-align: left;
+  .nav {
+    grid-column: 1 / -1;
+    order: 3;
   }
 
   .heroGrid,
@@ -643,7 +611,15 @@
     padding-inline: 0.75rem;
   }
 
-  .headerInner,
+  .headerInner {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .headerControls {
+    justify-content: flex-start;
+  }
+
   .main,
   .footerInner {
     width: min(100% - 1.2rem, var(--page-max));
@@ -661,12 +637,13 @@
 
 @media (max-width: 640px) {
   .nav {
-    border-radius: 1.25rem;
+    padding: 0.25rem;
+    border-radius: 1rem;
   }
 
   .navLink,
   .navLinkActive {
-    flex: 1 1 calc(50% - 0.4rem);
+    padding-inline: 0.8rem;
   }
 
   .heroStats,
@@ -688,12 +665,17 @@
 
 @media (max-width: 520px) {
   .headerInner {
-    padding: 1rem;
-    border-radius: 1.5rem;
+    padding: 0.85rem;
+    border-radius: 1.2rem;
+  }
+
+  .brandTag {
+    display: none;
   }
 
   .headerControls {
     width: 100%;
+    justify-content: stretch;
   }
 
   .inlineControl,
