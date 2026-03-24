@@ -112,8 +112,11 @@ function pickSelectedSeason(seasons = [], seasonRef) {
   const normalized = normalizeReference(seasonRef);
 
   if (normalized) {
+    const target = String(normalized).trim().toLowerCase();
     const exact = seasons.find((season) =>
-      [season.id, season.externalRef, season.name].includes(normalized)
+      [season.id, season.externalRef, season.name]
+        .filter(Boolean)
+        .some((value) => String(value).trim().toLowerCase() === target)
     );
 
     if (exact) {
@@ -135,6 +138,31 @@ function toSeasonSummary(season) {
     fixtureCount: season._count?.fixtures || 0,
     standingCount: season._count?.standings || 0,
   };
+}
+
+function pickSelectedCompetition(competitions = [], competitionRef) {
+  const normalized = normalizeReference(competitionRef);
+
+  if (normalized) {
+    const target = String(normalized).trim().toLowerCase();
+    const exact = competitions.find((competition) =>
+      [
+        competition.id,
+        competition.leagueId,
+        competition.code,
+        competition.name,
+        competition.competitionId,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).trim().toLowerCase() === target)
+    );
+
+    if (exact) {
+      return exact;
+    }
+  }
+
+  return competitions.find((competition) => competition.isCurrent) || competitions[0] || null;
 }
 
 function sortFixturesAsc(fixtures = []) {
@@ -200,40 +228,65 @@ function buildLinkedCompetitions(team) {
   const linked = new Map();
 
   const register = (entry) => {
-    const code = entry?.code || entry?.leagueCode;
-    if (!code) {
+    const key = entry?.leagueId || entry?.id || entry?.code || entry?.leagueCode;
+    if (!key) {
       return;
     }
 
-    linked.set(code, {
-      code,
+    linked.set(key, {
+      id: entry?.id || entry?.leagueId || entry?.code || entry?.leagueCode,
+      leagueId: entry?.leagueId || entry?.id || null,
+      competitionId: entry?.competitionId || null,
+      code: entry?.code || entry?.leagueCode || null,
       name: entry.name,
       country: entry.country || null,
+      countryRecord: entry.countryRecord || null,
+      sport: entry.sport || null,
       seasonName: entry.seasonName || null,
+      isCurrent: Boolean(entry.isCurrent),
     });
   };
 
   if (team?.league) {
     register({
+      id: team.league.id,
+      leagueId: team.league.id,
+      competitionId: team.league.competitionId,
       code: team.league.code,
       name: team.league.name,
       country: team.league.country || team.league.countryRecord?.name || team.competition?.country?.name,
+      countryRecord: team.league.countryRecord || team.competition?.country || null,
+      sport: team.league.sport || team.competition?.sport || null,
+      isCurrent: true,
     });
   }
 
   for (const standing of team?.standings || []) {
     register({
+      id: standing.season?.league?.id,
+      leagueId: standing.season?.league?.id,
+      competitionId: standing.season?.league?.competitionId || standing.competitionId,
       code: standing.season?.league?.code,
       name: standing.season?.league?.name || standing.competition?.name,
       country:
         standing.season?.league?.country ||
         standing.season?.league?.countryRecord?.name ||
         standing.competition?.country?.name,
+      countryRecord: standing.season?.league?.countryRecord || standing.competition?.country || null,
+      sport: standing.season?.league?.sport || standing.competition?.sport || null,
       seasonName: standing.season?.name || null,
+      isCurrent: Boolean(standing.season?.isCurrent),
     });
   }
 
-  return [...linked.values()].sort((left, right) => left.name.localeCompare(right.name));
+  return [...linked.values()].sort((left, right) => {
+    const currentDifference = Number(Boolean(right.isCurrent)) - Number(Boolean(left.isCurrent));
+    if (currentDifference !== 0) {
+      return currentDifference;
+    }
+
+    return left.name.localeCompare(right.name);
+  });
 }
 
 const getHomeSnapshotCached = unstable_cache(
@@ -1179,7 +1232,17 @@ export async function getTeamDirectory() {
   });
 }
 
-export async function getTeamDetail(reference) {
+export async function getTeamDetail(
+  reference,
+  {
+    locale = "en",
+    viewerTerritory,
+    competitionRef,
+    seasonRef,
+    standingsView = "overall",
+    includeExperience = false,
+  } = {}
+) {
   return observeOperation(
     {
       metric: "page_read",
@@ -1201,6 +1264,9 @@ export async function getTeamDetail(reference) {
     () =>
       safeDataRead(
         async () => {
+          const recentWindow = new Date();
+          recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+
           const team = await db.team.findFirst({
             where: {
               OR: [{ id: reference }, { code: reference }],
@@ -1233,11 +1299,13 @@ export async function getTeamDetail(reference) {
                       competition: {
                         include: {
                           country: true,
+                          sport: true,
                         },
                       },
                       league: {
                         include: {
                           countryRecord: true,
+                          sport: true,
                         },
                       },
                     },
@@ -1246,12 +1314,12 @@ export async function getTeamDetail(reference) {
               },
               homeFor: {
                 orderBy: { startsAt: "desc" },
-                take: 12,
+                take: 18,
                 include: fixtureInclude({ includeOdds: false }),
               },
               awayFor: {
                 orderBy: { startsAt: "desc" },
-                take: 12,
+                take: 18,
                 include: fixtureInclude({ includeOdds: false }),
               },
               lineupEntries: {
@@ -1285,32 +1353,218 @@ export async function getTeamDetail(reference) {
             return null;
           }
 
-          const allFixtures = dedupeFixtures([...team.homeFor, ...team.awayFor]);
-          const sortedFixtures = sortFixturesDesc(allFixtures);
+          const allRecentFixtures = dedupeFixtures([...team.homeFor, ...team.awayFor]);
+          const linkedCompetitions = buildLinkedCompetitions(team);
+          const selectedCompetitionSummary = pickSelectedCompetition(linkedCompetitions, competitionRef);
+          const selectedCompetitionWhere = [];
+
+          if (selectedCompetitionSummary?.leagueId) {
+            selectedCompetitionWhere.push({ id: selectedCompetitionSummary.leagueId });
+          }
+
+          if (selectedCompetitionSummary?.code) {
+            selectedCompetitionWhere.push({ code: selectedCompetitionSummary.code });
+          }
+
+          const selectedLeague = selectedCompetitionWhere.length
+            ? await db.league.findFirst({
+                where: {
+                  OR: selectedCompetitionWhere,
+                },
+                include: {
+                  sport: true,
+                  countryRecord: true,
+                  competition: {
+                    include: {
+                      sport: true,
+                      country: true,
+                    },
+                  },
+                  teams: {
+                    orderBy: { name: "asc" },
+                    take: 24,
+                  },
+                  seasons: {
+                    orderBy: [{ isCurrent: "desc" }, { startDate: "desc" }],
+                    take: 8,
+                    select: {
+                      id: true,
+                      name: true,
+                      externalRef: true,
+                      startDate: true,
+                      endDate: true,
+                      isCurrent: true,
+                      _count: {
+                        select: {
+                          fixtures: true,
+                          standings: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              })
+            : null;
+          const selectedSeasonSummary = pickSelectedSeason(selectedLeague?.seasons || [], seasonRef);
+          const [selectedSeasonRecord, selectedSeasonFixtures, competitionOddsFixtures] = await Promise.all([
+            selectedSeasonSummary
+              ? db.season.findUnique({
+                  where: {
+                    id: selectedSeasonSummary.id,
+                  },
+                  include: {
+                    standings: {
+                      where: { scope: "OVERALL" },
+                      orderBy: { position: "asc" },
+                      include: {
+                        team: true,
+                      },
+                    },
+                  },
+                })
+              : Promise.resolve(null),
+            selectedSeasonSummary
+              ? db.fixture.findMany({
+                  where: {
+                    seasonId: selectedSeasonSummary.id,
+                    OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
+                  },
+                  orderBy: [{ startsAt: "asc" }],
+                  take: 120,
+                  include: fixtureInclude({ includeOdds: false }),
+                })
+              : Promise.resolve([]),
+            selectedLeague
+              ? db.fixture.findMany({
+                  where: {
+                    leagueId: selectedLeague.id,
+                    OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
+                  },
+                  orderBy: [{ startsAt: "asc" }],
+                  take: 12,
+                  include: fixtureInclude({
+                    includeOdds: true,
+                    oddsTake: 12,
+                    includeBroadcast: true,
+                  }),
+                })
+              : Promise.resolve([]),
+          ]);
 
           return {
             ...team,
-            sport: team.league?.sport || team.competition?.sport || null,
-            country:
-              team.league?.countryRecord?.name ||
-              team.competition?.country?.name ||
-              team.league?.country ||
-              null,
-            fixtures: sortedFixtures.slice(0, 12),
-            upcomingFixtures: sortFixturesAsc(
-              allFixtures.filter((fixture) => ["LIVE", "SCHEDULED"].includes(fixture.status))
-            ).slice(0, 8),
-            recentResults: sortedFixtures
-              .filter((fixture) => ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status))
-              .slice(0, 8),
-            fixtureSummary: summarizeFixtureStates(allFixtures),
-            roster: buildRoster(team.lineupEntries, team.fixtureParticipants),
-            linkedCompetitions: buildLinkedCompetitions(team),
+            allRecentFixtures,
+            linkedCompetitions,
+            selectedCompetitionSummary,
+            selectedLeague,
+            selectedSeasonRecord,
+            selectedSeasonFixtures,
+            competitionOddsFixtures,
           };
         },
         null
       )
-  );
+  ).then(async (team) => {
+    if (!team) {
+      return null;
+    }
+
+    const {
+      allRecentFixtures,
+      competitionOddsFixtures,
+      linkedCompetitions,
+      selectedCompetitionSummary,
+      selectedLeague,
+      selectedSeasonFixtures,
+      selectedSeasonRecord,
+      ...baseTeam
+    } = team;
+    const fallbackFixtures = sortFixturesDesc(allRecentFixtures || []);
+    const seasonFixtures = sortFixturesAsc(selectedSeasonFixtures || []);
+    const contextualFixtures = seasonFixtures.length ? seasonFixtures : fallbackFixtures;
+    const selectedSeason = selectedSeasonRecord
+      ? {
+          id: selectedSeasonRecord.id,
+          name: selectedSeasonRecord.name,
+          externalRef: selectedSeasonRecord.externalRef,
+          startDate: selectedSeasonRecord.startDate,
+          endDate: selectedSeasonRecord.endDate,
+          isCurrent: selectedSeasonRecord.isCurrent,
+          fixtureCount: seasonFixtures.length,
+          standingCount: selectedSeasonRecord.standings?.length || 0,
+          standings: selectedSeasonRecord.standings || [],
+        }
+      : null;
+    const archiveSeasons = selectedLeague?.seasons?.map(toSeasonSummary) || [];
+    const selectedCompetition = selectedLeague
+      ? {
+          id: selectedLeague.id,
+          leagueId: selectedLeague.id,
+          competitionId: selectedLeague.competitionId,
+          code: selectedLeague.code,
+          name: selectedLeague.name,
+          country:
+            selectedLeague.countryRecord?.name ||
+            selectedLeague.country ||
+            selectedLeague.competition?.country?.name ||
+            null,
+          countryRecord: selectedLeague.countryRecord || selectedLeague.competition?.country || null,
+          sport: selectedLeague.sport || selectedLeague.competition?.sport || null,
+          isCurrent: Boolean(selectedSeason?.isCurrent),
+        }
+      : selectedCompetitionSummary;
+    const standingsTable = buildStandingTable({
+      teams: selectedLeague?.teams || [baseTeam],
+      standings: selectedSeason?.standings || [],
+      fixtures: contextualFixtures,
+      view: standingsView,
+    });
+    const competitionOdds =
+      includeExperience && selectedLeague
+        ? await buildCompetitionBettingExperience(
+            {
+              ...selectedLeague,
+              fixtures: competitionOddsFixtures,
+              oddsFixtures: competitionOddsFixtures,
+            },
+            {
+              locale,
+              viewerTerritory,
+              flags: await getPublicSurfaceFlags(),
+            }
+          )
+        : null;
+
+    return {
+      ...baseTeam,
+      sport: selectedCompetition?.sport || baseTeam.league?.sport || baseTeam.competition?.sport || null,
+      country:
+        selectedCompetition?.country ||
+        baseTeam.league?.countryRecord?.name ||
+        baseTeam.competition?.country?.name ||
+        baseTeam.league?.country ||
+        null,
+      fixtures: contextualFixtures.slice(0, 12),
+      seasonFixtures,
+      upcomingFixtures: sortFixturesAsc(
+        contextualFixtures.filter((fixture) => ["LIVE", "SCHEDULED"].includes(fixture.status))
+      ).slice(0, 8),
+      recentResults: sortFixturesDesc(
+        contextualFixtures.filter((fixture) =>
+          ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status)
+        )
+      ).slice(0, 8),
+      fixtureSummary: summarizeFixtureStates(contextualFixtures),
+      roster: buildRoster(baseTeam.lineupEntries, baseTeam.fixtureParticipants),
+      linkedCompetitions,
+      selectedCompetition,
+      selectedSeason,
+      seasons: archiveSeasons,
+      archiveSeasons,
+      standingsTable,
+      competitionOdds,
+    };
+  });
 }
 
 export async function getFixtureDetail(

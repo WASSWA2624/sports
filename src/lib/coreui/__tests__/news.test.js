@@ -3,6 +3,7 @@ import {
   buildArticleQualitySignal,
   decorateNewsArticle,
   groupNewsHubArticles,
+  normalizeNewsMetadata,
   slugifyArticleTitle,
 } from "../news";
 
@@ -88,6 +89,63 @@ describe("news helpers", () => {
     );
   });
 
+  it("normalizes sponsored and monetization metadata", () => {
+    const metadata = normalizeNewsMetadata({
+      sponsored: true,
+      sponsorName: "BetPulse",
+      monetization: {
+        allowInlineCta: false,
+        allowRelatedOdds: true,
+        ctaSafetyChecked: true,
+        promoPreference: "funnel",
+        notes: "Reviewed by revenue ops.",
+      },
+    });
+
+    expect(metadata).toMatchObject({
+      sponsored: true,
+      sponsorName: "BetPulse",
+      sponsorLabel: "Sponsored",
+      allowInlineCta: false,
+      allowRelatedOdds: true,
+      ctaSafetyChecked: true,
+      promoPreference: "FUNNEL",
+      monetizationNotes: "Reviewed by revenue ops.",
+    });
+  });
+
+  it("flags unsafe sponsored monetization setups", () => {
+    const quality = buildArticleQualitySignal({
+      title: "Sponsored derby guide for the weekend showdown",
+      excerpt: "Preview",
+      body: new Array(180).fill("coverage").join(" "),
+      imageUrl: "/window.svg",
+      status: "PUBLISHED",
+      publishedAt: "2026-03-24T08:00:00.000Z",
+      sponsored: true,
+      sponsorName: "",
+      allowInlineCta: true,
+      allowRelatedOdds: true,
+      ctaSafetyChecked: false,
+      entities: {
+        sports: [{ id: "sport-1" }],
+        countries: [],
+        competitions: [],
+        teams: [{ id: "team-1" }],
+        fixtures: [],
+      },
+    });
+
+    expect(quality.issues).toEqual(
+      expect.arrayContaining([
+        "Sponsored article is missing a sponsor label",
+        "Inline monetization is not safety approved",
+        "Related odds need a linked fixture or competition",
+      ])
+    );
+    expect(quality.state).toBe("review");
+  });
+
   it("groups decorated articles into hub sections", () => {
     const hero = buildArticle();
     const second = buildArticle({
@@ -135,5 +193,31 @@ describe("news helpers", () => {
     const hub = groupNewsHubArticles([first, second]);
 
     expect(hub.homepage.map((article) => article.id)).toEqual(["article-2", "article-1"]);
+  });
+
+  it("decorates article-level monetization flags for UI reads", () => {
+    const article = buildArticle({
+      metadata: {
+        topicLabel: "Club watch",
+        sponsored: true,
+        sponsorName: "BetPulse",
+        monetization: {
+          allowInlineCta: true,
+          allowRelatedOdds: false,
+          promoPreference: "affiliate",
+          ctaSafetyChecked: true,
+        },
+      },
+    });
+
+    expect(article).toMatchObject({
+      sponsored: true,
+      sponsorName: "BetPulse",
+      sponsorLabel: "Sponsored",
+      allowInlineCta: true,
+      allowRelatedOdds: false,
+      promoPreference: "AFFILIATE",
+      ctaSafetyChecked: true,
+    });
   });
 });

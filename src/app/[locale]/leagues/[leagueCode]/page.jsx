@@ -18,6 +18,7 @@ import {
   getStandingViewLabel,
 } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
 import {
   buildBreadcrumbStructuredData,
   buildCollectionPageStructuredData,
@@ -219,6 +220,18 @@ export default async function LeagueDetailPage({ params, searchParams }) {
   const competitionNews = flags.leagueNews
     ? await getCompetitionNewsModule(league.competitionId, activeTab === "news" ? 8 : 4)
     : { articles: [], total: 0 };
+  const competitionNewsExperience = flags.leagueNews
+    ? await getNewsModuleExperience({
+        locale,
+        viewerTerritory,
+        articles: competitionNews.articles,
+        entityContext: {
+          competition: league,
+          entityType: "league",
+          entityId: league.id,
+        },
+      })
+    : { promo: null };
   const sport = league.sport || league.competition?.sport || null;
   const country = league.countryRecord || league.competition?.country || null;
   const countryHref = sport && country ? buildCountryHref(locale, country, sport) : null;
@@ -552,6 +565,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           {flags.leagueNews ? (
             <NewsModule
               locale={locale}
+              dictionary={dictionary}
               eyebrow={dictionary.news}
               title={dictionary.newsCompetitionModuleTitle}
               lead={dictionary.newsCompetitionModuleLead}
@@ -560,6 +574,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
               actionLabel={dictionary.browseAll}
               emptyLabel={dictionary.newsEmpty}
               trackingSurface="league-news-module"
+              promo={competitionNewsExperience.promo}
             />
           ) : null}
         </>
@@ -635,6 +650,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
         flags.leagueNews ? (
           <NewsModule
             locale={locale}
+            dictionary={dictionary}
             eyebrow={dictionary.news}
             title={dictionary.newsCompetitionModuleTitle}
             lead={dictionary.newsCompetitionModuleLead}
@@ -643,6 +659,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             actionLabel={dictionary.browseAll}
             emptyLabel={dictionary.newsEmpty}
             trackingSurface="league-news-tab"
+            promo={competitionNewsExperience.promo}
           />
         ) : (
           <div className={styles.emptyState}>{dictionary.newsHubDisabled}</div>

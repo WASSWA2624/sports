@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
+import { getNewsModuleExperience } from "../../../lib/coreui/news-experience";
 import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getLiveMatchdayFeed } from "../../../lib/coreui/live-read";
 import { resolveViewerTerritory } from "../../../lib/coreui/odds-broadcast";
@@ -78,6 +79,13 @@ export default async function LivePage({ params, searchParams }) {
   const selectedDateLabel = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
   }).format(new Date(feed.selectedDate));
+  const liveNewsExperience = feed.flags?.liveNews
+    ? await getNewsModuleExperience({
+        locale,
+        viewerTerritory,
+        articles: latestNews.articles,
+      })
+    : { promo: null };
 
   return (
     <section className={styles.section}>
@@ -250,6 +258,7 @@ export default async function LivePage({ params, searchParams }) {
       {feed.flags?.liveNews ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.newsScoreStripTitle}
           lead={dictionary.newsScoreStripLead}
@@ -258,6 +267,7 @@ export default async function LivePage({ params, searchParams }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="live-news-strip"
+          promo={liveNewsExperience.promo}
         />
       ) : null}
     </section>

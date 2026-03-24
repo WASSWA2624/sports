@@ -7,6 +7,7 @@ import { StructuredData } from "../../../../components/coreui/structured-data";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
 import {
   buildBreadcrumbStructuredData,
   buildCollectionPageStructuredData,
@@ -93,6 +94,16 @@ export default async function SportHubPage({ params }) {
   const sportNews = flags.news && sportHub.sport.id
     ? await getSportNewsModule(sportHub.sport.id, 4)
     : { articles: [], total: 0 };
+  const sportNewsExperience = flags.news
+    ? await getNewsModuleExperience({
+        locale,
+        articles: sportNews.articles,
+        entityContext: {
+          entityType: "sport",
+          entityId: sportHub.sport.id || sportHub.sport.code,
+        },
+      })
+    : { promo: null };
   const prioritizedCompetitions = sortCompetitionsByPersonalization(
     sportHub.competitions,
     personalization,
@@ -274,6 +285,7 @@ export default async function SportHubPage({ params }) {
       {flags.news ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.news}
           lead={dictionary.newsLead}
@@ -282,6 +294,7 @@ export default async function SportHubPage({ params }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="sport-news-module"
+          promo={sportNewsExperience.promo}
         />
       ) : null}
     </section>

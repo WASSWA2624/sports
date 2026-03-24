@@ -48,6 +48,13 @@ function buildEmptyDraft(categories) {
     homepagePlacement: false,
     homepageRank: "",
     moderationNotes: "",
+    sponsored: false,
+    sponsorName: "",
+    allowInlineCta: true,
+    allowRelatedOdds: true,
+    promoPreference: "AUTO",
+    ctaSafetyChecked: true,
+    monetizationNotes: "",
     entityLinks: [],
   };
 }
@@ -75,6 +82,13 @@ function articleToForm(article, categories) {
     homepagePlacement: Boolean(article.homepagePlacement),
     homepageRank: article.homepageRank || "",
     moderationNotes: article.moderationNotes || "",
+    sponsored: Boolean(article.sponsored),
+    sponsorName: article.sponsorName || "",
+    allowInlineCta: article.allowInlineCta !== false,
+    allowRelatedOdds: article.allowRelatedOdds !== false,
+    promoPreference: article.promoPreference || "AUTO",
+    ctaSafetyChecked: article.ctaSafetyChecked !== false,
+    monetizationNotes: article.monetizationNotes || "",
     entityLinks: (article.entityLinks || []).map((entry) => ({
       entityType: entry.entityType,
       entityId: entry.entityId,
@@ -103,7 +117,21 @@ function buildQualityPreview(form, options) {
     status: form.status,
     metadata: {
       moderationNotes: form.moderationNotes,
+      sponsored: form.sponsored,
+      sponsorName: form.sponsorName,
+      promoPreference: form.promoPreference,
+      monetization: {
+        allowInlineCta: form.allowInlineCta,
+        allowRelatedOdds: form.allowRelatedOdds,
+        ctaSafetyChecked: form.ctaSafetyChecked,
+        notes: form.monetizationNotes,
+      },
     },
+    sponsored: form.sponsored,
+    sponsorName: form.sponsorName,
+    allowInlineCta: form.allowInlineCta,
+    allowRelatedOdds: form.allowRelatedOdds,
+    ctaSafetyChecked: form.ctaSafetyChecked,
     entities: {
       sports: findSelections("SPORT", options.sports),
       countries: findSelections("COUNTRY", options.countries),
@@ -492,6 +520,87 @@ export default function NewsEditorClient({
           <article className={sharedStyles.panel}>
             <div className={sharedStyles.sectionHeader}>
               <div>
+                <p className={sharedStyles.eyebrow}>{dictionary.newsManageCommercial}</p>
+                <h2 className={sharedStyles.cardTitle}>{dictionary.newsManageCommercial}</h2>
+              </div>
+            </div>
+
+            <div className={editorStyles.checkboxRow}>
+              <label className={editorStyles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={form.sponsored}
+                  onChange={(event) => updateField("sponsored", event.target.checked)}
+                />
+                <span>{dictionary.newsManageSponsored}</span>
+              </label>
+
+              <label className={editorStyles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={form.allowInlineCta}
+                  onChange={(event) => updateField("allowInlineCta", event.target.checked)}
+                />
+                <span>{dictionary.newsManageInlineCta}</span>
+              </label>
+
+              <label className={editorStyles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={form.allowRelatedOdds}
+                  onChange={(event) => updateField("allowRelatedOdds", event.target.checked)}
+                />
+                <span>{dictionary.newsManageRelatedOdds}</span>
+              </label>
+
+              <label className={editorStyles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={form.ctaSafetyChecked}
+                  onChange={(event) => updateField("ctaSafetyChecked", event.target.checked)}
+                />
+                <span>{dictionary.newsManageCtaSafety}</span>
+              </label>
+            </div>
+
+            <div className={editorStyles.formGrid}>
+              <label className={editorStyles.field}>
+                <span>{dictionary.newsManageSponsorName}</span>
+                <input
+                  value={form.sponsorName}
+                  onChange={(event) => updateField("sponsorName", event.target.value)}
+                  placeholder={dictionary.newsManageSponsorPlaceholder}
+                />
+              </label>
+
+              <label className={editorStyles.field}>
+                <span>{dictionary.newsManagePromoPreference}</span>
+                <select
+                  value={form.promoPreference}
+                  onChange={(event) => updateField("promoPreference", event.target.value)}
+                >
+                  <option value="AUTO">{dictionary.newsManagePromoAuto}</option>
+                  <option value="ODDS">{dictionary.newsManagePromoOdds}</option>
+                  <option value="AFFILIATE">{dictionary.newsManagePromoAffiliate}</option>
+                  <option value="FUNNEL">{dictionary.newsManagePromoFunnel}</option>
+                  <option value="DISABLED">{dictionary.newsManagePromoDisabled}</option>
+                </select>
+              </label>
+            </div>
+
+            <label className={editorStyles.field}>
+              <span>{dictionary.newsManageMonetizationNotes}</span>
+              <textarea
+                rows={3}
+                value={form.monetizationNotes}
+                onChange={(event) => updateField("monetizationNotes", event.target.value)}
+              />
+            </label>
+          </article>
+
+          <article className={sharedStyles.panel}>
+            <div className={sharedStyles.sectionHeader}>
+              <div>
                 <p className={sharedStyles.eyebrow}>{dictionary.newsManageModeration}</p>
                 <h2 className={sharedStyles.cardTitle}>{dictionary.newsManageQuality}</h2>
               </div>
@@ -514,6 +623,14 @@ export default function NewsEditorClient({
               </span>
               <span className={sharedStyles.badge}>
                 {dictionary.newsManageLinks}: {quality.totalLinks}
+              </span>
+              {form.sponsored ? (
+                <span className={sharedStyles.badge}>{dictionary.newsManageSponsored}</span>
+              ) : null}
+              <span className={sharedStyles.badge}>
+                {form.ctaSafetyChecked
+                  ? dictionary.newsManageSafetyReady
+                  : dictionary.newsManageSafetyPending}
               </span>
             </div>
 

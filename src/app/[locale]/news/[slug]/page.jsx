@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { NewsEngagementTracker } from "../../../../components/coreui/news-engagement-tracker";
 import { NewsCard } from "../../../../components/coreui/news-card";
+import { NewsPromoUnit } from "../../../../components/coreui/news-promo-unit";
+import { OddsPredictionWidgets } from "../../../../components/coreui/odds-prediction-widgets";
 import { StructuredData } from "../../../../components/coreui/structured-data";
 import sharedStyles from "../../../../components/coreui/styles.module.css";
 import {
@@ -11,7 +14,9 @@ import {
   buildPageMetadata,
 } from "../../../../lib/coreui/metadata";
 import { getDictionary } from "../../../../lib/coreui/dictionaries";
+import { getNewsArticleExperience } from "../../../../lib/coreui/news-experience";
 import { getNewsArticleDetail } from "../../../../lib/coreui/news-read";
+import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import styles from "../news.module.css";
 
 function formatPublishedAt(value, locale) {
@@ -65,12 +70,20 @@ export default async function NewsArticlePage({ params }) {
   const { locale, slug } = await params;
   const dictionary = getDictionary(locale);
   const detail = await getNewsArticleDetail(slug);
+  const viewerTerritory = resolveViewerTerritory({
+    headers: await headers(),
+  });
 
   if (!detail) {
     notFound();
   }
 
   const { article, relatedArticles } = detail;
+  const articleExperience = await getNewsArticleExperience({
+    locale,
+    viewerTerritory,
+    article,
+  });
   const heroStyle = article.heroImageUrl
     ? {
         backgroundImage: `linear-gradient(180deg, rgba(7, 16, 28, 0.08), rgba(7, 16, 28, 0.72)), url(${article.heroImageUrl})`,
@@ -103,7 +116,16 @@ export default async function NewsArticlePage({ params }) {
       >
       <header className={sharedStyles.pageHeader}>
         <div>
-          <p className={sharedStyles.eyebrow}>{article.topicLabel}</p>
+          <div className={sharedStyles.inlineBadgeRow}>
+            <p className={sharedStyles.eyebrow}>{article.topicLabel}</p>
+            {article.sponsored ? (
+              <span className={sharedStyles.indicatorBadge}>
+                {article.sponsorName
+                  ? `${article.sponsorLabel || dictionary.newsSponsoredTag}: ${article.sponsorName}`
+                  : article.sponsorLabel || dictionary.newsSponsoredTag}
+              </span>
+            ) : null}
+          </div>
           <h1 className={sharedStyles.pageTitle}>{article.title}</h1>
           <p className={sharedStyles.pageLead}>{article.excerpt}</p>
         </div>
@@ -112,7 +134,14 @@ export default async function NewsArticlePage({ params }) {
       <div className={styles.storyLayout}>
         <article className={`${sharedStyles.panel} ${styles.storyPanel}`}>
           <div className={styles.heroVisual} style={heroStyle}>
-            <span className={sharedStyles.badge}>{article.topicLabel}</span>
+            <div className={sharedStyles.inlineBadgeRow}>
+              <span className={sharedStyles.badge}>{article.topicLabel}</span>
+              {article.sponsored ? (
+                <span className={sharedStyles.indicatorBadge}>
+                  {article.sponsorLabel || dictionary.newsSponsoredTag}
+                </span>
+              ) : null}
+            </div>
             <strong className={styles.heroTitle}>
               {article.primaryCompetition?.shortName ||
                 article.primaryCompetition?.name ||
@@ -151,6 +180,14 @@ export default async function NewsArticlePage({ params }) {
               ))}
             </div>
           ) : null}
+
+          <NewsPromoUnit
+            dictionary={dictionary}
+            promo={articleExperience.promo}
+            surface="news-article"
+            variant="compact"
+            moduleType="news_article_journey"
+          />
 
           {article.bodyBlocks.length ? (
             <div className={styles.storyBody}>
@@ -258,6 +295,32 @@ export default async function NewsArticlePage({ params }) {
           </article>
         </aside>
       </div>
+
+      {articleExperience.relatedOdds ? (
+        <section className={sharedStyles.section}>
+          <div className={sharedStyles.sectionHeader}>
+            <div>
+              <p className={sharedStyles.eyebrow}>{dictionary.news}</p>
+              <h2 className={sharedStyles.sectionTitle}>{dictionary.newsJourneyTitle}</h2>
+              <p className={sharedStyles.sectionLead}>
+                {articleExperience.relatedOdds.title || articleExperience.relatedOdds.lead}
+              </p>
+            </div>
+          </div>
+
+          <OddsPredictionWidgets
+            locale={locale}
+            dictionary={dictionary}
+            surface="news-article"
+            entityType="article"
+            entityId={article.id}
+            insights={articleExperience.relatedOdds.insights}
+            ctaConfig={articleExperience.relatedOdds.ctaConfig}
+            broadcastQuickActions={articleExperience.relatedOdds.broadcastQuickActions}
+            showBestBet={articleExperience.relatedOdds.showBestBet}
+          />
+        </section>
+      ) : null}
 
       <section className={sharedStyles.section}>
         <div className={sharedStyles.sectionHeader}>

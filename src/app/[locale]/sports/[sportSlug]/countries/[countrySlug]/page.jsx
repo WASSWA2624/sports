@@ -7,6 +7,7 @@ import { StructuredData } from "../../../../../../components/coreui/structured-d
 import styles from "../../../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../../../../../lib/coreui/news-experience";
 import {
   buildBreadcrumbStructuredData,
   buildCollectionPageStructuredData,
@@ -61,6 +62,16 @@ export default async function CountryHubPage({ params }) {
   const countryNews = flags.news
     ? await getCountryNewsModule(countryDetail.country.id, 4)
     : { articles: [], total: 0 };
+  const countryNewsExperience = flags.news
+    ? await getNewsModuleExperience({
+        locale,
+        articles: countryNews.articles,
+        entityContext: {
+          entityType: "country",
+          entityId: countryDetail.country.id,
+        },
+      })
+    : { promo: null };
   const prioritizedCompetitions = sortCompetitionsByPersonalization(
     countryDetail.competitions,
     personalization,
@@ -214,6 +225,7 @@ export default async function CountryHubPage({ params }) {
       {flags.news ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.news}
           lead={dictionary.newsLead}
@@ -222,6 +234,7 @@ export default async function CountryHubPage({ params }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="country-news-module"
+          promo={countryNewsExperience.promo}
         />
       ) : null}
     </section>

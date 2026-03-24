@@ -1,12 +1,16 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getCurrentUserFromServer } from "../../../lib/auth";
 import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
+import { getNewsHubExperience } from "../../../lib/coreui/news-experience";
 import { getNewsHubSnapshot } from "../../../lib/coreui/news-read";
 import { NewsEngagementTracker } from "../../../components/coreui/news-engagement-tracker";
 import { NewsCard } from "../../../components/coreui/news-card";
+import { NewsPromoUnit } from "../../../components/coreui/news-promo-unit";
 import sharedStyles from "../../../components/coreui/styles.module.css";
+import { resolveViewerTerritory } from "../../../lib/coreui/odds-broadcast";
 import styles from "./news.module.css";
 
 function formatPublishedAt(value, locale) {
@@ -33,11 +37,19 @@ export async function generateMetadata({ params }) {
 export default async function NewsPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
+  const viewerTerritory = resolveViewerTerritory({
+    headers: await headers(),
+  });
   const [flags, hub, userContext] = await Promise.all([
     getPublicSurfaceFlags(),
     getNewsHubSnapshot(),
     getCurrentUserFromServer(),
   ]);
+  const hubExperience = await getNewsHubExperience({
+    locale,
+    viewerTerritory,
+    hub,
+  });
   const canEdit = userContext?.roles?.some((role) => ["EDITOR", "ADMIN"].includes(role));
 
   if (!flags.news) {
@@ -73,6 +85,13 @@ export default async function NewsPage({ params }) {
         ) : null}
       </header>
 
+      <NewsPromoUnit
+        dictionary={dictionary}
+        promo={hubExperience.promo}
+        surface="news-hub"
+        moduleType="news_hub_promo"
+      />
+
       {hub.hero ? (
         <section className={styles.hubHero}>
           <article className={`${sharedStyles.panel} ${styles.heroPanel}`}>
@@ -82,7 +101,14 @@ export default async function NewsPage({ params }) {
               data-news-article-id={hub.hero.id}
             >
               <div className={styles.heroVisual}>
-                <span className={sharedStyles.badge}>{hub.hero.topicLabel}</span>
+                <div className={sharedStyles.inlineBadgeRow}>
+                  <span className={sharedStyles.badge}>{hub.hero.topicLabel}</span>
+                  {hub.hero.sponsored ? (
+                    <span className={sharedStyles.indicatorBadge}>
+                      {hub.hero.sponsorLabel || dictionary.newsSponsoredTag}
+                    </span>
+                  ) : null}
+                </div>
                 <strong className={styles.heroTitle}>{hub.hero.title}</strong>
               </div>
 
@@ -121,6 +147,9 @@ export default async function NewsPage({ params }) {
                     <div className={styles.storyMeta}>
                       <span>{article.topicLabel}</span>
                       <span>{article.readingTimeMinutes} min read</span>
+                      {article.sponsored ? (
+                        <span>{article.sponsorLabel || dictionary.newsSponsoredTag}</span>
+                      ) : null}
                     </div>
                     <Link
                       href={`/${locale}/news/${article.slug}`}

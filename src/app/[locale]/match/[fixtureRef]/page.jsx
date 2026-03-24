@@ -28,6 +28,7 @@ import {
   buildSportsEventStructuredData,
 } from "../../../../lib/coreui/metadata";
 import { getFixtureNewsModule } from "../../../../lib/coreui/news-read";
+import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import { getPersonalizationSnapshot, sortFixturesByPersonalization } from "../../../../lib/personalization";
 
@@ -148,6 +149,19 @@ export default async function MatchDetailPage({ params, searchParams }) {
   const detail = fixture.detail;
   const odds = fixture.odds;
   const broadcast = fixture.broadcast;
+  const relatedNewsExperience = flags.news
+    ? await getNewsModuleExperience({
+        locale,
+        viewerTerritory,
+        articles: relatedNews.articles,
+        entityContext: {
+          fixture,
+          competition: fixture.league,
+          entityType: "fixture",
+          entityId: fixture.id,
+        },
+      })
+    : { promo: null };
   const coverage = [
     { label: dictionary.timeline, state: detail.coverage.timeline === "available" ? "available" : "unavailable" },
     { label: dictionary.statistics, state: detail.coverage.statistics === "available" ? "available" : "unavailable" },
@@ -536,6 +550,7 @@ export default async function MatchDetailPage({ params, searchParams }) {
       {flags.news ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.relatedNewsTitle}
           lead={dictionary.relatedNewsLead}
@@ -544,6 +559,7 @@ export default async function MatchDetailPage({ params, searchParams }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="match-news-module"
+          promo={relatedNewsExperience.promo}
         />
       ) : null}
 

@@ -9,6 +9,7 @@ import { RecentViewTracker } from "../../../../components/coreui/recent-view-tra
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
 import {
   buildBreadcrumbStructuredData,
   buildPageMetadata,
@@ -50,12 +51,24 @@ export default async function TeamDetailPage({ params }) {
   }
 
   const teamNews = flags.teamNews ? await getTeamNewsModule(team.id, 4) : { articles: [], total: 0 };
+  const primaryCompetition = team.linkedCompetitions[0] || null;
+  const teamNewsExperience = flags.teamNews
+    ? await getNewsModuleExperience({
+        locale,
+        articles: teamNews.articles,
+        entityContext: {
+          team,
+          competition: primaryCompetition || null,
+          entityType: "team",
+          entityId: team.id,
+        },
+      })
+    : { promo: null };
   const sportHref = team.sport ? buildSportHref(locale, team.sport) : null;
   const countryHref =
     team.country && team.sport && team.league?.countryRecord
       ? buildCountryHref(locale, team.league.countryRecord, team.sport)
       : null;
-  const primaryCompetition = team.linkedCompetitions[0] || null;
   const structuredData = [
     buildBreadcrumbStructuredData([
       { name: dictionary.home, path: `/${locale}` },
@@ -273,6 +286,7 @@ export default async function TeamDetailPage({ params }) {
       {flags.teamNews ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.newsTeamModuleTitle}
           lead={dictionary.newsTeamModuleLead}
@@ -281,6 +295,7 @@ export default async function TeamDetailPage({ params }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="team-news-module"
+          promo={teamNewsExperience.promo}
         />
       ) : null}
     </section>

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { NewsCard } from "./news-card";
 import { NewsEngagementTracker } from "./news-engagement-tracker";
+import { NewsPromoUnit } from "./news-promo-unit";
 import styles from "./styles.module.css";
 
 export function NewsModule({
   locale,
+  dictionary = null,
   eyebrow,
   title,
   lead = null,
@@ -14,6 +16,7 @@ export function NewsModule({
   actionLabel = "View all",
   emptyLabel = "No articles published yet.",
   trackingSurface = "news-module",
+  promo = null,
 }) {
   return (
     <section className={styles.section}>
@@ -50,6 +53,16 @@ export function NewsModule({
       ) : (
         <div className={styles.emptyState}>{emptyLabel}</div>
       )}
+
+      {dictionary ? (
+        <NewsPromoUnit
+          dictionary={dictionary}
+          promo={promo}
+          surface={trackingSurface}
+          variant="compact"
+          moduleType="news_module_promo"
+        />
+      ) : null}
     </section>
   );
 }

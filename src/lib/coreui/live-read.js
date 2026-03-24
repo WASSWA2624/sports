@@ -4,6 +4,7 @@ import { db } from "../db";
 import { observeOperation } from "../operations";
 import { getPlatformPublicSnapshotData } from "../platform/env";
 import { buildGroupStandingsPreview, buildBestOddsCards, buildBoardGroupSummary, buildCompletedFixtureSummary, buildPredictionCards } from "./live-board";
+import { buildStandingTable } from "./competition-standings";
 import { buildFixtureBettingExperience } from "./odds-experience";
 import { getPublicSurfaceFlags } from "./feature-flags";
 import {
@@ -74,8 +75,13 @@ function buildFixtureInclude({ includeOdds = false } = {}) {
 function buildFixtureDetailInclude() {
   return {
     sport: true,
-    league: true,
+    league: {
+      include: {
+        countryRecord: true,
+      },
+    },
     season: true,
+    venueRecord: true,
     homeTeam: true,
     awayTeam: true,
     resultSnapshot: true,
@@ -107,6 +113,18 @@ function buildFixtureDetailInclude() {
     },
     broadcastChannels: {
       orderBy: [{ territory: "asc" }, { name: "asc" }],
+    },
+    participants: {
+      orderBy: [{ sortOrder: "asc" }],
+      include: {
+        team: true,
+        player: true,
+        official: true,
+      },
+    },
+    h2hSnapshots: {
+      orderBy: [{ capturedAt: "desc" }],
+      take: 4,
     },
   };
 }

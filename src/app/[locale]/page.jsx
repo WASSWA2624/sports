@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { buildPageMetadata } from "../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../lib/coreui/news-experience";
 import { getHomepageNewsModule } from "../../lib/coreui/news-read";
 import { getHomeSnapshot } from "../../lib/coreui/read";
 import { getLiveMatchdayFeed } from "../../lib/coreui/live-read";
@@ -105,6 +106,13 @@ export default async function LocaleHomePage({ params }) {
         .filter((item) => !(personalization.alertSettings?.[item.itemId] || []).length)
         .slice(0, 3)
     : [];
+  const homeNewsExperience = flags.homeNews
+    ? await getNewsModuleExperience({
+        locale,
+        viewerTerritory,
+        articles: homeNews.articles,
+      })
+    : { promo: null };
 
   return (
     <>
@@ -270,6 +278,7 @@ export default async function LocaleHomePage({ params }) {
       {flags.homeNews ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.newsHomeModuleTitle}
           lead={dictionary.newsHomeModuleLead}
@@ -278,6 +287,7 @@ export default async function LocaleHomePage({ params }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="home-news-module"
+          promo={homeNewsExperience.promo}
         />
       ) : null}
     </>

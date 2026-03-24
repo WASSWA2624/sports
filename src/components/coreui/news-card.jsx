@@ -35,7 +35,14 @@ export function NewsCard({
     <article className={articleClassName} data-priority={priority ? "true" : "false"}>
       <Link href={href} className={styles.cardLink} data-news-article-id={article.id}>
         <div className={compact ? styles.visualCompact : styles.visual} style={visualStyle}>
-          <span className={sharedStyles.badge}>{article.topicLabel}</span>
+          <div className={sharedStyles.inlineBadgeRow}>
+            <span className={sharedStyles.badge}>{article.topicLabel}</span>
+            {article.sponsored ? (
+              <span className={sharedStyles.indicatorBadge}>
+                {article.sponsorLabel || "Sponsored"}
+              </span>
+            ) : null}
+          </div>
           <strong className={styles.visualTitle}>
             {article.primaryCompetition?.shortName ||
               article.primaryCompetition?.name ||

@@ -1,6 +1,7 @@
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../../lib/coreui/news-experience";
 import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getUpcomingFixtures } from "../../../lib/coreui/read";
 import {
@@ -33,6 +34,12 @@ export default async function FixturesPage({ params }) {
     getPersonalizationSnapshot(),
   ]);
   const usage = getPersonalizationUsage(personalization);
+  const fixturesNewsExperience = flags.liveNews
+    ? await getNewsModuleExperience({
+        locale,
+        articles: latestNews.articles,
+      })
+    : { promo: null };
   const prioritizedFixtures = sortFixturesByPersonalization(
     fixtures,
     personalization,
@@ -66,6 +73,7 @@ export default async function FixturesPage({ params }) {
       {flags.liveNews ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.newsScoreStripTitle}
           lead={dictionary.newsScoreStripLead}
@@ -74,6 +82,7 @@ export default async function FixturesPage({ params }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="fixtures-news-strip"
+          promo={fixturesNewsExperience.promo}
         />
       ) : null}
     </section>

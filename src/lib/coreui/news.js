@@ -80,6 +80,12 @@ export function buildArticleExcerpt(article) {
 
 export function normalizeNewsMetadata(metadata) {
   const source = metadata && typeof metadata === "object" ? metadata : {};
+  const monetization =
+    source.monetization && typeof source.monetization === "object"
+      ? source.monetization
+      : {};
+  const commercial =
+    source.commercial && typeof source.commercial === "object" ? source.commercial : {};
   const topicLabel = pickString(source.topicLabel, source.topic?.label, source.topic);
   const topicSlug = pickString(source.topicSlug, source.topic?.slug);
   const moderationNotes = pickString(
@@ -89,6 +95,18 @@ export function normalizeNewsMetadata(metadata) {
   );
   const seoTitle = pickString(source.seoTitle, source.seo?.title);
   const seoDescription = pickString(source.seoDescription, source.seo?.description);
+  const promoPreference = pickString(source.promoPreference, monetization.promoPreference);
+  const sponsored = Boolean(source.sponsored || monetization.sponsored || commercial.sponsored);
+  const sponsorName = pickString(
+    source.sponsorName,
+    monetization.sponsorName,
+    commercial.sponsorName
+  );
+  const sponsorLabel = pickString(
+    source.sponsorLabel,
+    monetization.sponsorLabel,
+    commercial.label
+  );
 
   return {
     topicLabel,
@@ -102,12 +120,48 @@ export function normalizeNewsMetadata(metadata) {
     moderationNotes,
     seoTitle,
     seoDescription,
+    sponsored,
+    sponsorName,
+    sponsorLabel: sponsorLabel || (sponsored ? "Sponsored" : null),
+    allowInlineCta:
+      typeof monetization.allowInlineCta === "boolean"
+        ? monetization.allowInlineCta
+        : typeof source.allowInlineCta === "boolean"
+          ? source.allowInlineCta
+          : true,
+    allowRelatedOdds:
+      typeof monetization.allowRelatedOdds === "boolean"
+        ? monetization.allowRelatedOdds
+        : typeof source.allowRelatedOdds === "boolean"
+          ? source.allowRelatedOdds
+          : true,
+    ctaSafetyChecked:
+      typeof monetization.ctaSafetyChecked === "boolean"
+        ? monetization.ctaSafetyChecked
+        : typeof source.ctaSafetyChecked === "boolean"
+          ? source.ctaSafetyChecked
+          : !sponsored,
+    monetizationNotes: pickString(
+      source.monetizationNotes,
+      monetization.notes,
+      source.editorial?.monetizationNotes
+    ),
+    promoPreference:
+      promoPreference &&
+      ["AUTO", "ODDS", "AFFILIATE", "FUNNEL", "DISABLED"].includes(
+        promoPreference.toUpperCase()
+      )
+        ? promoPreference.toUpperCase()
+        : "AUTO",
+    takedownNote: pickString(source.takedown?.note),
+    takedownAt: pickString(source.takedown?.at),
   };
 }
 
 export function buildArticleQualitySignal(article) {
   const issues = [];
   let score = 100;
+  const metadata = normalizeNewsMetadata(article?.metadata);
   const wordCount = toPlainText(article?.body).split(/\s+/).filter(Boolean).length;
   const totalLinks =
     (article?.entities?.sports?.length || 0) +
@@ -115,6 +169,13 @@ export function buildArticleQualitySignal(article) {
     (article?.entities?.competitions?.length || 0) +
     (article?.entities?.teams?.length || 0) +
     (article?.entities?.fixtures?.length || 0);
+  const sponsored = Boolean(article?.sponsored ?? metadata.sponsored);
+  const sponsorName = pickString(article?.sponsorName, metadata.sponsorName);
+  const allowInlineCta = article?.allowInlineCta ?? metadata.allowInlineCta;
+  const allowRelatedOdds = article?.allowRelatedOdds ?? metadata.allowRelatedOdds;
+  const ctaSafetyChecked = article?.ctaSafetyChecked ?? metadata.ctaSafetyChecked;
+  const relatedOddsTargets =
+    (article?.entities?.fixtures?.length || 0) + (article?.entities?.competitions?.length || 0);
 
   if (String(article?.title || "").trim().length < 18) {
     score -= 10;
@@ -146,13 +207,32 @@ export function buildArticleQualitySignal(article) {
     issues.push("Published article is missing a publish timestamp");
   }
 
+  if (sponsored && !sponsorName) {
+    score -= 12;
+    issues.push("Sponsored article is missing a sponsor label");
+  }
+
+  if (allowInlineCta && !ctaSafetyChecked) {
+    score -= 18;
+    issues.push("Inline monetization is not safety approved");
+  }
+
+  if (allowRelatedOdds && relatedOddsTargets === 0) {
+    score -= 8;
+    issues.push("Related odds need a linked fixture or competition");
+  }
+
   return {
     score: Math.max(0, score),
     state: score >= 85 ? "ready" : score >= 60 ? "review" : "hold",
     issues,
-    moderationNotes: normalizeNewsMetadata(article?.metadata).moderationNotes,
+    moderationNotes: metadata.moderationNotes,
     wordCount,
     totalLinks,
+    sponsored,
+    allowInlineCta,
+    allowRelatedOdds,
+    ctaSafetyChecked,
   };
 }
 
@@ -208,10 +288,21 @@ export function decorateNewsArticle(article) {
     seoTitle: metadata.seoTitle,
     seoDescription: metadata.seoDescription,
     moderationNotes: metadata.moderationNotes,
+    sponsored: metadata.sponsored,
+    sponsorName: metadata.sponsorName,
+    sponsorLabel: metadata.sponsorLabel,
+    allowInlineCta: metadata.allowInlineCta,
+    allowRelatedOdds: metadata.allowRelatedOdds,
+    ctaSafetyChecked: metadata.ctaSafetyChecked,
+    monetizationNotes: metadata.monetizationNotes,
+    promoPreference: metadata.promoPreference,
+    takedownNote: metadata.takedownNote,
+    takedownAt: metadata.takedownAt,
     entities,
     primarySport: entities.sports[0] || null,
     primaryCompetition: entities.competitions[0] || null,
     primaryTeam: entities.teams[0] || null,
+    primaryFixture: entities.fixtures[0] || null,
   };
 
   return {
@@ -308,5 +399,5 @@ export function formatArticleEntityLabel(article) {
     article?.primarySport?.name,
   ]
     .filter(Boolean)
-    .join(" • ");
+    .join(" · ");
 }

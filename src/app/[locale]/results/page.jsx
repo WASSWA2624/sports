@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
+import { getNewsModuleExperience } from "../../../lib/coreui/news-experience";
 import { formatFixtureStatus, formatMatchday } from "../../../lib/coreui/format";
 import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getResultsFeed } from "../../../lib/coreui/live-read";
@@ -72,6 +73,12 @@ export default async function ResultsPage({ params, searchParams }) {
     getPersonalizationSnapshot(),
   ]);
   const usage = getPersonalizationUsage(personalization);
+  const resultsNewsExperience = flags.resultsNews
+    ? await getNewsModuleExperience({
+        locale,
+        articles: latestNews.articles,
+      })
+    : { promo: null };
   const sections = groupFixturesByDay(feed.fixtures, locale).map((section) => ({
     ...section,
     fixtures: sortFixturesByPersonalization(
@@ -182,6 +189,7 @@ export default async function ResultsPage({ params, searchParams }) {
       {flags.resultsNews ? (
         <NewsModule
           locale={locale}
+          dictionary={dictionary}
           eyebrow={dictionary.news}
           title={dictionary.newsScoreStripTitle}
           lead={dictionary.newsScoreStripLead}
@@ -190,6 +198,7 @@ export default async function ResultsPage({ params, searchParams }) {
           actionLabel={dictionary.browseAll}
           emptyLabel={dictionary.newsEmpty}
           trackingSurface="results-news-strip"
+          promo={resultsNewsExperience.promo}
         />
       ) : null}
     </section>

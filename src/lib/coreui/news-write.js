@@ -34,6 +34,15 @@ export const newsArticleInputSchema = z.object({
   homepagePlacement: z.boolean().default(false),
   homepageRank: z.number().int().min(1).max(12).optional().nullable(),
   moderationNotes: z.string().max(500).optional().nullable(),
+  sponsored: z.boolean().default(false),
+  sponsorName: z.string().max(80).optional().nullable(),
+  allowInlineCta: z.boolean().default(true),
+  allowRelatedOdds: z.boolean().default(true),
+  promoPreference: z
+    .enum(["AUTO", "ODDS", "AFFILIATE", "FUNNEL", "DISABLED"])
+    .default("AUTO"),
+  ctaSafetyChecked: z.boolean().default(true),
+  monetizationNotes: z.string().max(500).optional().nullable(),
   entityLinks: z.array(articleEntityLinkSchema).max(24).default([]),
 });
 
@@ -102,6 +111,7 @@ async function resolveCategoryId(tx, payload) {
 function buildArticleMetadata(existingMetadata, payload, actorUserId) {
   const base =
     existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {};
+  const sponsored = Boolean(payload.sponsored);
   const next = {
     ...base,
     topicLabel: cleanOptionalString(payload.topicLabel),
@@ -112,6 +122,21 @@ function buildArticleMetadata(existingMetadata, payload, actorUserId) {
     homepagePlacement: Boolean(payload.homepagePlacement),
     homepageRank: Number.isFinite(payload.homepageRank) ? payload.homepageRank : null,
     moderationNotes: cleanOptionalString(payload.moderationNotes),
+    commercial: {
+      sponsored,
+      sponsorName: sponsored ? cleanOptionalString(payload.sponsorName) : null,
+      label: sponsored ? "Sponsored" : null,
+    },
+    monetization: {
+      allowInlineCta: Boolean(payload.allowInlineCta),
+      allowRelatedOdds: Boolean(payload.allowRelatedOdds),
+      promoPreference: payload.promoPreference || "AUTO",
+      ctaSafetyChecked: Boolean(payload.ctaSafetyChecked),
+      notes: cleanOptionalString(payload.monetizationNotes),
+      sponsored,
+      sponsorName: sponsored ? cleanOptionalString(payload.sponsorName) : null,
+      sponsorLabel: sponsored ? "Sponsored" : null,
+    },
     editorial: {
       updatedBy: actorUserId,
       updatedAt: new Date().toISOString(),
