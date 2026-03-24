@@ -140,4 +140,8 @@ export class SportsMonksProvider {
 
     return normalizeSportsMonksBroadcastChannels(payload.data || payload, fixtureExternalRef);
   }
+
+  async fetchPredictions() {
+    return [];
+  }
 }

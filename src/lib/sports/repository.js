@@ -91,6 +91,12 @@ function buildProviderMetadata(providerContext) {
   };
 }
 
+function buildPlayerSourceCode(player) {
+  return toStringOrNull(
+    player?.externalRef || [player?.name, player?.countryName].filter(Boolean).join(":")
+  );
+}
+
 async function upsertProviderRef(
   tx,
   {
@@ -614,6 +620,73 @@ async function ensureVenue(tx, venueName, venueMetadata) {
   });
 }
 
+async function ensurePlayer(tx, player, sourceProvider, providerContext) {
+  const providerLookupRef = buildPlayerSourceCode(player);
+  const playerName = toStringOrNull(player?.name);
+
+  if (!providerLookupRef && !playerName) {
+    return null;
+  }
+
+  let existingPlayer = providerLookupRef
+    ? await findProviderLinkedRecord(tx, "player", sourceProvider.id, "PLAYER", providerLookupRef)
+    : null;
+
+  if (!existingPlayer && player?.externalRef) {
+    existingPlayer = await tx.player.findUnique({
+      where: { externalRef: player.externalRef },
+    });
+  }
+
+  if (!existingPlayer && playerName) {
+    existingPlayer = await tx.player.findFirst({
+      where: {
+        name: playerName,
+        ...(player?.countryName ? { countryName: player.countryName } : {}),
+      },
+    });
+  }
+
+  const basePayload = {
+    name: playerName || "Unknown Player",
+    shortName: toStringOrNull(player?.shortName),
+    countryName: toStringOrNull(player?.countryName),
+    metadata: player?.metadata || null,
+  };
+
+  const storedPlayer = existingPlayer
+    ? await tx.player.update({
+        where: { id: existingPlayer.id },
+        data: {
+          ...basePayload,
+          ...(player?.externalRef && !existingPlayer.externalRef
+            ? { externalRef: player.externalRef }
+            : {}),
+        },
+      })
+    : await tx.player.create({
+        data: {
+          ...basePayload,
+          externalRef: toStringOrNull(player?.externalRef),
+        },
+      });
+
+  await upsertProviderRef(tx, {
+    providerId: sourceProvider.id,
+    entityType: "PLAYER",
+    entityId: storedPlayer.id,
+    externalRef: toStringOrNull(player?.externalRef),
+    sourceCode: providerLookupRef,
+    sourceName: storedPlayer.name,
+    feedFamily: "fixture-detail",
+    role: providerContext.providerRole,
+    tier: providerContext.providerTier,
+    metadata: player?.metadata,
+  });
+
+  return storedPlayer;
+}
+
 async function ensureStage(tx, stage, competitionId, seasonId, sourceProvider, providerContext) {
   if (!stage || !competitionId) {
     return null;
@@ -863,6 +936,175 @@ async function replaceFixtureParticipants(tx, storedFixture, homeTeam, awayTeam)
   });
 }
 
+function resolveFixtureTeamId(teamExternalRef, side, homeTeam, awayTeam) {
+  const normalizedTeamExternalRef = toStringOrNull(teamExternalRef);
+
+  if (
+    normalizedTeamExternalRef &&
+    normalizedTeamExternalRef === toStringOrNull(homeTeam?.externalRef)
+  ) {
+    return homeTeam.id;
+  }
+
+  if (
+    normalizedTeamExternalRef &&
+    normalizedTeamExternalRef === toStringOrNull(awayTeam?.externalRef)
+  ) {
+    return awayTeam.id;
+  }
+
+  if (side === "HOME") {
+    return homeTeam.id;
+  }
+
+  if (side === "AWAY") {
+    return awayTeam.id;
+  }
+
+  return null;
+}
+
+async function replaceFixtureIncidents(
+  tx,
+  storedFixture,
+  incidents,
+  homeTeam,
+  awayTeam,
+  sourceProvider,
+  providerContext
+) {
+  await tx.incident.deleteMany({
+    where: { fixtureId: storedFixture.id },
+  });
+
+  let created = 0;
+  for (const incident of incidents || []) {
+    const player = await ensurePlayer(tx, incident.player, sourceProvider, providerContext);
+    const secondaryPlayer = await ensurePlayer(
+      tx,
+      incident.secondaryPlayer,
+      sourceProvider,
+      providerContext
+    );
+
+    await tx.incident.create({
+      data: {
+        fixtureId: storedFixture.id,
+        teamId: resolveFixtureTeamId(
+          incident.teamExternalRef,
+          incident.side,
+          homeTeam,
+          awayTeam
+        ),
+        playerId: player?.id || null,
+        secondaryPlayerId: secondaryPlayer?.id || null,
+        minute: incident.minute,
+        extraMinute: incident.extraMinute,
+        sortOrder: incident.sortOrder || 0,
+        side: incident.side,
+        incidentKey: toStringOrNull(incident.incidentKey),
+        type: incident.type || "EVENT",
+        title: incident.title || "Event",
+        description: incident.description || null,
+        secondaryLabel: toStringOrNull(incident.secondaryLabel),
+        payload: incident.payload || null,
+      },
+    });
+
+    created += 1;
+  }
+
+  return created;
+}
+
+async function replaceFixtureLineups(
+  tx,
+  storedFixture,
+  lineups,
+  homeTeam,
+  awayTeam,
+  sourceProvider,
+  providerContext
+) {
+  await tx.lineup.deleteMany({
+    where: { fixtureId: storedFixture.id },
+  });
+
+  let created = 0;
+  for (const lineupEntry of lineups || []) {
+    const teamId = resolveFixtureTeamId(
+      lineupEntry.teamExternalRef,
+      lineupEntry.side,
+      homeTeam,
+      awayTeam
+    );
+
+    if (!teamId) {
+      continue;
+    }
+
+    const player = await ensurePlayer(tx, lineupEntry.player, sourceProvider, providerContext);
+
+    await tx.lineup.create({
+      data: {
+        fixtureId: storedFixture.id,
+        teamId,
+        playerId: player?.id || null,
+        externalRef: toStringOrNull(lineupEntry.externalRef),
+        side: lineupEntry.side,
+        entryType: toStringOrNull(lineupEntry.entryType),
+        jerseyNumber: toStringOrNull(lineupEntry.jerseyNumber),
+        formationSlot: toStringOrNull(lineupEntry.formationSlot),
+        positionLabel: toStringOrNull(lineupEntry.positionLabel),
+        isStarter: Boolean(lineupEntry.isStarter),
+        sortOrder: Number.isFinite(Number(lineupEntry.sortOrder))
+          ? Number(lineupEntry.sortOrder)
+          : 0,
+        metadata: lineupEntry.metadata || null,
+      },
+    });
+
+    created += 1;
+  }
+
+  return created;
+}
+
+async function replaceFixtureStatistics(tx, storedFixture, statistics, homeTeam, awayTeam) {
+  await tx.statistic.deleteMany({
+    where: { fixtureId: storedFixture.id },
+  });
+
+  let created = 0;
+  for (const statistic of statistics || []) {
+    await tx.statistic.create({
+      data: {
+        fixtureId: storedFixture.id,
+        teamId: resolveFixtureTeamId(
+          statistic.teamExternalRef,
+          statistic.side,
+          homeTeam,
+          awayTeam
+        ),
+        side: statistic.side,
+        metricKey: toStringOrNull(statistic.metricKey),
+        name: statistic.name || "Statistic",
+        statGroup: toStringOrNull(statistic.statGroup),
+        period: toStringOrNull(statistic.period),
+        value: toStringOrNull(statistic.value),
+        sortOrder: Number.isFinite(Number(statistic.sortOrder))
+          ? Number(statistic.sortOrder)
+          : 0,
+        metadata: statistic.metadata || null,
+      },
+    });
+
+    created += 1;
+  }
+
+  return created;
+}
+
 export async function persistFixtureBatch(fixtures) {
   const providerContext = getProviderContext();
   let processed = 0;
@@ -1004,6 +1246,40 @@ export async function persistFixtureBatch(fixtures) {
       });
 
       await replaceFixtureParticipants(tx, storedFixture, homeTeam, awayTeam);
+
+      if (fixture.detailPayloads?.incidents) {
+        await replaceFixtureIncidents(
+          tx,
+          storedFixture,
+          fixture.incidents,
+          homeTeam,
+          awayTeam,
+          sourceProvider,
+          providerContext
+        );
+      }
+
+      if (fixture.detailPayloads?.lineups) {
+        await replaceFixtureLineups(
+          tx,
+          storedFixture,
+          fixture.lineups,
+          homeTeam,
+          awayTeam,
+          sourceProvider,
+          providerContext
+        );
+      }
+
+      if (fixture.detailPayloads?.statistics) {
+        await replaceFixtureStatistics(
+          tx,
+          storedFixture,
+          fixture.statistics,
+          homeTeam,
+          awayTeam
+        );
+      }
 
       const shouldKeepFrozenSnapshot =
         existingFixture?.resultSnapshot &&

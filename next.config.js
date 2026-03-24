@@ -5,6 +5,32 @@ const DEFAULT_ASSET_REMOTE_HOSTS = [
   "example.com",
 ];
 
+function normalizeProviderCode(value, fallback = "SPORTSMONKS") {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return normalized || fallback;
+}
+
+function readFirstString(...names) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (typeof value !== "string") {
+      continue;
+    }
+
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return "";
+}
+
 function normalizeRemoteHost(value) {
   const normalized = String(value || "").trim();
   if (!normalized) {
@@ -26,7 +52,14 @@ function parseCsv(value) {
 }
 
 function buildRemotePatterns() {
-  const configuredHosts = parseCsv(process.env.ASSET_REMOTE_HOSTS);
+  const providerCode = normalizeProviderCode(process.env.SPORTS_DATA_PROVIDER);
+  const configuredHosts = parseCsv(
+    readFirstString(
+      "SPORTS_PROVIDER_ASSET_HOSTS",
+      `${providerCode}_ASSET_HOSTS`,
+      "ASSET_REMOTE_HOSTS"
+    )
+  );
   const hostnames = configuredHosts.length ? configuredHosts : DEFAULT_ASSET_REMOTE_HOSTS;
 
   return [...new Set(hostnames)].flatMap((hostname) => [

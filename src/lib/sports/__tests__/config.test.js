@@ -69,4 +69,15 @@ describe("sports sync config", () => {
       broadcastEnabled: false,
     });
   });
+
+  it("resolves provider-specific asset hosts ahead of the global fallback list", () => {
+    process.env.SPORTS_DATA_PROVIDER = "SPORTSMONKS";
+    process.env.SPORTSMONKS_API_KEY = "provider-key";
+    process.env.SPORTSMONKS_ASSET_HOSTS = "cdn.sportmonks.com,assets.sportsmonks.com";
+    process.env.ASSET_REMOTE_HOSTS = "global.example";
+
+    const config = getSportsSyncConfig();
+
+    expect(config.assetHosts).toEqual(["cdn.sportmonks.com", "assets.sportsmonks.com"]);
+  });
 });

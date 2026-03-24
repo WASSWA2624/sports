@@ -16,9 +16,11 @@ const DEFAULT_STALE_LIVE_GRACE_MINUTES = 8;
 const DEFAULT_PROVIDER_TIMEOUT_MS = 15000;
 
 function parseCsv(value) {
-  return (value || "")
-    .split(",")
-    .map((entry) => entry.trim())
+  return [...new Set(
+    (value || "")
+      .split(",")
+      .map((entry) => entry.trim())
+  )]
     .filter(Boolean);
 }
 
@@ -106,7 +108,14 @@ export function getSportsSyncConfig() {
       odds: sportsProviderSupportsCapability(descriptor, "odds"),
       broadcast: sportsProviderSupportsCapability(descriptor, "broadcast"),
       news: sportsProviderSupportsCapability(descriptor, "news"),
+      predictions: sportsProviderSupportsCapability(descriptor, "predictions"),
     },
+    assetHosts: parseCsv(
+      readProviderEnvString(provider, "ASSET_HOSTS") ||
+        process.env.ASSET_REMOTE_HOSTS ||
+        descriptor?.defaultAssetHosts?.join(",") ||
+        ""
+    ),
     fallbackProviders: parseCsv(process.env.SPORTS_SYNC_FAILOVER_PROVIDERS).map((entry) =>
       normalizeSportsProviderCode(entry, entry)
     ),
@@ -149,6 +158,18 @@ export function getSportsSyncConfig() {
     broadcastEnabled: parseBoolean(
       process.env.SPORTS_SYNC_BROADCAST_ENABLED,
       sportsProviderSupportsCapability(descriptor, "broadcast")
+    ),
+    predictionsEnabled: parseBoolean(
+      process.env.SPORTS_SYNC_PREDICTIONS_ENABLED,
+      sportsProviderSupportsCapability(descriptor, "predictions")
+    ),
+    bookmakerCatalogFixtureLimit: parseInteger(
+      process.env.SPORTS_SYNC_BOOKMAKER_CATALOG_FIXTURE_LIMIT,
+      DEFAULT_MAX_ODDS_FIXTURES
+    ),
+    maxPredictionFixturesPerRun: parseInteger(
+      process.env.SPORTS_SYNC_MAX_PREDICTION_FIXTURES,
+      DEFAULT_MAX_ODDS_FIXTURES
     ),
   };
 }

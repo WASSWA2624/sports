@@ -19,8 +19,6 @@ const PROD_ONLY = ["production"];
 const STAGE_AND_PROD = ["staging", "production"];
 const IMPLEMENTED_PROVIDER_CODES = new Set([
   "SPORTSMONKS",
-  "SPORTSMONKS_BASKETBALL",
-  "SPORTSMONKS_TENNIS",
 ]);
 const PROVIDER_AUTH_EXPECTATIONS = {
   API_SPORTS: {
@@ -582,6 +580,21 @@ export async function runReleasePreflight(options = {}) {
     recommendedModes: ["staging", "production"],
     validate: (value) => value.includes("."),
   });
+  validateAnyStringSetting(
+    report,
+    mode,
+    "assets",
+    `${providerCode} asset hosts`,
+    [
+      "SPORTS_PROVIDER_ASSET_HOSTS",
+      `${providerCode}_ASSET_HOSTS`,
+      "ASSET_REMOTE_HOSTS",
+    ],
+    {
+      recommendedModes: ["staging", "production"],
+      validate: (value) => value.includes("."),
+    }
+  );
 
   await checkPrismaStatus(report, mode);
   await checkReleaseDocs(report);

@@ -19,6 +19,11 @@ describe("sports provider registry", () => {
           sports: ["football"],
         }),
         expect.objectContaining({
+          code: "SPORTSMONKS_BASKETBALL",
+          implemented: false,
+          tier: "planned",
+        }),
+        expect.objectContaining({
           code: "API_SPORTS",
           envNamespace: "API_SPORTS",
           implemented: false,

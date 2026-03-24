@@ -48,4 +48,8 @@ export class UnimplementedSportsProvider {
   fetchMediaMetadata() {
     throw buildError(this.descriptor, "fetchMediaMetadata");
   }
+
+  fetchPredictions() {
+    throw buildError(this.descriptor, "fetchPredictions");
+  }
 }

@@ -17,6 +17,7 @@ const requiredProviderMethods = [
   "fetchTeams",
   "fetchNews",
   "fetchMediaMetadata",
+  "fetchPredictions",
 ];
 
 const adapterFactories = {
@@ -43,6 +44,7 @@ function sanitizeDescriptor(descriptor) {
     capabilities: [...descriptor.capabilities],
     fallbackFor: [...(descriptor.fallbackFor || [])],
     implemented: Boolean(descriptor.implemented),
+    defaultAssetHosts: [...(descriptor.defaultAssetHosts || [])],
     docsUrl: descriptor.docsUrl || null,
     notes: descriptor.notes || null,
   };

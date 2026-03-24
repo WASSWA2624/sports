@@ -1,13 +1,16 @@
 export const DEFAULT_SPORTS_PROVIDER_CODE = "SPORTSMONKS";
 
 const CAPABILITY_ALIASES = {
+  taxonomy: ["taxonomy", "reference-data", "catalog"],
   fixtures: ["fixtures", "matches", "results", "scores"],
   livescores: ["livescores", "livescore", "scores"],
+  "fixture-detail": ["fixture-detail", "details", "match-center"],
   standings: ["standings", "tables"],
   teams: ["teams", "participants", "players"],
   odds: ["odds", "markets", "market", "exchange-odds", "betting-feeds", "spreads", "props"],
   broadcast: ["broadcast", "media-metadata", "tv", "tv-stations", "widgets"],
   news: ["news", "news-hook"],
+  predictions: ["predictions", "prediction", "tips", "pick", "recommendations"],
 };
 
 const PROVIDER_DEFINITIONS = [
@@ -34,6 +37,7 @@ const PROVIDER_DEFINITIONS = [
     implemented: true,
     defaultPrimarySport: "football",
     defaultBaseUrl: "https://api.sportmonks.com/v3/football",
+    defaultAssetHosts: ["cdn.sportmonks.com", "assets.sportsmonks.com"],
     authLocation: "query",
     authQueryKey: "api_token",
     docsUrl: "https://www.sportmonks.com/",
@@ -47,9 +51,10 @@ const PROVIDER_DEFINITIONS = [
     tier: "planned",
     sports: ["basketball"],
     capabilities: ["taxonomy", "fixtures", "standings"],
-    implemented: true,
+    implemented: false,
     defaultPrimarySport: "basketball",
     defaultBaseUrl: "https://api.sportmonks.com/v3/basketball",
+    defaultAssetHosts: ["cdn.sportmonks.com", "assets.sportsmonks.com"],
     authLocation: "query",
     authQueryKey: "api_token",
     docsUrl: "https://www.sportmonks.com/",
@@ -64,9 +69,10 @@ const PROVIDER_DEFINITIONS = [
     tier: "planned",
     sports: ["tennis"],
     capabilities: ["taxonomy", "fixtures", "standings"],
-    implemented: true,
+    implemented: false,
     defaultPrimarySport: "tennis",
     defaultBaseUrl: "https://api.sportmonks.com/v3/tennis",
+    defaultAssetHosts: ["cdn.sportmonks.com", "assets.sportsmonks.com"],
     authLocation: "query",
     authQueryKey: "api_token",
     docsUrl: "https://www.sportmonks.com/",
@@ -430,6 +436,7 @@ function sanitizeProviderDefinition(definition) {
     defaultAuthHeader: definition.defaultAuthHeader || "",
     defaultAuthScheme: definition.defaultAuthScheme || "",
     defaultApiHost: definition.defaultApiHost || "",
+    defaultAssetHosts: [...(definition.defaultAssetHosts || [])],
     docsUrl: definition.docsUrl || null,
     notes: definition.notes || null,
   };
