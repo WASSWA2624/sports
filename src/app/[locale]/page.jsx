@@ -79,6 +79,8 @@ export default async function LocaleHomePage({ params }) {
     locale,
     viewerTerritory,
     currentUserId: userContext?.user?.id || null,
+    includeComposerCatalog: true,
+    catalogFixtureLimit: 16,
   });
   const usage = getPersonalizationUsage(personalization);
   const [
@@ -207,6 +209,8 @@ export default async function LocaleHomePage({ params }) {
         initialData={communitySlipHub}
         authHref={`/${locale}/auth`}
         predictionsHref={`/${locale}/predictions`}
+        allowComposer
+        catalogLimit={16}
       />
 
       <section className={styles.homeBoard}>

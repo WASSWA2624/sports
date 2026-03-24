@@ -107,10 +107,13 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
   } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
+  const isPredictionsPage =
+    pathname === `/${locale}/predictions` || pathname.startsWith(`/${locale}/predictions/`);
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isAuthPage = pathname === `/${locale}/auth` || pathname.startsWith(`/${locale}/auth/`);
   const isFavoritesPage = pathname === `/${locale}/favorites` || pathname.startsWith(`/${locale}/favorites/`);
   const isSettingsPage = pathname === `/${locale}/settings` || pathname.startsWith(`/${locale}/settings/`);
+  const isScoresMode = !isNewsMode && !isPredictionsPage;
   const watchCount = watchlistCount || watchlistItems.length;
   const shellChrome = shellData?.chrome || {};
   const platform = shellData?.platform || {};
@@ -339,6 +342,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
       <span>{getScoreViewLabel(item.key, dictionary)}</span>
     </span>
   );
+  const createSlipHref = `/${locale}/predictions#slip-composer`;
   const modeSwitchLink = {
     href: isNewsMode ? `/${locale}` : `/${locale}/news`,
     label: isNewsMode ? dictionary.scores : dictionary.news,
@@ -348,13 +352,20 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     const active =
       item.key === "news"
         ? isNewsMode
-        : !isNewsMode && (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`));
+        : item.key === "slips"
+          ? isPredictionsPage
+          : isScoresMode;
 
     return {
       ...item,
       href,
       active,
-      label: item.key === "scores" ? dictionary.scores : dictionary.news,
+      label:
+        item.key === "scores"
+          ? dictionary.scores
+          : item.key === "slips"
+            ? dictionary.bettingSlips
+            : dictionary.news,
     };
   });
 
@@ -464,6 +475,16 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 </Link>
               ))}
             </nav>
+
+            <Link
+              href={createSlipHref}
+              className={isPredictionsPage ? styles.mobileSlipPillActive : styles.mobileSlipPill}
+            >
+              <span className={styles.sportLinkContent}>
+                <ShellIcon name="slips" className={styles.sportIcon} />
+                <span>{dictionary.createSlip}</span>
+              </span>
+            </Link>
 
             {!isNewsMode && activeSport ? (
               activeSport.enabled ? (
@@ -654,10 +675,20 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionCompact}`}>
                   <div className={styles.mobileMenuSectionHead}>
                     <h2 className={styles.mobileMenuSectionTitle}>{dictionary.account}</h2>
-                    <span className={styles.mobileMenuSectionCount}>2</span>
+                    <span className={styles.mobileMenuSectionCount}>3</span>
                   </div>
 
                   <div className={`${styles.mobileMenuList} ${styles.mobileMenuQuickGrid}`}>
+                    <Link
+                      href={`/${locale}/predictions`}
+                      className={isPredictionsPage ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className={styles.mobileMenuItemContent}>
+                        <ShellIcon name="slips" className={styles.controlIcon} />
+                        <span>{dictionary.bettingSlips}</span>
+                      </span>
+                    </Link>
                     <Link
                       href={accountHref}
                       className={
@@ -1071,6 +1102,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                     <Link href={`/${locale}/search`} className={styles.sectionAction}>
                       {dictionary.search}
                     </Link>
+                    <Link href={`/${locale}/predictions`} className={styles.sectionAction}>
+                      {dictionary.bettingSlips}
+                    </Link>
+                    <Link href={createSlipHref} className={styles.sectionAction}>
+                      {dictionary.createSlip}
+                    </Link>
                     <Link href={`/${locale}/favorites`} className={styles.sectionAction}>
                       {dictionary.favorites}
                     </Link>
@@ -1274,6 +1311,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <div className={styles.footerActions}>
                   <Link href={`/${locale}/search`} className={styles.sectionAction}>
                     {dictionary.search}
+                  </Link>
+                  <Link href={`/${locale}/predictions`} className={styles.sectionAction}>
+                    {dictionary.bettingSlips}
+                  </Link>
+                  <Link href={createSlipHref} className={styles.sectionAction}>
+                    {dictionary.createSlip}
                   </Link>
                   <Link href={`/${locale}/favorites`} className={styles.sectionAction}>
                     {dictionary.favorites}

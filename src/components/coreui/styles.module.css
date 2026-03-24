@@ -3222,7 +3222,7 @@
 .topModeNav {
   grid-area: mode;
   display: none;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
   margin-right: 0;
   gap: 0.22rem;
@@ -3288,7 +3288,9 @@
 
 .mobileModeLink,
 .mobileModeLinkActive,
-.mobileSportPill {
+.mobileSportPill,
+.mobileSlipPill,
+.mobileSlipPillActive {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3304,7 +3306,8 @@
 }
 
 .mobileModeLink,
-.mobileSportPill {
+.mobileSportPill,
+.mobileSlipPill {
   background: transparent;
   color: var(--text);
 }
@@ -3321,9 +3324,29 @@
   background: #061a22;
 }
 
+.mobileSlipPill,
+.mobileSlipPillActive {
+  padding-inline: 0.82rem;
+  border: 1px solid rgba(255, 138, 29, 0.24);
+  background: linear-gradient(135deg, rgba(255, 91, 61, 0.2), rgba(255, 138, 29, 0.32));
+  color: #fff7ed;
+  box-shadow: 0 14px 22px rgba(255, 91, 61, 0.14);
+}
+
+.mobileSlipPillActive {
+  border-color: rgba(251, 191, 36, 0.42);
+  background: linear-gradient(135deg, rgba(255, 91, 61, 0.32), rgba(251, 191, 36, 0.28));
+}
+
 .mobileSportPill:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: transparent;
+}
+
+.mobileSlipPill:hover,
+.mobileSlipPillActive:hover {
+  border-color: rgba(251, 191, 36, 0.38);
+  transform: translateY(-1px);
 }
 
 .nav,

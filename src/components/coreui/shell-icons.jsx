@@ -94,6 +94,16 @@ export function ShellIcon({ name, className }) {
           <path d="M8.5 15.5h7" />
         </svg>
       );
+    case "slips":
+      return (
+        <svg {...props}>
+          <path d="M6.5 5.5h11a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 17.5V7a1.5 1.5 0 0 1 1.5-1.5Z" />
+          <path d="M8.5 9h7" />
+          <path d="M8.5 12h4.25" />
+          <path d="M8.5 15h6" />
+          <path d="m15.5 8.2 1.2 1.2 2.1-2.4" />
+        </svg>
+      );
     case "search":
       return (
         <svg {...props}>

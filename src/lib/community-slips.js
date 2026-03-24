@@ -279,11 +279,18 @@ export function buildFixtureSlipCatalogEntry(
     return null;
   }
 
+  const sportRecord = fixture.sport || fixture.competition?.sport || fixture.league?.sport || null;
+  const sportKey = sportRecord?.slug || sportRecord?.code?.toLowerCase?.() || "football";
+
   return {
     fixtureId: fixture.id,
     fixtureRef: fixture.externalRef || fixture.id,
     fixtureLabel: buildFixtureLabel(fixture),
     competitionName: fixture.league?.name || null,
+    sportId: sportRecord?.id || null,
+    sportKey,
+    sportName: sportRecord?.name || "Football",
+    status: fixture.status || "SCHEDULED",
     startsAt: fixture.startsAt?.toISOString?.() || fixture.startsAt || null,
     marketGroups: marketGroups.map((group) => ({
       ...group,
@@ -319,7 +326,13 @@ async function readCatalogFixtures({
         orderBy: [{ startsAt: "asc" }],
         take: fixtureId ? 1 : limit,
         include: {
+          sport: true,
           league: true,
+          competition: {
+            include: {
+              sport: true,
+            },
+          },
           homeTeam: true,
           awayTeam: true,
           oddsMarkets: {

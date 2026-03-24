@@ -22,6 +22,7 @@ The goal is to deliver a dense, fast, real-time sports web app that:
 * aggregates sports news
 * supports deep navigation across sports ecosystems
 * delivers high-intent betting-related insights (non-operational)
+* gives registered users a visible community prediction loop through saved and published betting slips
 * maximizes monetization through affiliate conversion and ad placements
 * is mobile-first and 100% responsive across phone, tablet, laptop, and desktop
 * keeps primary actions within 1 to 2 clicks or taps wherever possible
@@ -29,6 +30,17 @@ The goal is to deliver a dense, fast, real-time sports web app that:
 * fully translates the entire UI, not just the public marketing or content shell
 
 This is not just a data product. It is a **conversion-optimized sports platform**.
+
+### 2.1 Current Implementation Snapshot
+
+As of March 24, 2026, the live product scope in this repository includes:
+
+* live scores board, grouped competitions, live standings, stale and degraded states, and board-level monetization modules
+* match, competition, team, country, archive, and news surfaces with SEO-aware routing
+* odds, prediction, affiliate CTA, and broadcast modules with provider capability gating and regulated copy
+* auth, preferences, favorites, onboarding, recent views, and geo-aware CTA behavior
+* search, SEO metadata, admin control-plane, and editor workflows for news and prediction review
+* community slips on home, predictions, and match surfaces, including drafts, publishing, optional reasoning per pick, likes, and public author history
 
 ---
 
@@ -40,6 +52,7 @@ Build a web app that feels immediately familiar to a Flashscore user, but optimi
 * navigate across sports, countries, competitions, teams, and matches seamlessly
 * follow live scores in real time
 * access high-value insights (predictions, odds, trends)
+* save, publish, compare, and revisit community betting slips without leaving the main app shell
 * take action (click affiliate links, join channels)
 * consume sports news within the same experience
 * complete core journeys with minimal friction, ideally in 1 to 2 interactions
@@ -120,8 +133,22 @@ Every high-traffic surface must:
 
 * guide user toward action
 * include monetization triggers
+* reinforce repeat visits through favorites, reminders, channels, or community prediction content
 * maintain UX balance
 * never sacrifice clarity, speed, or ease of use for monetization density
+
+### 4.10 Community Retention Layer
+
+Community prediction features are in scope when they strengthen repeat visits and monetization without turning the product into a general-purpose social network.
+
+The bounded community layer includes:
+
+* saved and published betting slips for registered users
+* optional per-pick reasoning so a predictor can defend a selection
+* public author history so visitors can review a predictor's past slips
+* featured or homepage-visible community modules that help bring users back into match, odds, and affiliate journeys
+
+The bounded community layer does not imply comments, chat, direct messaging, tipping economies, or creator payouts.
 
 ---
 
@@ -383,7 +410,19 @@ Favoriting must feel nearly instant and available from all key surfaces.
 
 ---
 
-### 7.9 Search
+### 7.9 Community Slips and Predictions
+
+* public community betting slips on the homepage, predictions hub, and match pages
+* account-backed draft saving and publishing for registered users
+* optional per-pick reasoning to defend a prediction
+* public author history so visitors can inspect past picks before acting
+* likes, featured placement, and clear return paths back to match center and odds surfaces
+
+This is the primary repeat-visit loop beyond favorites and alerts and should stay visible as a first-class product module.
+
+---
+
+### 7.10 Search
 
 * teams
 * competitions
@@ -394,7 +433,7 @@ Search should open quickly, show useful results fast, and get the user to the ri
 
 ---
 
-### 7.10 Odds and Betting-Adjacent Surfaces
+### 7.11 Odds and Betting-Adjacent Surfaces
 
 Supports:
 
@@ -406,7 +445,7 @@ Supports:
 
 ---
 
-### 7.11 Ads, Consent, and Legal
+### 7.12 Ads, Consent, and Legal
 
 * banner ads
 * inline ads
@@ -449,7 +488,7 @@ CTAs must remain clear, efficient, and easy to reach without harming usability.
 
 ---
 
-### 8.3 Prediction Layer (Conversion Engine)
+### 8.3 Prediction Layer (Conversion Engine and Retention Loop)
 
 Add modules:
 
@@ -457,18 +496,24 @@ Add modules:
 * Best Odds
 * High Odds Matches
 * Value Bets
+* Community Slips
+* Predictor History
 
 Displayed:
 
 * homepage
 * match pages
 * competition pages
+* dedicated predictions hub
 
 Each includes:
 
 * odds
 * reasoning (optional)
 * affiliate CTA
+* clear routes back into live match and comparison surfaces
+
+Community predictions are not a replacement for editorial or model-driven recommendation modules. They are a complementary return-visit loop that keeps the betting-adjacent surfaces fresh between feed updates.
 
 ---
 
@@ -543,6 +588,7 @@ Track:
 * funnel flow
 * page performance
 * click-depth and interaction-efficiency signals where useful
+* community slip creation, publish, like, and author-history engagement
 
 ---
 
@@ -557,14 +603,19 @@ Track:
 
 * synced favorites
 * alerts
+* saved drafts and published betting slips
+* public prediction history tied to the account profile
 
 ### Editor
 
 * manage news
+* review prediction and promo content
+* curate or moderate community-facing prediction surfaces where required
 
 ### Admin
 
 * manage system, ads, affiliates
+* manage operational controls, prediction surfaces, and community moderation hooks
 
 All user types should get a fully translated, responsive, theme-complete experience.
 
@@ -592,7 +643,14 @@ All user types should get a fully translated, responsive, theme-complete experie
 
 * Favorites, Preferences
 
-### 10.6 Monetization
+### 10.6 Community Prediction Data
+
+* CommunitySlip
+* CommunitySlipSelection
+* CommunitySlipLike
+* featured state, visibility, outcome, and predictor history read models
+
+### 10.7 Monetization
 
 * Bookmaker
 * AffiliateLink
@@ -610,7 +668,7 @@ All user types should get a fully translated, responsive, theme-complete experie
 * Prisma
 * MySQL
 * Redux Toolkit
-* Styled Components
+* CSS Modules plus selective Styled Components
 * i18n
 
 ### Frontend Responsibilities
@@ -635,6 +693,7 @@ src/
     competitions/
     news/
     odds/
+    community/
     affiliates/
     funnel/
     ads/
@@ -672,6 +731,7 @@ Includes:
 * news
 * search
 * favorites
+* community slips
 * affiliates
 * analytics
 
@@ -681,12 +741,17 @@ Includes:
 
 ```txt
 /{locale}
+/{locale}/live
+/{locale}/predictions
+/{locale}/favorites
 /{locale}/news
-/{locale}/{sport}
-/{locale}/{sport}/{country}
-/{locale}/{sport}/{country}/{competition}
+/{locale}/leagues/{leagueCode}
 /{locale}/match/{matchRef}
-/{locale}/team/{teamRef}
+/{locale}/teams/{teamRef}
+/{locale}/sports/{sportSlug}
+/{locale}/sports/{sportSlug}/countries/{countrySlug}
+/{locale}/search
+/{locale}/admin
 ```
 
 ---
@@ -711,9 +776,9 @@ Includes:
 Removed:
 
 * marketplace
-* creator economy
+* creator economy payouts
 * paid subscriptions
-* community features
+* open-ended social networking features like comments, chat, DMs, and tipping
 
 ---
 
@@ -728,6 +793,7 @@ Removed:
 
 * multi-sport expansion
 * UX refinement across responsive and theme-heavy surfaces
+* community prediction retention refinement and moderation tooling
 
 ### Phase 3
 

@@ -30,9 +30,16 @@ export async function GET(request) {
   const viewerTerritory = request.nextUrl.searchParams.get("territory") || "US";
   const fixtureId = request.nextUrl.searchParams.get("fixtureId") || null;
   const authorId = request.nextUrl.searchParams.get("authorId") || null;
+  const catalogLimitRaw = Number.parseInt(
+    request.nextUrl.searchParams.get("catalogLimit") || "",
+    10
+  );
   const withComposer =
     request.nextUrl.searchParams.get("withComposer") === "1" ||
     request.nextUrl.searchParams.get("withComposer") === "true";
+  const catalogFixtureLimit = Number.isFinite(catalogLimitRaw)
+    ? Math.min(Math.max(catalogLimitRaw, 1), 24)
+    : undefined;
 
   const userContext = await getCurrentUserFromRequest(request).catch(() => null);
   const data = await getCommunitySlipHubData({
@@ -42,6 +49,7 @@ export async function GET(request) {
     fixtureId,
     selectedAuthorId: authorId,
     includeComposerCatalog: withComposer,
+    ...(catalogFixtureLimit ? { catalogFixtureLimit } : {}),
   });
 
   return NextResponse.json(data);

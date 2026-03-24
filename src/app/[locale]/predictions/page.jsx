@@ -30,7 +30,7 @@ export default async function PredictionsPage({ params }) {
     viewerTerritory: viewerGeo,
     currentUserId: userContext?.user?.id || null,
     includeComposerCatalog: true,
-    catalogFixtureLimit: 8,
+    catalogFixtureLimit: 16,
   });
 
   return (
@@ -46,6 +46,7 @@ export default async function PredictionsPage({ params }) {
         authHref={`/${locale}/auth`}
         predictionsHref={`/${locale}/predictions`}
         allowComposer
+        catalogLimit={16}
       />
     </section>
   );

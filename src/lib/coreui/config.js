@@ -1,5 +1,6 @@
 export const TOP_LEVEL_NAV = [
   { key: "scores", href: "", label: "Scores" },
+  { key: "slips", href: "/predictions", label: "Betting slips" },
   { key: "news", href: "/news", label: "News" },
 ];
 
