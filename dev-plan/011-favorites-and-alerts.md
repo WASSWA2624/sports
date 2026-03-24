@@ -11,9 +11,11 @@ Deliver favorites, my teams, alerts, and favorite-driven retention loops.
 5. Add homepage, board, and shell prioritization rules based on favorites and recent views.
 6. Add reminder prompts, channel-entry prompts, and compliant Telegram or WhatsApp funnel hooks from favorite-driven surfaces without forcing opt-in.
 7. Add analytics for favorite creation, alert opt-in, channel joins, and favorites-driven return usage.
+8. Make favorite actions effectively one tap on major surfaces and keep favorites or alert management fully translated, theme-complete, and responsive.
 
 ## Done When
 - Favorites feel native across the entire app.
 - Alert settings can be saved and respected.
 - Personalized navigation mirrors the reference product's behavior.
 - Favorite-driven retention and funnel entry points are measurable.
+- Favorite and alert flows stay easy to use on mobile and desktop without hidden friction.

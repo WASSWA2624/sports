@@ -1,7 +1,7 @@
 # 012-admin-and-editor-ops
 
 ## Goal
-Deliver editorial, monetization, and operational control for a live scores platform.
+Deliver editorial, monetization, and operational control for a live scores platform, with admin and editorial UI quality held to the same translation and responsiveness bar.
 
 ## Build
 1. Build admin modules for users, providers, sync jobs, feature flags, ad slots, consent text, affiliate partners, bookmaker mappings, funnel destinations, and geo-targeted CTA configuration.
@@ -11,9 +11,11 @@ Deliver editorial, monetization, and operational control for a live scores platf
 5. Add emergency controls to disable a provider, hide an odds or prediction surface, pause an affiliate CTA, or remove a broken module without redeploying.
 6. Expose enough provider metadata in control-plane views for operators to understand selected-provider code, fallback chain, supported capabilities, and when a cataloged provider is not yet implemented.
 7. Add issue-triage workflows for data disputes, wrong scores, broken article content, broken affiliate destinations, provider-switch incidents, and compliance incidents.
+8. Keep frequent operator and editor actions efficient, translated, responsive, and achievable in minimal clicks where reasonable.
 
 ## Done When
 - Editors can manage news and sponsored or monetized placements safely.
 - Admins can observe live platform health and act quickly across product and revenue surfaces.
 - Critical control-plane actions are traceable.
 - Provider-switch and provider-readiness issues are visible before they become production incidents.
+- Admin and editorial surfaces remain fully translated, responsive, and efficient to operate.

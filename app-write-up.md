@@ -1,4 +1,3 @@
-
 # Sports App Product and Technical Specification
 
 **Reference product: Flashscore web experience**
@@ -24,6 +23,10 @@ The goal is to deliver a dense, fast, real-time sports web app that:
 * supports deep navigation across sports ecosystems
 * delivers high-intent betting-related insights (non-operational)
 * maximizes monetization through affiliate conversion and ad placements
+* is mobile-first and 100% responsive across phone, tablet, laptop, and desktop
+* keeps primary actions within 1 to 2 clicks or taps wherever possible
+* ships with polished dark and light themes that both feel first-class
+* fully translates the entire UI, not just the public marketing or content shell
 
 This is not just a data product. It is a **conversion-optimized sports platform**.
 
@@ -31,14 +34,16 @@ This is not just a data product. It is a **conversion-optimized sports platform*
 
 ## 3. Product Vision
 
-Build a web app that feels immediately familiar to a Flashscore user, but optimized for **engagement and monetization**:
+Build a web app that feels immediately familiar to a Flashscore user, but optimized for **engagement, usability, speed, and monetization**:
 
-* open the site and instantly see live matches
+* open the site and instantly see live matches on mobile or desktop
 * navigate across sports, countries, competitions, teams, and matches seamlessly
 * follow live scores in real time
 * access high-value insights (predictions, odds, trends)
 * take action (click affiliate links, join channels)
 * consume sports news within the same experience
+* complete core journeys with minimal friction, ideally in 1 to 2 interactions
+* read and use every surface in the selected language and theme without degraded quality
 
 ---
 
@@ -48,40 +53,152 @@ Build a web app that feels immediately familiar to a Flashscore user, but optimi
 
 Match Flashscore UX and structure before introducing enhancements.
 
-### 4.2 Dense Information Layout
+### 4.2 Dense Information Layout, Mobile First
 
 Compact, data-rich UI with:
 
-* left rail navigation
+* left rail navigation on larger screens
 * central live board
 * optional monetization rail
 * minimal whitespace, high signal density
+* mobile-first composition so the smallest viewport gets the primary design pass
+
+Desktop should expand the mobile experience, not replace it with a separate product logic.
 
 ### 4.3 Live-First Performance
 
-Real-time updates without refresh.
+Real-time updates without refresh, with fast initial load, fast filter changes, low layout shift, and strong perceived performance on mobile connections.
 
-### 4.4 Navigation Depth
+### 4.4 One-to-Two-Click UX
 
-Sport → Country → Competition → Match in minimal steps.
+Primary actions should happen in 1 to 2 clicks or taps whenever realistically possible:
 
-### 4.5 SEO at Scale
+* open search
+* switch date or filter
+* favorite a match, team, or competition
+* open a match center
+* switch major tabs
+* reach key monetization or funnel entry points
+
+### 4.5 Navigation Depth
+
+Sport -> Country -> Competition -> Match in minimal steps.
+
+### 4.6 Full Translation Coverage
+
+The UI must be 100% translated across:
+
+* public pages
+* auth flows
+* favorites and settings
+* search
+* news
+* odds and prediction surfaces
+* ads, consent, legal, and regulated copy
+* errors, empty states, loading states, stale states, and degraded states
+* admin and editorial surfaces
+
+No mixed-language UI is acceptable in shipped surfaces.
+
+### 4.7 Theme Quality in Dark and Light Modes
+
+Dark and light themes must both be production-grade:
+
+* balanced color blending
+* strong readability on dense data surfaces
+* clear status colors for live, finished, alerts, warnings, and disabled states
+* accessible contrast for text, tabs, chips, tables, and CTA components
+* monetization modules that feel integrated rather than visually bolted on
+
+### 4.8 SEO at Scale
 
 Template-driven, crawlable pages across all entities.
 
-### 4.6 Conversion-Driven Design (NEW)
+### 4.9 Conversion-Driven Design
 
 Every high-traffic surface must:
 
 * guide user toward action
 * include monetization triggers
 * maintain UX balance
+* never sacrifice clarity, speed, or ease of use for monetization density
 
 ---
 
-## 5. Primary Navigation Model
+## 5. UX and Design Requirements
 
-### 5.1 Header
+### 5.1 Mobile-First Layout Rules
+
+* Design starts from the smallest breakpoint first.
+* Every major page must work without horizontal scrolling.
+* Sticky controls, tabs, filters, and match actions should remain thumb-friendly.
+* Desktop layouts may add rails and density, but mobile must still feel complete and primary.
+
+### 5.2 Responsiveness
+
+The UI must be 100% responsive across:
+
+* small phones
+* large phones
+* tablets
+* laptop screens
+* large desktop screens
+
+Cards, tables, rows, tabs, rails, and monetization units must reflow cleanly at every supported size.
+
+### 5.3 Interaction Efficiency
+
+The product should feel easy to use immediately:
+
+* 1 to 2 clicks or taps for primary actions
+* clear visual hierarchy
+* predictable interaction patterns
+* minimal modal dependency
+* fast return paths back to live scores and favorites
+
+### 5.4 Performance Expectations
+
+The experience should feel fast even on dense pages:
+
+* quick first render
+* fast board and tab transitions
+* low-friction search
+* low-jank live updates
+* smooth theme switching
+* no noticeable slowdown from translation or monetization modules
+
+### 5.5 Theme System
+
+The design system must support:
+
+* full dark theme
+* full light theme
+* shared semantic tokens for text, borders, backgrounds, live states, alerts, CTA states, and monetization surfaces
+* consistent component behavior across both themes
+
+### 5.6 Translation Requirements
+
+Translation must cover the whole UI, including:
+
+* navigation
+* tabs and filters
+* match states
+* search copy
+* article metadata
+* favorites and alerts
+* auth, settings, and onboarding
+* consent, legal, and geo-gated copy
+* admin labels and operational messaging
+
+The app should support full-locale rendering rather than partial label substitution.
+
+---
+
+## 6. Primary Navigation Model
+
+The navigation system must preserve Flashscore familiarity while staying mobile-first, responsive, fast, and fully translated.
+
+### 6.1 Header
 
 * logo
 * Scores / News switch
@@ -89,26 +206,32 @@ Every high-traffic surface must:
 * register/login/profile
 * utility actions
 
+Header behavior must collapse cleanly on mobile without hiding core actions behind excessive taps.
+
 ---
 
-### 5.2 Sports Strip
+### 6.2 Sports Strip
 
 * Favorites
 * Major sports
 * More (full list)
 
+Must be touch-friendly, horizontally usable on mobile, and fast to scan.
+
 ---
 
-### 5.3 Left Rail
+### 6.3 Left Rail
 
 * pinned leagues
 * my teams
 * country list
 * competitions
 
+On mobile, this should become a usable drawer or stacked pattern without losing navigation depth.
+
 ---
 
-### 5.4 Center Content
+### 6.4 Center Content
 
 Dynamic:
 
@@ -119,20 +242,26 @@ Dynamic:
 * news
 * predictions modules
 
+This is the core speed and usability zone of the product.
+
 ---
 
-### 5.5 Right Rail
+### 6.5 Right Rail
 
 * ads
 * affiliate widgets
 * Telegram/WhatsApp CTAs
 * promo blocks
 
+On mobile, these modules should stack or inline gracefully without overwhelming primary content.
+
 ---
 
-## 6. Core Experiences
+## 7. Core Experiences
 
-### 6.1 Scores Home
+Every core experience must be mobile-first, 100% responsive, fully translated, theme-consistent, fast, and efficient to use.
+
+### 7.1 Scores Home
 
 Features:
 
@@ -140,8 +269,9 @@ Features:
 * filters: All, LIVE, Finished, Scheduled
 * grouped competitions
 * expandable sections
-* favorites & pinning
+* favorites and pinning
 * compact match rows
+* touch-friendly controls with 1 to 2 tap access to match center and favorite actions
 
 #### Monetization Additions
 
@@ -152,7 +282,7 @@ Features:
 
 ---
 
-### 6.2 Sport Landing Pages
+### 7.2 Sport Landing Pages
 
 Same as scores home, scoped per sport.
 
@@ -163,14 +293,16 @@ Includes:
 
 ---
 
-### 6.3 Country Pages
+### 7.3 Country Pages
 
 * competition listing
 * drill-down navigation
 
+Must remain easy to scan and navigate on narrow screens.
+
 ---
 
-### 6.4 Competition Pages
+### 7.4 Competition Pages
 
 Tabs:
 
@@ -188,9 +320,11 @@ Tabs:
 * prediction modules per round
 * sponsored placements (future)
 
+Tabs and selectors should stay usable, translated, and visually stable across both themes.
+
 ---
 
-### 6.5 Match Center
+### 7.5 Match Center
 
 Tabs:
 
@@ -207,13 +341,15 @@ Includes:
 #### Monetization Additions (CRITICAL)
 
 * odds block (top placement)
-* “Best Bet” highlight
+* Best Bet highlight
 * affiliate CTAs (Bet Now)
 * Telegram CTA
 
+The match center is the highest-value action surface and must feel extremely fast and easy to use on mobile.
+
 ---
 
-### 6.6 Team Pages
+### 7.6 Team Pages
 
 * fixtures
 * results
@@ -222,7 +358,7 @@ Includes:
 
 ---
 
-### 6.7 News Hub
+### 7.7 News Hub
 
 * global news
 * sport-specific news
@@ -234,25 +370,31 @@ Includes:
 * related odds widgets
 * funnel CTAs
 
+Article discovery, open, and return paths must be low-friction on mobile and desktop.
+
 ---
 
-### 6.8 Favorites and My Teams
+### 7.8 Favorites and My Teams
 
 * favorite matches, teams, competitions
 * drive personalization and alerts
 
+Favoriting must feel nearly instant and available from all key surfaces.
+
 ---
 
-### 6.9 Search
+### 7.9 Search
 
 * teams
 * competitions
 * matches
 * articles
 
+Search should open quickly, show useful results fast, and get the user to the right destination in 1 to 2 interactions.
+
 ---
 
-### 6.10 Odds and Betting-Adjacent Surfaces
+### 7.10 Odds and Betting-Adjacent Surfaces
 
 Supports:
 
@@ -264,7 +406,7 @@ Supports:
 
 ---
 
-### 6.11 Ads, Consent, and Legal
+### 7.11 Ads, Consent, and Legal
 
 * banner ads
 * inline ads
@@ -272,11 +414,13 @@ Supports:
 * cookie consent
 * legal pages
 
+These surfaces must also be fully translated, responsive, theme-aware, and non-disruptive to the core experience.
+
 ---
 
-## 7. Monetization Strategy (CORE SECTION)
+## 8. Monetization Strategy (CORE SECTION)
 
-### 7.1 Revenue Streams
+### 8.1 Revenue Streams
 
 1. Betting Affiliate Revenue (Primary)
 2. Display Ads (Secondary)
@@ -285,7 +429,7 @@ Supports:
 
 ---
 
-### 7.2 Betting Affiliate System
+### 8.2 Betting Affiliate System
 
 #### Requirements
 
@@ -301,9 +445,11 @@ Supports:
 * homepage
 * prediction modules
 
+CTAs must remain clear, efficient, and easy to reach without harming usability.
+
 ---
 
-### 7.3 Prediction Layer (Conversion Engine)
+### 8.3 Prediction Layer (Conversion Engine)
 
 Add modules:
 
@@ -326,7 +472,7 @@ Each includes:
 
 ---
 
-### 7.4 Funnel System (MANDATORY)
+### 8.4 Funnel System (MANDATORY)
 
 Channels:
 
@@ -342,11 +488,11 @@ Channels:
 
 #### Flow
 
-User → joins channel → receives tips → clicks affiliate → revenue
+User -> joins channel -> receives tips -> clicks affiliate -> revenue
 
 ---
 
-### 7.5 Advertising
+### 8.5 Advertising
 
 Start with:
 
@@ -364,7 +510,7 @@ Expand to:
 
 ---
 
-### 7.6 Sponsored Content
+### 8.6 Sponsored Content
 
 Future support:
 
@@ -373,7 +519,7 @@ Future support:
 
 ---
 
-### 7.7 Geo Strategy
+### 8.7 Geo Strategy
 
 Focus:
 
@@ -388,7 +534,7 @@ Use:
 
 ---
 
-### 7.8 Analytics
+### 8.8 Analytics
 
 Track:
 
@@ -396,10 +542,11 @@ Track:
 * conversions
 * funnel flow
 * page performance
+* click-depth and interaction-efficiency signals where useful
 
 ---
 
-## 8. User Types
+## 9. User Types
 
 ### Guest
 
@@ -419,31 +566,33 @@ Track:
 
 * manage system, ads, affiliates
 
+All user types should get a fully translated, responsive, theme-complete experience.
+
 ---
 
-## 9. Data Domains
+## 10. Data Domains
 
-### 9.1 Taxonomy
+### 10.1 Taxonomy
 
 * Sport, Country, Competition, Season
 
-### 9.2 Participants
+### 10.2 Participants
 
 * Team, Player, Official, Venue
 
-### 9.3 Match Data
+### 10.3 Match Data
 
 * Fixture, Score, Incident, Stats
 
-### 9.4 Content
+### 10.4 Content
 
 * NewsArticle, Category
 
-### 9.5 Personalization
+### 10.5 Personalization
 
 * Favorites, Preferences
 
-### 9.6 Monetization (NEW)
+### 10.6 Monetization
 
 * Bookmaker
 * AffiliateLink
@@ -453,7 +602,7 @@ Track:
 
 ---
 
-## 10. Technical Architecture
+## 11. Technical Architecture
 
 ### Stack
 
@@ -464,7 +613,15 @@ Track:
 * Styled Components
 * i18n
 
----
+### Frontend Responsibilities
+
+The frontend architecture must explicitly support:
+
+* mobile-first responsive composition
+* full dark and light theme coverage
+* complete translation of all user-facing UI
+* efficient navigation and 1 to 2 click primary journeys
+* fast rendering on dense pages
 
 ### Frontend Structure
 
@@ -483,8 +640,6 @@ src/
     ads/
 ```
 
----
-
 ### Backend Services
 
 * auth
@@ -497,15 +652,17 @@ src/
 
 ---
 
-## 11. Data Provider Strategy
+## 12. Data Provider Strategy
 
 * multi-provider architecture
 * sports + odds feeds
 * real-time sync
 
+Provider flexibility must never break UI quality, translation coverage, theme behavior, or responsiveness.
+
 ---
 
-## 12. API Design
+## 13. API Design
 
 Includes:
 
@@ -520,7 +677,7 @@ Includes:
 
 ---
 
-## 13. Route Map
+## 14. Route Map
 
 ```txt
 /{locale}
@@ -534,17 +691,22 @@ Includes:
 
 ---
 
-## 14. Non-Functional Requirements
+## 15. Non-Functional Requirements
 
 * real-time updates
 * high performance
+* mobile-first implementation
+* 100% responsiveness across supported viewports
+* easy-to-use UI with 1 to 2 click or tap completion for primary actions
+* efficient interaction design with minimal friction
+* full dark and light theme parity with strong color blending and readable contrast
+* 100% translation of the entire UI, including public, auth, admin, consent, legal, empty, error, and degraded states
 * SEO coverage
-* mobile optimization
 * fault tolerance
 
 ---
 
-## 15. Explicit Non-Goals
+## 16. Explicit Non-Goals
 
 Removed:
 
@@ -555,15 +717,17 @@ Removed:
 
 ---
 
-## 16. Delivery Phases
+## 17. Delivery Phases
 
 ### Phase 1
 
 * Flashscore parity (football)
+* mobile-first and translation-complete public product baseline
 
 ### Phase 2
 
 * multi-sport expansion
+* UX refinement across responsive and theme-heavy surfaces
 
 ### Phase 3
 
@@ -573,7 +737,7 @@ Removed:
 
 ---
 
-## 17. Final Recommendation
+## 18. Final Recommendation
 
 This product must be treated as:
 
@@ -584,5 +748,9 @@ Success is defined by:
 * traffic quality
 * conversion rate
 * affiliate revenue
+* speed and ease of use
+* mobile usability
+* translation completeness
+* dark and light theme quality
 
 ---

@@ -1,7 +1,7 @@
 # 010-competition-team-archive-pages
 
 ## Goal
-Build country, competition, team, match-center, and archive page coverage.
+Build country, competition, team, match-center, and archive page coverage with a responsive, low-friction UX.
 
 ## Build
 1. Build country pages that list competitions for the selected sport and support deep drill-down navigation.
@@ -10,9 +10,12 @@ Build country, competition, team, match-center, and archive page coverage.
 4. Build standings views with overall, home, away, form, and live variants when data exists.
 5. Build team pages with fixtures, results, squad or roster data, linked competitions, news modules, and supported prediction or odds content.
 6. Add season selectors, archive navigation, and internal linking between sport, country, competition, team, and match routes for SEO and navigation parity.
+7. Ensure tabs, selectors, tables, stats blocks, and archive controls are mobile-first, fully translated, responsive, and strong in both dark and light themes.
+8. Keep primary actions like tab switch, season switch, match open, and team or competition drill-down within 1 to 2 interactions wherever practical.
 
 ## Done When
 - Users can navigate from sport to country to competition to team or match without dead ends.
 - Competition pages match the Flashscore tab structure.
 - Match center exposes the core parity and monetization modules defined in `app-write-up.md`.
 - Archive and season navigation work across supported competitions.
+- These deeper pages remain fast, 100% responsive, and easy to use on mobile and desktop.

@@ -11,9 +11,11 @@ Harden the platform for real-time load, multi-sport expansion, and reliable mone
 5. Add asset, image, and CDN strategy for logos, competition marks, article media, bookmaker badges, and sponsored creative assets, including remote host updates through env configuration.
 6. Run failure drills for provider outage, delayed live feed, search degradation, cache invalidation issues, and broken affiliate or funnel endpoints.
 7. Document SLOs and operational playbooks for peak traffic windows, including what to disable first when a revenue surface threatens core live-score performance.
+8. Set explicit mobile performance and interaction-efficiency budgets for dense translated UI in both dark and light themes.
 
 ## Done When
 - The app can handle peak live traffic reliably.
 - Multi-sport and multi-feed expansion is technically prepared, and supported provider swaps are operationally driven by env plus release validation instead of code edits.
 - Operations have tested runbooks for the main failure modes across both product and monetization surfaces.
 - Unsupported provider selections are caught by tooling and operational visibility before promotion.
+- UX speed targets remain protected as the app scales in sports, languages, and monetization density.
