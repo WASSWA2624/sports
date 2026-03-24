@@ -3,6 +3,11 @@ import { db } from "../db";
 import { safeDataRead } from "../data-access";
 import { getShellChromeContent } from "../control-plane";
 import { getPlatformPublicSnapshot, getPlatformPublicSnapshotData } from "../platform/env";
+import {
+  ensureCatalogSportsDataFresh,
+  ensureStableSportsDataFresh,
+  ensureVolatileSportsDataFresh,
+} from "../sports/freshness";
 import { markCacheFill, observeCachedOperation, observeOperation } from "../operations";
 import { buildStandingTable } from "./competition-standings";
 import {
@@ -289,6 +294,22 @@ function buildLinkedCompetitions(team) {
   });
 }
 
+async function ensureStableBackendData() {
+  await ensureStableSportsDataFresh();
+}
+
+async function ensureCatalogBackedData() {
+  await Promise.all([ensureStableSportsDataFresh(), ensureCatalogSportsDataFresh()]);
+}
+
+async function ensureLiveBackendData() {
+  await Promise.all([
+    ensureStableSportsDataFresh(),
+    ensureVolatileSportsDataFresh({ waitForCompletion: true }),
+    ensureCatalogSportsDataFresh(),
+  ]);
+}
+
 const getHomeSnapshotCached = unstable_cache(
   async () =>
     safeDataRead(async () => {
@@ -344,6 +365,7 @@ const getHomeSnapshotCached = unstable_cache(
 );
 
 export async function getHomeSnapshot() {
+  await ensureLiveBackendData();
   return observeCachedOperation("coreui:home", () => getHomeSnapshotCached(), {
     route: "/",
     revalidateSeconds: 120,
@@ -371,6 +393,7 @@ const getLiveFixturesCached = unstable_cache(
 );
 
 export async function getLiveFixtures() {
+  await ensureLiveBackendData();
   return observeCachedOperation("coreui:live", () => getLiveFixturesCached(), {
     route: "/live",
     revalidateSeconds: 30,
@@ -398,6 +421,7 @@ const getUpcomingFixturesCached = unstable_cache(
 );
 
 export async function getUpcomingFixtures() {
+  await ensureStableBackendData();
   return observeCachedOperation("coreui:fixtures", () => getUpcomingFixturesCached(), {
     route: "/fixtures",
     revalidateSeconds: 120,
@@ -425,6 +449,7 @@ const getRecentResultsCached = unstable_cache(
 );
 
 export async function getRecentResults() {
+  await ensureStableBackendData();
   return observeCachedOperation("coreui:results", () => getRecentResultsCached(), {
     route: "/results",
     revalidateSeconds: 180,
@@ -466,6 +491,7 @@ const getTablesOverviewCached = unstable_cache(
 );
 
 export async function getTablesOverview() {
+  await ensureStableBackendData();
   return observeCachedOperation("coreui:tables", () => getTablesOverviewCached(), {
     route: "/tables",
     revalidateSeconds: 300,
@@ -501,6 +527,7 @@ const getLeagueDirectoryCached = unstable_cache(
 );
 
 export async function getLeagueDirectory() {
+  await ensureStableBackendData();
   return observeCachedOperation("coreui:leagues", () => getLeagueDirectoryCached(), {
     route: "/leagues",
     revalidateSeconds: 300,
@@ -717,6 +744,7 @@ const getShellSnapshotCached = unstable_cache(
 );
 
 export async function getShellSnapshot(locale = "en") {
+  await ensureStableBackendData();
   return observeCachedOperation("coreui:shell", () => getShellSnapshotCached(locale), {
     route: "/shell",
     revalidateSeconds: 300,
@@ -726,6 +754,7 @@ export async function getShellSnapshot(locale = "en") {
 }
 
 export async function getSportHub(reference) {
+  await ensureStableBackendData();
   const sportReference = normalizeReference(reference);
 
   return observeOperation(
@@ -865,6 +894,7 @@ export async function getSportHub(reference) {
 }
 
 export async function getCountryDetail(countryReference, { sportReference = "football" } = {}) {
+  await ensureStableBackendData();
   const normalizedCountryReference = normalizeReference(countryReference);
   const normalizedSportReference = normalizeReference(sportReference) || "football";
 
@@ -1020,6 +1050,7 @@ export async function getLeagueDetail(
   reference,
   { locale = "en", viewerTerritory, seasonRef, standingsView = "overall" } = {}
 ) {
+  await ensureCatalogBackedData();
   return observeOperation(
     {
       metric: "page_read",
@@ -1225,6 +1256,7 @@ const getTeamDirectoryCached = unstable_cache(
 );
 
 export async function getTeamDirectory() {
+  await ensureStableBackendData();
   return observeCachedOperation("coreui:teams", () => getTeamDirectoryCached(), {
     route: "/teams",
     revalidateSeconds: 300,
@@ -1243,6 +1275,7 @@ export async function getTeamDetail(
     includeExperience = false,
   } = {}
 ) {
+  await ensureCatalogBackedData();
   return observeOperation(
     {
       metric: "page_read",
@@ -1571,6 +1604,7 @@ export async function getFixtureDetail(
   reference,
   { locale = "en", viewerTerritory } = {}
 ) {
+  await ensureLiveBackendData();
   return observeOperation(
     {
       metric: "page_read",

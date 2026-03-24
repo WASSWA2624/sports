@@ -264,9 +264,9 @@ async function ensureCompetition(tx, league, sportId, countryId, sourceProvider,
     sportId,
     countryId,
     name: league.name,
-    shortName: league.code || league.name,
+    shortName: toStringOrNull(league.code || league.name),
     slug: slugify(`${league.country || "international"}-${league.code || league.name}`),
-    code: league.code,
+    code: toStringOrNull(league.code),
     logoUrl: league.logoUrl,
     metadata: league.metadata,
   };
@@ -339,7 +339,7 @@ async function ensureLeague(tx, league, links, sourceProvider, providerContext) 
     competitionId: links.competitionId,
     name: league.name,
     country: league.country,
-    code: league.code,
+    code: toStringOrNull(league.code),
     logoUrl: league.logoUrl,
     metadata: league.metadata,
     isActive: true,
@@ -358,7 +358,7 @@ async function ensureLeague(tx, league, links, sourceProvider, providerContext) 
 
   if (!existingLeague) {
     existingLeague = await tx.league.findUnique({
-      where: { code: league.code },
+      where: { code: toStringOrNull(league.code) },
     });
   }
 
@@ -476,8 +476,8 @@ async function ensureTeam(tx, team, leagueId, competitionId, sourceProvider, pro
     leagueId,
     competitionId,
     name: team.name,
-    shortName: team.shortName,
-    code: team.code,
+    shortName: toStringOrNull(team.shortName),
+    code: toStringOrNull(team.code),
     logoUrl: team.logoUrl,
     metadata: team.metadata,
   };
@@ -672,9 +672,9 @@ async function ensureStage(tx, stage, competitionId, seasonId, sourceProvider, p
   const basePayload = {
     competitionId,
     seasonId,
-    name: stage.name || stage.code || "Stage",
+    name: toStringOrNull(stage.name || stage.code) || "Stage",
     slug,
-    code: stage.code || null,
+    code: toStringOrNull(stage.code),
     stageType: stage.stageType || null,
     status: stage.status || null,
     sortOrder: Number.isFinite(Number(stage.sortOrder)) ? Number(stage.sortOrder) : 0,
@@ -753,9 +753,9 @@ async function ensureRound(
     competitionId,
     seasonId,
     stageId,
-    name: round.name || round.code || "Round",
+    name: toStringOrNull(round.name || round.code) || "Round",
     slug,
-    code: round.code || null,
+    code: toStringOrNull(round.code),
     roundType: round.roundType || null,
     sequence: Number.isFinite(Number(round.sequence)) ? Number(round.sequence) : null,
     startsAt: fallbackDate(round.startsAt || null),

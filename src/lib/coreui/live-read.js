@@ -3,6 +3,11 @@ import { safeDataRead } from "../data-access";
 import { db } from "../db";
 import { observeOperation } from "../operations";
 import { getPlatformPublicSnapshotData } from "../platform/env";
+import {
+  ensureCatalogSportsDataFresh,
+  ensureStableSportsDataFresh,
+  ensureVolatileSportsDataFresh,
+} from "../sports/freshness";
 import { buildGroupStandingsPreview, buildBestOddsCards, buildBoardGroupSummary, buildCompletedFixtureSummary, buildPredictionCards } from "./live-board";
 import { buildStandingTable } from "./competition-standings";
 import { buildFixtureBettingExperience } from "./odds-experience";
@@ -19,6 +24,18 @@ const LIVE_STATUS_FILTERS = ["ALL", "LIVE", "FINISHED", "SCHEDULED"];
 const RESULT_STATUS_FILTERS = ["ALL", "FINISHED", "POSTPONED", "CANCELLED"];
 const TERMINAL_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED"];
 const RESULTS_WINDOW_DAYS = 5;
+
+async function ensureStableReadData() {
+  await ensureStableSportsDataFresh();
+}
+
+async function ensureLiveReadData() {
+  await Promise.all([
+    ensureStableSportsDataFresh(),
+    ensureVolatileSportsDataFresh({ waitForCompletion: true }),
+    ensureCatalogSportsDataFresh(),
+  ]);
+}
 
 function addDays(date, amount) {
   const next = new Date(date);
@@ -629,6 +646,7 @@ export async function getLiveMatchdayFeed({
   date,
   viewerTerritory,
 } = {}) {
+  await ensureLiveReadData();
   return observeOperation(
     {
       metric: "live_surface",
@@ -739,6 +757,7 @@ export async function getLiveMatchdayFeed({
 
 export async function getResultsFeed({ locale = "en", status, leagueCode } = {}) {
   void locale;
+  await ensureStableReadData();
   return observeOperation(
     {
       metric: "results_surface",
@@ -810,6 +829,7 @@ export async function getLiveMatchDetail(
   viewerTerritory,
   { standingsView = "overall", includeMatchCentre = false, includeExperience = true } = {}
 ) {
+  await ensureLiveReadData();
   return observeOperation(
     {
       metric: "live_surface",

@@ -14,6 +14,9 @@ const DEFAULT_MAX_BROADCAST_FIXTURES = 12;
 const DEFAULT_BACKPRESSURE_THRESHOLD = 12;
 const DEFAULT_STALE_LIVE_GRACE_MINUTES = 8;
 const DEFAULT_PROVIDER_TIMEOUT_MS = 15000;
+const DEFAULT_STABLE_REFRESH_MINUTES = 360;
+const DEFAULT_VOLATILE_REFRESH_SECONDS = 45;
+const DEFAULT_CATALOG_REFRESH_MINUTES = 15;
 
 function parseCsv(value) {
   return [...new Set(
@@ -163,6 +166,18 @@ export function getSportsSyncConfig(providerOverride = null) {
     predictionsEnabled: parseBoolean(
       process.env.SPORTS_SYNC_PREDICTIONS_ENABLED,
       sportsProviderSupportsCapability(descriptor, "predictions")
+    ),
+    stableRefreshMinutes: parseInteger(
+      process.env.SPORTS_SYNC_STABLE_REFRESH_MINUTES,
+      DEFAULT_STABLE_REFRESH_MINUTES
+    ),
+    volatileRefreshSeconds: parseInteger(
+      process.env.SPORTS_SYNC_VOLATILE_REFRESH_SECONDS,
+      DEFAULT_VOLATILE_REFRESH_SECONDS
+    ),
+    catalogRefreshMinutes: parseInteger(
+      process.env.SPORTS_SYNC_CATALOG_REFRESH_MINUTES,
+      DEFAULT_CATALOG_REFRESH_MINUTES
     ),
     bookmakerCatalogFixtureLimit: parseInteger(
       process.env.SPORTS_SYNC_BOOKMAKER_CATALOG_FIXTURE_LIMIT,

@@ -50,6 +50,9 @@ ALTER TABLE `SyncJob`
     ADD COLUMN `resultSummary` JSON NULL,
     ADD INDEX `SyncJob_provider_bucket_createdAt_idx`(`provider`, `bucket`, `createdAt`);
 
+-- RedefineForeignKey
+ALTER TABLE `SyncCheckpoint` DROP FOREIGN KEY `SyncCheckpoint_syncJobId_fkey`;
+
 -- AlterTable
 ALTER TABLE `SyncCheckpoint`
     DROP INDEX `SyncCheckpoint_syncJobId_cursor_key`,
@@ -64,7 +67,5 @@ ALTER TABLE `SyncCheckpoint`
     ADD UNIQUE INDEX `SyncCheckpoint_provider_key_key`(`provider`, `key`),
     ADD INDEX `SyncCheckpoint_provider_updatedAt_idx`(`provider`, `updatedAt`);
 
--- RedefineForeignKey
-ALTER TABLE `SyncCheckpoint` DROP FOREIGN KEY `SyncCheckpoint_syncJobId_fkey`;
 ALTER TABLE `SyncCheckpoint` ADD CONSTRAINT `SyncCheckpoint_syncJobId_fkey`
     FOREIGN KEY (`syncJobId`) REFERENCES `SyncJob`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

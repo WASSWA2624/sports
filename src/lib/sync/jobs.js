@@ -35,6 +35,25 @@ export function getSyncProviderCodes(config = getSportsSyncConfig()) {
   return [...new Set([config.provider, ...(config.fallbackProviders || [])].filter(Boolean))];
 }
 
+function isProviderNumericFixtureRef(providerCode) {
+  return ["SPORTSMONKS", "SPORTSMONKS_BASKETBALL", "SPORTSMONKS_TENNIS"].includes(
+    providerCode
+  );
+}
+
+function isSupportedFixtureExternalRef(externalRef, config) {
+  const normalized = String(externalRef || "").trim();
+  if (!normalized) {
+    return false;
+  }
+
+  if (isProviderNumericFixtureRef(config.provider)) {
+    return /^\d+$/.test(normalized);
+  }
+
+  return true;
+}
+
 function buildProviderAttempt(providerCode, descriptor, status, error = null) {
   return {
     providerCode,
@@ -229,7 +248,10 @@ async function getHighFrequencyFixturePlan(config) {
       lastSyncedAt: true,
     },
   });
-  const plan = buildLiveWindowBackpressurePlan(fixtures, config);
+  const compatibleFixtures = fixtures.filter((fixture) =>
+    isSupportedFixtureExternalRef(fixture.externalRef, config)
+  );
+  const plan = buildLiveWindowBackpressurePlan(compatibleFixtures, config);
 
   await recordSyncPressureEvent({
     subject: "high-frequency",
@@ -243,7 +265,9 @@ async function getHighFrequencyFixturePlan(config) {
 
 async function getCatalogFixtureRefs(config) {
   if (config.trackedFixtureRefs.length) {
-    return config.trackedFixtureRefs;
+    return [...new Set(config.trackedFixtureRefs)].filter((fixtureRef) =>
+      isSupportedFixtureExternalRef(fixtureRef, config)
+    );
   }
 
   const now = new Date();
@@ -267,7 +291,9 @@ async function getCatalogFixtureRefs(config) {
     },
   });
 
-  return [...new Set(fixtures.map((fixture) => fixture.externalRef).filter(Boolean))];
+  return [...new Set(fixtures.map((fixture) => fixture.externalRef).filter(Boolean))].filter(
+    (fixtureRef) => isSupportedFixtureExternalRef(fixtureRef, config)
+  );
 }
 
 async function runTrackedSeasonJobs(providerRuntime, seasonRefs, syncJobId, config) {

@@ -99,4 +99,20 @@ describe("sports sync config", () => {
       authLocation: "header",
     });
   });
+
+  it("exposes refresh cadence settings for stable and volatile provider reads", () => {
+    process.env.SPORTS_DATA_PROVIDER = "SPORTSMONKS";
+    process.env.SPORTSMONKS_API_KEY = "provider-key";
+    process.env.SPORTS_SYNC_STABLE_REFRESH_MINUTES = "720";
+    process.env.SPORTS_SYNC_VOLATILE_REFRESH_SECONDS = "30";
+    process.env.SPORTS_SYNC_CATALOG_REFRESH_MINUTES = "5";
+
+    const config = getSportsSyncConfig();
+
+    expect(config).toMatchObject({
+      stableRefreshMinutes: 720,
+      volatileRefreshSeconds: 30,
+      catalogRefreshMinutes: 5,
+    });
+  });
 });
