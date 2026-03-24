@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -15,6 +15,9 @@ import { getGeoLabel, isGeoAllowed } from "../../lib/coreui/route-context";
 
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, viewerGeo }) {
   const pathname = usePathname();
+  const leftRailRef = useRef(null);
+  const centerRailRef = useRef(null);
+  const rightRailRef = useRef(null);
   const {
     compliance,
     ctaGeo,
@@ -27,6 +30,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     watchlistCount,
   } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isAuthPage = pathname === `/${locale}/auth` || pathname.startsWith(`/${locale}/auth/`);
@@ -143,6 +147,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
   const primarySports = rankedSports.slice(0, 3);
   const overflowSports = rankedSports.slice(3);
   const activeSport = rankedSports.find((sport) => sport.enabled) || rankedSports[0] || null;
+  const modeSwitchLink = {
+    href: isNewsMode ? `/${locale}` : `/${locale}/news`,
+    label: isNewsMode ? dictionary.scores : dictionary.news,
+  };
   const browseItems = TOP_LEVEL_NAV.map((item) => {
     const href = `/${locale}${item.href}`;
     const active =
@@ -157,6 +165,60 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
       label: item.key === "scores" ? dictionary.scores : dictionary.news,
     };
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const desktopMedia = window.matchMedia("(min-width: 1121px)");
+    const railRefs = [leftRailRef, centerRailRef, rightRailRef];
+
+    function isFooterRevealPoint(node) {
+      if (!node) {
+        return false;
+      }
+
+      const scrollableDistance = node.scrollHeight - node.clientHeight;
+      if (scrollableDistance <= 48) {
+        return false;
+      }
+
+      return node.scrollTop + node.clientHeight >= node.scrollHeight - 24;
+    }
+
+    function updateFooterVisibility() {
+      if (!desktopMedia.matches) {
+        setFooterVisible(false);
+        return;
+      }
+
+      setFooterVisible(railRefs.some((ref) => isFooterRevealPoint(ref.current)));
+    }
+
+    const observedRails = railRefs.map((ref) => ref.current).filter(Boolean);
+    const resizeObserver =
+      typeof ResizeObserver === "function" ? new ResizeObserver(updateFooterVisibility) : null;
+
+    observedRails.forEach((node) => {
+      node.addEventListener("scroll", updateFooterVisibility, { passive: true });
+      resizeObserver?.observe(node);
+    });
+
+    desktopMedia.addEventListener("change", updateFooterVisibility);
+    window.addEventListener("resize", updateFooterVisibility);
+    updateFooterVisibility();
+
+    return () => {
+      observedRails.forEach((node) => {
+        node.removeEventListener("scroll", updateFooterVisibility);
+        resizeObserver?.unobserve(node);
+      });
+      resizeObserver?.disconnect();
+      desktopMedia.removeEventListener("change", updateFooterVisibility);
+      window.removeEventListener("resize", updateFooterVisibility);
+    };
+  }, [pathname]);
 
   return (
     <div className={styles.shell}>
@@ -643,7 +705,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
       <main className={styles.main}>
         <div className={styles.shellColumns}>
-          <aside className={styles.leftRail}>
+          <aside ref={leftRailRef} className={styles.leftRail}>
             <section className={styles.railCard}>
               <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.scoreViews}</h2>
@@ -747,9 +809,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
             </section>
           </aside>
 
-          <div className={styles.centerRail}>{children}</div>
+          <div ref={centerRailRef} className={styles.centerRail}>
+            {children}
+          </div>
 
-          <aside className={styles.rightRail}>
+          <aside ref={rightRailRef} className={styles.rightRail}>
             {adSlotEnabled ? (
               <section className={styles.railCard}>
                 <div className={styles.railSection}>
@@ -838,9 +902,76 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
         </div>
       </main>
 
-      <footer className={styles.footer}>
+      <footer className={`${styles.footer} ${footerVisible ? styles.footerVisible : ""}`}>
         <div className={styles.footerInner}>
-          <p>{dictionary.footerSummary}</p>
+          <div className={styles.footerGrid}>
+            <section className={styles.footerLead}>
+              <div className={styles.footerBrandRow}>
+                <div className={styles.footerBrandMark} aria-hidden="true">
+                  SP
+                </div>
+                <div className={styles.footerBrandCopy}>
+                  <strong className={styles.footerBrandTitle}>{dictionary.brand}</strong>
+                  <p className={styles.footerSummary}>{dictionary.footerSummary}</p>
+                </div>
+              </div>
+
+              <div className={styles.footerMeta}>
+                <span className={styles.badge}>
+                  {dictionary.currentMarket}: {currentGeoLabel}
+                </span>
+                {affiliatePartner ? (
+                  <span className={styles.badge}>
+                    {dictionary.affiliatePartnerLabel}: {affiliatePartner}
+                  </span>
+                ) : null}
+                <span className={styles.badge}>{accountLabel}</span>
+              </div>
+            </section>
+
+            <section className={styles.footerPanel}>
+              <h2 className={styles.footerHeading}>{dictionary.browse}</h2>
+              <div className={styles.footerActions}>
+                <Link href={`/${locale}/search`} className={styles.sectionAction}>
+                  {dictionary.search}
+                </Link>
+                <Link href={`/${locale}/favorites`} className={styles.sectionAction}>
+                  {dictionary.favorites}
+                </Link>
+                <Link href={`/${locale}/settings`} className={styles.sectionAction}>
+                  {dictionary.settingsTitle}
+                </Link>
+                <Link href={accountHref} className={styles.sectionAction}>
+                  {accountLabel}
+                </Link>
+                <Link href={modeSwitchLink.href} className={styles.sectionAction}>
+                  {modeSwitchLink.label}
+                </Link>
+              </div>
+            </section>
+
+            <section className={styles.footerPanel}>
+              <h2 className={styles.footerHeading}>{dictionary.favorites}</h2>
+              <div className={styles.footerStatGrid}>
+                <div className={styles.footerStatCard}>
+                  <span>{dictionary.watchlist}</span>
+                  <strong>{watchCount}</strong>
+                </div>
+                <div className={styles.footerStatCard}>
+                  <span>{dictionary.pinnedCompetitions}</span>
+                  <strong>{pinnedCompetitions.length}</strong>
+                </div>
+                <div className={styles.footerStatCard}>
+                  <span>{dictionary.myTeams}</span>
+                  <strong>{savedTeams.length}</strong>
+                </div>
+                <div className={styles.footerStatCard}>
+                  <span>{dictionary.currentMarket}</span>
+                  <strong>{currentGeoLabel}</strong>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </footer>
     </div>
