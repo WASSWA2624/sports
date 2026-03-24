@@ -2,6 +2,12 @@
 
 Baseline Next.js App Router project for the sports platform roadmap.
 
+## Scope Source Of Truth
+
+The active product contract is locked in [docs/mvp-scope.md](docs/mvp-scope.md).
+
+That scope freezes the app as a Flashscore-style public web product with monetization, affiliate conversion, Telegram/WhatsApp funnel entry, geo-aware betting-adjacent compliance, and provider-agnostic feed architecture. It also explicitly retires marketplace, creator, subscription, and community-product directions.
+
 ## Quick Start
 
 1. Install dependencies:
