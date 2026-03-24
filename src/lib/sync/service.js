@@ -1,54 +1,53 @@
 import { db } from "../db";
 import { getProviderDescriptor } from "../sports/provider";
+import { getProviderContext, upsertSourceProviderRecord } from "../sports/provider-state";
 
-function buildProviderMetadata(descriptor) {
-  if (!descriptor) {
-    return null;
-  }
-
-  return {
-    role: descriptor.role || null,
-    tier: descriptor.tier || null,
-    family: descriptor.adapter || null,
-    namespace: descriptor.envNamespace || null,
-    sports: descriptor.sports || [],
-    fallbackFor: descriptor.fallbackFor || [],
-    assetHosts: descriptor.defaultAssetHosts || [],
-  };
-}
-
-async function ensureSyncSourceProvider(providerCode) {
+async function ensureSyncSourceProvider(providerCode, { fallbackProviderId = undefined } = {}) {
   const descriptor = getProviderDescriptor(providerCode);
   if (!descriptor) {
     return null;
   }
 
-  const kind = descriptor.sports?.[0] ? `${descriptor.sports[0]}-feed` : null;
-
-  return db.sourceProvider.upsert({
-    where: {
-      code: providerCode,
-    },
-    update: {
-      name: descriptor.name,
-      kind,
-      family: descriptor.adapter || null,
-      namespace: descriptor.envNamespace || null,
-      role: descriptor.role || null,
-      tier: descriptor.tier || null,
-      metadata: buildProviderMetadata(descriptor),
-    },
-    create: {
-      code: providerCode,
-      name: descriptor.name,
-      kind,
-      family: descriptor.adapter || null,
-      namespace: descriptor.envNamespace || null,
-      role: descriptor.role || null,
-      tier: descriptor.tier || null,
-      metadata: buildProviderMetadata(descriptor),
-    },
+  return upsertSourceProviderRecord(db, getProviderContext(providerCode), {
+    fallbackProviderId,
   });
+}
+
+export async function ensureSyncProviderChain(providerCodes = []) {
+  const uniqueProviderCodes = [...new Set((providerCodes || []).filter(Boolean))];
+  const providersByCode = new Map();
+
+  for (const providerCode of uniqueProviderCodes) {
+    const storedProvider = await ensureSyncSourceProvider(providerCode);
+    if (storedProvider) {
+      providersByCode.set(providerCode, storedProvider);
+    }
+  }
+
+  for (const providerCode of uniqueProviderCodes) {
+    if (!providersByCode.has(providerCode)) {
+      continue;
+    }
+
+    const providerContext = getProviderContext(providerCode);
+    const fallbackProviderCode = (providerContext.providerFallbackFor || []).find((code) =>
+      providersByCode.has(code)
+    );
+
+    if (!fallbackProviderCode) {
+      continue;
+    }
+
+    const storedProvider = await ensureSyncSourceProvider(providerCode, {
+      fallbackProviderId: providersByCode.get(fallbackProviderCode).id,
+    });
+
+    if (storedProvider) {
+      providersByCode.set(providerCode, storedProvider);
+    }
+  }
+
+  return providersByCode;
 }
 
 export async function startSyncJob({ provider, source, bucket }) {

@@ -1,12 +1,6 @@
 import { db } from "../db";
-import { getSportsSyncConfig } from "./config";
-import { getProviderDescriptor } from "./provider";
-
-const DEFAULT_SPORT = {
-  code: "football",
-  slug: "football",
-  name: "Football",
-};
+import { getProviderContext, upsertSourceProviderRecord } from "./provider-state";
+import { revalidateSportsSyncTags } from "./sync-cache";
 
 function isTerminalStatus(status) {
   return ["FINISHED", "POSTPONED", "CANCELLED"].includes(status);
@@ -48,47 +42,6 @@ function toCountryCode(value) {
 
 function toBookmakerCode(value) {
   return slugify(value, "bookmaker").replace(/-/g, "_").toUpperCase().slice(0, 48);
-}
-
-function toTitleCase(value) {
-  return String(value || "")
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function getProviderContext() {
-  const config = getSportsSyncConfig();
-  const descriptor = getProviderDescriptor(config.provider);
-  const sportCode = config.primarySport || DEFAULT_SPORT.code;
-
-  return {
-    providerCode: config.provider,
-    providerName: descriptor?.name || config.provider,
-    providerFamily: descriptor?.adapter || "custom",
-    providerNamespace: descriptor?.envNamespace || config.provider,
-    providerRole: descriptor?.role || "primary",
-    providerTier: descriptor?.tier || "live",
-    providerSports: descriptor?.sports?.length ? descriptor.sports : [sportCode],
-    providerNotes: descriptor?.notes || null,
-    sport: {
-      code: sportCode,
-      slug: slugify(sportCode, DEFAULT_SPORT.slug),
-      name: toTitleCase(sportCode) || DEFAULT_SPORT.name,
-    },
-  };
-}
-
-function buildProviderMetadata(providerContext) {
-  return {
-    role: providerContext.providerRole,
-    tier: providerContext.providerTier,
-    family: providerContext.providerFamily,
-    namespace: providerContext.providerNamespace,
-    sports: providerContext.providerSports,
-    note: providerContext.providerNotes,
-  };
 }
 
 function buildPlayerSourceCode(player) {
@@ -224,29 +177,19 @@ async function findProviderLinkedRecord(
 }
 
 async function ensureSourceProvider(tx, providerContext) {
-  return tx.sourceProvider.upsert({
-    where: { code: providerContext.providerCode },
-    update: {
-      name: providerContext.providerName,
-      kind: `${providerContext.sport.code}-feed`,
-      family: providerContext.providerFamily,
-      namespace: providerContext.providerNamespace,
-      role: providerContext.providerRole,
-      tier: providerContext.providerTier,
-      isActive: true,
-      metadata: buildProviderMetadata(providerContext),
-    },
-    create: {
-      code: providerContext.providerCode,
-      name: providerContext.providerName,
-      kind: `${providerContext.sport.code}-feed`,
-      family: providerContext.providerFamily,
-      namespace: providerContext.providerNamespace,
-      role: providerContext.providerRole,
-      tier: providerContext.providerTier,
-      isActive: true,
-      metadata: buildProviderMetadata(providerContext),
-    },
+  let fallbackProviderId;
+
+  for (const fallbackProviderCode of providerContext.providerFallbackFor || []) {
+    const fallbackProvider = await upsertSourceProviderRecord(
+      tx,
+      getProviderContext(fallbackProviderCode)
+    );
+    fallbackProviderId = fallbackProvider.id;
+    break;
+  }
+
+  return upsertSourceProviderRecord(tx, providerContext, {
+    fallbackProviderId,
   });
 }
 
@@ -1117,8 +1060,8 @@ async function replaceFixtureStatistics(tx, storedFixture, statistics, homeTeam,
   return created;
 }
 
-export async function persistFixtureBatch(fixtures) {
-  const providerContext = getProviderContext();
+export async function persistFixtureBatch(fixtures, { providerCode = null } = {}) {
+  const providerContext = getProviderContext(providerCode);
   let processed = 0;
 
   for (const fixture of fixtures) {
@@ -1331,11 +1274,19 @@ export async function persistFixtureBatch(fixtures) {
     processed += 1;
   }
 
+  if (processed > 0) {
+    await revalidateSportsSyncTags({ fixtures }, "sports-sync:fixtures");
+  }
+
   return processed;
 }
 
-export async function persistTeamBatch(teams, seasonExternalRef) {
-  const providerContext = getProviderContext();
+export async function persistTeamBatch(
+  teams,
+  seasonExternalRef,
+  { providerCode = null } = {}
+) {
+  const providerContext = getProviderContext(providerCode);
   if (!teams.length) {
     return 0;
   }
@@ -1376,11 +1327,15 @@ export async function persistTeamBatch(teams, seasonExternalRef) {
     processed += 1;
   }
 
+  if (processed > 0) {
+    await revalidateSportsSyncTags({}, "sports-sync:teams");
+  }
+
   return processed;
 }
 
-export async function persistStandingsBatch(standings) {
-  const providerContext = getProviderContext();
+export async function persistStandingsBatch(standings, { providerCode = null } = {}) {
+  const providerContext = getProviderContext(providerCode);
   let processed = 0;
 
   for (const standing of standings) {
@@ -1458,6 +1413,10 @@ export async function persistStandingsBatch(standings) {
     });
 
     processed += 1;
+  }
+
+  if (processed > 0) {
+    await revalidateSportsSyncTags({}, "sports-sync:standings");
   }
 
   return processed;
@@ -1541,9 +1500,10 @@ async function upsertOddsMarket(tx, fixtureId, market, sourceProvider, providerC
   return storedMarket;
 }
 
-export async function persistOddsBatch(markets) {
-  const providerContext = getProviderContext();
+export async function persistOddsBatch(markets, { providerCode = null } = {}) {
+  const providerContext = getProviderContext(providerCode);
   let processed = 0;
+  const fixtureRefs = [...new Set(markets.map((market) => market.fixtureExternalRef).filter(Boolean))];
 
   for (const market of markets) {
     await db.$transaction(async (tx) => {
@@ -1672,12 +1632,21 @@ export async function persistOddsBatch(markets) {
     processed += 1;
   }
 
+  if (processed > 0) {
+    await revalidateSportsSyncTags({ fixtureRefs }, "sports-sync:odds");
+  }
+
   return processed;
 }
 
-export async function persistPredictionBatch(predictions) {
-  const providerContext = getProviderContext();
+export async function persistPredictionBatch(predictions, { providerCode = null } = {}) {
+  const providerContext = getProviderContext(providerCode);
   let processed = 0;
+  const fixtureRefs = [
+    ...new Set(
+      (predictions || []).map((prediction) => prediction.fixtureExternalRef).filter(Boolean)
+    ),
+  ];
 
   for (const prediction of predictions || []) {
     if (!prediction?.key || !prediction?.title) {
@@ -1812,18 +1781,26 @@ export async function persistPredictionBatch(predictions) {
     processed += 1;
   }
 
+  if (processed > 0) {
+    await revalidateSportsSyncTags({ fixtureRefs }, "sports-sync:predictions");
+  }
+
   return processed;
 }
 
-export async function replaceBroadcastChannels(fixtureExternalRef, channels) {
+export async function replaceBroadcastChannels(
+  fixtureExternalRef,
+  channels,
+  { providerCode = null } = {}
+) {
   const normalizedFixtureRef = toStringOrNull(fixtureExternalRef);
   if (!normalizedFixtureRef) {
     return 0;
   }
 
-  const providerContext = getProviderContext();
+  const providerContext = getProviderContext(providerCode);
 
-  return db.$transaction(async (tx) => {
+  const created = await db.$transaction(async (tx) => {
     const sourceProvider = await ensureSourceProvider(tx, providerContext);
     const fixtureId =
       (await findEntityIdByProviderRef(tx, sourceProvider.id, "FIXTURE", normalizedFixtureRef)) ||
@@ -1899,4 +1876,8 @@ export async function replaceBroadcastChannels(fixtureExternalRef, channels) {
 
     return created;
   });
+
+  await revalidateSportsSyncTags({ fixtureRefs: [normalizedFixtureRef] }, "sports-sync:broadcast");
+
+  return created;
 }

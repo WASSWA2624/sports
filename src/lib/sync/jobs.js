@@ -14,6 +14,7 @@ import {
 import { buildLiveWindowBackpressurePlan } from "./backpressure";
 import {
   completeSyncJob,
+  ensureSyncProviderChain,
   failSyncJob,
   getCheckpoint,
   saveCheckpoint,
@@ -28,6 +29,83 @@ function addDays(date, amount) {
 
 function formatSyncError(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+export function getSyncProviderCodes(config = getSportsSyncConfig()) {
+  return [...new Set([config.provider, ...(config.fallbackProviders || [])].filter(Boolean))];
+}
+
+function buildProviderAttempt(providerCode, descriptor, status, error = null) {
+  return {
+    providerCode,
+    providerName: descriptor?.name || providerCode,
+    role: descriptor?.role || null,
+    tier: descriptor?.tier || null,
+    implemented: descriptor?.implemented ?? false,
+    status,
+    ...(error ? { error: formatSyncError(error) } : {}),
+  };
+}
+
+function buildProviderExecutionMetadata(attempts = []) {
+  const attemptedProviders = attempts.map((attempt) => attempt.providerCode);
+  const successProvider =
+    attempts.find((attempt) => attempt.status === "success")?.providerCode || null;
+
+  return {
+    attemptedProviders,
+    successProvider,
+    failoverUsed: Boolean(
+      successProvider && attemptedProviders[0] && successProvider !== attemptedProviders[0]
+    ),
+    attempts,
+  };
+}
+
+export function createSyncProviderRuntime(config = getSportsSyncConfig()) {
+  const providerCodes = getSyncProviderCodes(config);
+  const providerCache = new Map();
+
+  return {
+    providerCodes,
+    async execute(operationLabel, handler) {
+      const attempts = [];
+
+      for (const providerCode of providerCodes) {
+        const descriptor = getProviderDescriptor(providerCode);
+
+        try {
+          let provider = providerCache.get(providerCode);
+          if (!provider) {
+            provider = createSportsProvider(providerCode);
+            providerCache.set(providerCode, provider);
+          }
+
+          const result = await handler(provider, {
+            providerCode,
+            descriptor,
+          });
+
+          return {
+            result,
+            providerCode,
+            descriptor,
+            attempts: [...attempts, buildProviderAttempt(providerCode, descriptor, "success")],
+          };
+        } catch (error) {
+          attempts.push(buildProviderAttempt(providerCode, descriptor, "failed", error));
+        }
+      }
+
+      const failure = new Error(
+        `${operationLabel} failed across provider chain: ${attempts
+          .map((attempt) => `${attempt.providerCode} (${attempt.error || attempt.status})`)
+          .join("; ")}`
+      );
+      failure.attempts = attempts;
+      throw failure;
+    },
+  };
 }
 
 function truncateFailures(failures = [], limit = 8) {
@@ -71,31 +149,53 @@ function summarizeJobSteps(jobName, steps, config) {
   };
 }
 
-async function runTaxonomySnapshot(provider, syncJobId, config) {
-  const taxonomy = await provider.fetchTaxonomy({
-    leagueCodes: config.trackedLeagueCodes,
-  });
-  const recordsProcessed = Array.isArray(taxonomy) ? taxonomy.length : 0;
+async function runTaxonomySnapshot(providerRuntime, syncJobId, config) {
+  try {
+    const outcome = await providerRuntime.execute("taxonomy", (provider) =>
+      provider.fetchTaxonomy({
+        leagueCodes: config.trackedLeagueCodes,
+      })
+    );
+    const taxonomy = outcome.result;
+    const recordsProcessed = Array.isArray(taxonomy) ? taxonomy.length : 0;
+    const providerExecution = buildProviderExecutionMetadata(outcome.attempts);
 
-  await saveCheckpoint({
-    provider: config.provider,
-    key: "taxonomy:snapshot",
-    syncJobId,
-    cursor: new Date().toISOString(),
-    payload: {
-      leagueCodes: config.trackedLeagueCodes,
-      records: recordsProcessed,
-    },
-    success: true,
-  });
+    await saveCheckpoint({
+      provider: outcome.providerCode,
+      key: "taxonomy:snapshot",
+      syncJobId,
+      cursor: new Date().toISOString(),
+      payload: {
+        leagueCodes: config.trackedLeagueCodes,
+        records: recordsProcessed,
+        providerExecution,
+      },
+      success: true,
+    });
 
-  return buildStepResult("taxonomy", {
-    recordsProcessed,
-    attempted: config.trackedLeagueCodes.length,
-    metadata: {
-      trackedLeagueCodes: config.trackedLeagueCodes,
-    },
-  });
+    return buildStepResult("taxonomy", {
+      recordsProcessed,
+      attempted: config.trackedLeagueCodes.length,
+      metadata: {
+        trackedLeagueCodes: config.trackedLeagueCodes,
+        providerExecution,
+      },
+    });
+  } catch (error) {
+    await saveCheckpoint({
+      provider: config.provider,
+      key: "taxonomy:snapshot",
+      syncJobId,
+      cursor: new Date().toISOString(),
+      payload: {
+        leagueCodes: config.trackedLeagueCodes,
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
+      },
+      errorMessage: formatSyncError(error),
+      success: false,
+    });
+    throw error;
+  }
 }
 
 function addHours(date, amount) {
@@ -170,26 +270,46 @@ async function getCatalogFixtureRefs(config) {
   return [...new Set(fixtures.map((fixture) => fixture.externalRef).filter(Boolean))];
 }
 
-async function runTrackedSeasonJobs(provider, seasonRefs, syncJobId, config) {
+async function runTrackedSeasonJobs(providerRuntime, seasonRefs, syncJobId, config) {
   let recordsProcessed = 0;
   const failures = [];
+  const providersUsed = new Set();
 
   for (const seasonExternalRef of seasonRefs) {
     try {
-      const teams = await provider.fetchTeams({ seasonExternalRef });
-      recordsProcessed += await persistTeamBatch(teams, seasonExternalRef);
+      const teamsOutcome = await providerRuntime.execute(
+        `season:${seasonExternalRef}:teams`,
+        (provider) => provider.fetchTeams({ seasonExternalRef })
+      );
+      const teams = teamsOutcome.result;
+      providersUsed.add(teamsOutcome.providerCode);
+      recordsProcessed += await persistTeamBatch(teams, seasonExternalRef, {
+        providerCode: teamsOutcome.providerCode,
+      });
 
-      const standings = await provider.fetchStandings({ seasonExternalRef });
-      recordsProcessed += await persistStandingsBatch(standings);
+      const standingsOutcome = await providerRuntime.execute(
+        `season:${seasonExternalRef}:standings`,
+        (provider) => provider.fetchStandings({ seasonExternalRef })
+      );
+      const standings = standingsOutcome.result;
+      providersUsed.add(standingsOutcome.providerCode);
+      recordsProcessed += await persistStandingsBatch(standings, {
+        providerCode: standingsOutcome.providerCode,
+      });
+      const providerExecution = {
+        teams: buildProviderExecutionMetadata(teamsOutcome.attempts),
+        standings: buildProviderExecutionMetadata(standingsOutcome.attempts),
+      };
 
       await saveCheckpoint({
-        provider: config.provider,
+        provider: standingsOutcome.providerCode,
         key: `season:${seasonExternalRef}`,
         syncJobId,
         cursor: seasonExternalRef,
         payload: {
           teams: teams.length,
           standings: standings.length,
+          providerExecution,
         },
         success: true,
       });
@@ -197,6 +317,7 @@ async function runTrackedSeasonJobs(provider, seasonRefs, syncJobId, config) {
       failures.push({
         seasonExternalRef,
         error: formatSyncError(error),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
       });
       await saveCheckpoint({
         provider: config.provider,
@@ -205,6 +326,7 @@ async function runTrackedSeasonJobs(provider, seasonRefs, syncJobId, config) {
         cursor: seasonExternalRef,
         payload: {
           seasonExternalRef,
+          providerExecution: buildProviderExecutionMetadata(error.attempts || []),
         },
         errorMessage: formatSyncError(error),
         success: false,
@@ -240,61 +362,115 @@ async function runTrackedSeasonJobs(provider, seasonRefs, syncJobId, config) {
     failures,
     metadata: {
       seasonRefs,
+      providersUsed: [...providersUsed],
     },
   });
 }
 
-async function runFixturesWindow(provider, syncJobId, config) {
+async function runFixturesWindow(providerRuntime, syncJobId, config) {
   const checkpoint = await getCheckpoint(config.provider, "fixtures:window");
   const now = new Date();
   const startDate = addDays(now, -config.fixtureDaysPast);
   const endDate = addDays(now, config.fixtureDaysAhead);
-  const fixtures = await provider.fetchFixtures({ startDate, endDate });
-  const recordsProcessed = await persistFixtureBatch(fixtures);
 
-  await saveCheckpoint({
-    provider: config.provider,
-    key: "fixtures:window",
-    syncJobId,
-    cursor: checkpoint?.cursor || endDate.toISOString(),
-    payload: {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      fixtures: fixtures.length,
-    },
-    success: true,
-  });
+  try {
+    const outcome = await providerRuntime.execute("fixtures-window", (provider) =>
+      provider.fetchFixtures({ startDate, endDate })
+    );
+    const fixtures = outcome.result;
+    const recordsProcessed = await persistFixtureBatch(fixtures, {
+      providerCode: outcome.providerCode,
+    });
+    const providerExecution = buildProviderExecutionMetadata(outcome.attempts);
 
-  return buildStepResult("fixtures-window", {
-    recordsProcessed,
-    attempted: fixtures.length,
-    metadata: {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-    },
-  });
+    await saveCheckpoint({
+      provider: outcome.providerCode,
+      key: "fixtures:window",
+      syncJobId,
+      cursor: checkpoint?.cursor || endDate.toISOString(),
+      payload: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        fixtures: fixtures.length,
+        providerExecution,
+      },
+      success: true,
+    });
+
+    return buildStepResult("fixtures-window", {
+      recordsProcessed,
+      attempted: fixtures.length,
+      metadata: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        providerExecution,
+      },
+    });
+  } catch (error) {
+    await saveCheckpoint({
+      provider: config.provider,
+      key: "fixtures:window",
+      syncJobId,
+      cursor: checkpoint?.cursor || endDate.toISOString(),
+      payload: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
+      },
+      errorMessage: formatSyncError(error),
+      success: false,
+    });
+    throw error;
+  }
 }
 
-async function runLivescores(provider, syncJobId, config) {
-  const fixtures = await provider.fetchLivescores();
-  const recordsProcessed = await persistFixtureBatch(fixtures);
+async function runLivescores(providerRuntime, syncJobId, config) {
+  try {
+    const outcome = await providerRuntime.execute("fixtures-live", (provider) =>
+      provider.fetchLivescores()
+    );
+    const fixtures = outcome.result;
+    const recordsProcessed = await persistFixtureBatch(fixtures, {
+      providerCode: outcome.providerCode,
+    });
+    const providerExecution = buildProviderExecutionMetadata(outcome.attempts);
 
-  await saveCheckpoint({
-    provider: config.provider,
-    key: "fixtures:live",
-    syncJobId,
-    cursor: new Date().toISOString(),
-    payload: { fixtures: fixtures.length },
-    success: true,
-  });
+    await saveCheckpoint({
+      provider: outcome.providerCode,
+      key: "fixtures:live",
+      syncJobId,
+      cursor: new Date().toISOString(),
+      payload: {
+        fixtures: fixtures.length,
+        providerExecution,
+      },
+      success: true,
+    });
 
-  return buildStepResult("livescores", {
-    recordsProcessed,
-    attempted: fixtures.length,
-  });
+    return buildStepResult("livescores", {
+      recordsProcessed,
+      attempted: fixtures.length,
+      metadata: {
+        providerExecution,
+      },
+    });
+  } catch (error) {
+    await saveCheckpoint({
+      provider: config.provider,
+      key: "fixtures:live",
+      syncJobId,
+      cursor: new Date().toISOString(),
+      payload: {
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
+      },
+      errorMessage: formatSyncError(error),
+      success: false,
+    });
+    throw error;
+  }
 }
 
-async function runActiveFixtureDetails(provider, syncJobId, config, fixturePlan) {
+async function runActiveFixtureDetails(providerRuntime, syncJobId, config, fixturePlan) {
   const now = new Date();
   const fixtureRefs = (fixturePlan?.detailFixtures || [])
     .map((fixture) => fixture.externalRef)
@@ -302,19 +478,28 @@ async function runActiveFixtureDetails(provider, syncJobId, config, fixturePlan)
 
   let recordsProcessed = 0;
   const failures = [];
+  const providersUsed = new Set();
 
   for (const fixtureExternalRef of fixtureRefs) {
     try {
-      const fixture = await provider.fetchFixtureDetail({ fixtureExternalRef });
+      const outcome = await providerRuntime.execute(
+        `fixture-detail:${fixtureExternalRef}`,
+        (provider) => provider.fetchFixtureDetail({ fixtureExternalRef })
+      );
+      const fixture = outcome.result;
       if (!fixture) {
         continue;
       }
 
-      recordsProcessed += await persistFixtureBatch([fixture]);
+      providersUsed.add(outcome.providerCode);
+      recordsProcessed += await persistFixtureBatch([fixture], {
+        providerCode: outcome.providerCode,
+      });
     } catch (error) {
       failures.push({
         fixtureExternalRef,
         error: formatSyncError(error),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
       });
       await saveCheckpoint({
         provider: config.provider,
@@ -323,6 +508,7 @@ async function runActiveFixtureDetails(provider, syncJobId, config, fixturePlan)
         cursor: fixtureExternalRef,
         payload: {
           fixtureExternalRef,
+          providerExecution: buildProviderExecutionMetadata(error.attempts || []),
         },
         errorMessage: formatSyncError(error),
         success: false,
@@ -362,11 +548,12 @@ async function runActiveFixtureDetails(provider, syncJobId, config, fixturePlan)
     metadata: {
       pressureMode: fixturePlan?.mode || "nominal",
       budget: fixturePlan?.summary?.detailBudget || fixtureRefs.length,
+      providersUsed: [...providersUsed],
     },
   });
 }
 
-async function runOdds(provider, syncJobId, config, fixturePlan) {
+async function runOdds(providerRuntime, syncJobId, config, fixturePlan) {
   if (!config.oddsEnabled) {
     return buildStepResult("odds", {
       metadata: {
@@ -383,34 +570,48 @@ async function runOdds(provider, syncJobId, config, fixturePlan) {
 
   let recordsProcessed = 0;
   const failures = [];
+  const providersUsed = new Set();
 
   for (const fixtureExternalRef of fixtureRefs) {
     try {
-      const odds = await provider.fetchOdds({
-        fixtureExternalRef,
-        bookmakerIds: config.oddsBookmakers,
+      const outcome = await providerRuntime.execute(`odds:${fixtureExternalRef}`, (provider) =>
+        provider.fetchOdds({
+          fixtureExternalRef,
+          bookmakerIds: config.oddsBookmakers,
+        })
+      );
+      const odds = outcome.result;
+      providersUsed.add(outcome.providerCode);
+      recordsProcessed += await persistOddsBatch(odds, {
+        providerCode: outcome.providerCode,
       });
-      recordsProcessed += await persistOddsBatch(odds);
 
       await saveCheckpoint({
-        provider: config.provider,
+        provider: outcome.providerCode,
         key: `odds:${fixtureExternalRef}`,
         syncJobId,
         cursor: fixtureExternalRef,
-        payload: { markets: odds.length },
+        payload: {
+          markets: odds.length,
+          providerExecution: buildProviderExecutionMetadata(outcome.attempts),
+        },
         success: true,
       });
     } catch (error) {
       failures.push({
         fixtureExternalRef,
         error: formatSyncError(error),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
       });
       await saveCheckpoint({
         provider: config.provider,
         key: `odds:${fixtureExternalRef}`,
         syncJobId,
         cursor: fixtureExternalRef,
-        payload: { fixtureExternalRef },
+        payload: {
+          fixtureExternalRef,
+          providerExecution: buildProviderExecutionMetadata(error.attempts || []),
+        },
         errorMessage: formatSyncError(error),
         success: false,
       });
@@ -424,11 +625,12 @@ async function runOdds(provider, syncJobId, config, fixturePlan) {
     failures,
     metadata: {
       bookmakerIds: config.oddsBookmakers,
+      providersUsed: [...providersUsed],
     },
   });
 }
 
-async function runBroadcasts(provider, syncJobId, config, fixturePlan) {
+async function runBroadcasts(providerRuntime, syncJobId, config, fixturePlan) {
   if (!config.broadcastEnabled) {
     return buildStepResult("broadcasts", {
       metadata: {
@@ -443,33 +645,47 @@ async function runBroadcasts(provider, syncJobId, config, fixturePlan) {
 
   let recordsProcessed = 0;
   const failures = [];
+  const providersUsed = new Set();
 
   for (const fixtureExternalRef of fixtureRefs) {
     try {
-      const channels = await provider.fetchMediaMetadata({
-        fixtureExternalRef,
+      const outcome = await providerRuntime.execute(`broadcast:${fixtureExternalRef}`, (provider) =>
+        provider.fetchMediaMetadata({
+          fixtureExternalRef,
+        })
+      );
+      const channels = outcome.result;
+      providersUsed.add(outcome.providerCode);
+      recordsProcessed += await replaceBroadcastChannels(fixtureExternalRef, channels, {
+        providerCode: outcome.providerCode,
       });
-      recordsProcessed += await replaceBroadcastChannels(fixtureExternalRef, channels);
 
       await saveCheckpoint({
-        provider: config.provider,
+        provider: outcome.providerCode,
         key: `broadcast:${fixtureExternalRef}`,
         syncJobId,
         cursor: fixtureExternalRef,
-        payload: { channels: channels.length },
+        payload: {
+          channels: channels.length,
+          providerExecution: buildProviderExecutionMetadata(outcome.attempts),
+        },
         success: true,
       });
     } catch (error) {
       failures.push({
         fixtureExternalRef,
         error: formatSyncError(error),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
       });
       await saveCheckpoint({
         provider: config.provider,
         key: `broadcast:${fixtureExternalRef}`,
         syncJobId,
         cursor: fixtureExternalRef,
-        payload: { fixtureExternalRef },
+        payload: {
+          fixtureExternalRef,
+          providerExecution: buildProviderExecutionMetadata(error.attempts || []),
+        },
         errorMessage: formatSyncError(error),
         success: false,
       });
@@ -481,10 +697,13 @@ async function runBroadcasts(provider, syncJobId, config, fixturePlan) {
     attempted: fixtureRefs.length,
     failureCount: failures.length,
     failures,
+    metadata: {
+      providersUsed: [...providersUsed],
+    },
   });
 }
 
-async function runBookmakerCatalog(provider, syncJobId, config) {
+async function runBookmakerCatalog(providerRuntime, syncJobId, config) {
   if (!config.oddsEnabled) {
     return buildStepResult("bookmaker-catalog", {
       metadata: {
@@ -496,18 +715,26 @@ async function runBookmakerCatalog(provider, syncJobId, config) {
   const fixtureRefs = await getCatalogFixtureRefs(config);
   let recordsProcessed = 0;
   const failures = [];
+  const providersUsed = new Set();
 
   for (const fixtureExternalRef of fixtureRefs) {
     try {
-      const odds = await provider.fetchOdds({
-        fixtureExternalRef,
-        bookmakerIds: config.oddsBookmakers,
+      const outcome = await providerRuntime.execute(`bookmaker-catalog:${fixtureExternalRef}`, (provider) =>
+        provider.fetchOdds({
+          fixtureExternalRef,
+          bookmakerIds: config.oddsBookmakers,
+        })
+      );
+      const odds = outcome.result;
+      providersUsed.add(outcome.providerCode);
+      recordsProcessed += await persistOddsBatch(odds, {
+        providerCode: outcome.providerCode,
       });
-      recordsProcessed += await persistOddsBatch(odds);
     } catch (error) {
       failures.push({
         fixtureExternalRef,
         error: formatSyncError(error),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
       });
     }
   }
@@ -527,6 +754,7 @@ async function runBookmakerCatalog(provider, syncJobId, config) {
       recordsProcessed,
       failureCount: failures.length,
       failures: truncateFailures(failures),
+      providersUsed: [...providersUsed],
     },
     errorMessage: failures[0]?.error || null,
     markSuccess: outcome.markSuccess,
@@ -538,10 +766,13 @@ async function runBookmakerCatalog(provider, syncJobId, config) {
     attempted: fixtureRefs.length,
     failureCount: failures.length,
     failures,
+    metadata: {
+      providersUsed: [...providersUsed],
+    },
   });
 }
 
-async function runPredictions(provider, syncJobId, config) {
+async function runPredictions(providerRuntime, syncJobId, config) {
   if (!config.predictionsEnabled) {
     return buildStepResult("predictions", {
       metadata: {
@@ -553,19 +784,27 @@ async function runPredictions(provider, syncJobId, config) {
   const fixtureRefs = (await getCatalogFixtureRefs(config)).slice(0, config.maxPredictionFixturesPerRun);
   let recordsProcessed = 0;
   const failures = [];
+  const providersUsed = new Set();
 
   for (const fixtureExternalRef of fixtureRefs) {
     try {
-      const predictions = await provider.fetchPredictions({ fixtureExternalRef });
-      recordsProcessed += await persistPredictionBatch(predictions);
+      const outcome = await providerRuntime.execute(`predictions:${fixtureExternalRef}`, (provider) =>
+        provider.fetchPredictions({ fixtureExternalRef })
+      );
+      const predictions = outcome.result;
+      providersUsed.add(outcome.providerCode);
+      recordsProcessed += await persistPredictionBatch(predictions, {
+        providerCode: outcome.providerCode,
+      });
 
       await saveCheckpoint({
-        provider: config.provider,
+        provider: outcome.providerCode,
         key: `predictions:${fixtureExternalRef}`,
         syncJobId,
         cursor: fixtureExternalRef,
         payload: {
           predictions: Array.isArray(predictions) ? predictions.length : 0,
+          providerExecution: buildProviderExecutionMetadata(outcome.attempts),
         },
         success: true,
       });
@@ -573,6 +812,7 @@ async function runPredictions(provider, syncJobId, config) {
       failures.push({
         fixtureExternalRef,
         error: formatSyncError(error),
+        providerExecution: buildProviderExecutionMetadata(error.attempts || []),
       });
       await saveCheckpoint({
         provider: config.provider,
@@ -581,6 +821,7 @@ async function runPredictions(provider, syncJobId, config) {
         cursor: fixtureExternalRef,
         payload: {
           fixtureExternalRef,
+          providerExecution: buildProviderExecutionMetadata(error.attempts || []),
         },
         errorMessage: formatSyncError(error),
         success: false,
@@ -603,6 +844,7 @@ async function runPredictions(provider, syncJobId, config) {
       recordsProcessed,
       failureCount: failures.length,
       failures: truncateFailures(failures),
+      providersUsed: [...providersUsed],
     },
     errorMessage: failures[0]?.error || null,
     markSuccess: outcome.markSuccess,
@@ -614,51 +856,54 @@ async function runPredictions(provider, syncJobId, config) {
     attempted: fixtureRefs.length,
     failureCount: failures.length,
     failures,
+    metadata: {
+      providersUsed: [...providersUsed],
+    },
   });
 }
 
 export const syncJobRegistry = {
   "static-ish": {
     bucket: "static-ish",
-    async run(provider, syncJobId, config) {
+    async run(providerRuntime, syncJobId, config) {
       const steps = [
-        await runTaxonomySnapshot(provider, syncJobId, config),
-        await runFixturesWindow(provider, syncJobId, config),
-        await runTrackedSeasonJobs(provider, config.trackedSeasonRefs, syncJobId, config),
+        await runTaxonomySnapshot(providerRuntime, syncJobId, config),
+        await runFixturesWindow(providerRuntime, syncJobId, config),
+        await runTrackedSeasonJobs(providerRuntime, config.trackedSeasonRefs, syncJobId, config),
       ];
       return summarizeJobSteps("static-ish", steps, config);
     },
   },
   daily: {
     bucket: "daily",
-    async run(provider, syncJobId, config) {
+    async run(providerRuntime, syncJobId, config) {
       const steps = [
-        await runTaxonomySnapshot(provider, syncJobId, config),
-        await runFixturesWindow(provider, syncJobId, config),
-        await runTrackedSeasonJobs(provider, config.trackedSeasonRefs, syncJobId, config),
+        await runTaxonomySnapshot(providerRuntime, syncJobId, config),
+        await runFixturesWindow(providerRuntime, syncJobId, config),
+        await runTrackedSeasonJobs(providerRuntime, config.trackedSeasonRefs, syncJobId, config),
       ];
       return summarizeJobSteps("daily", steps, config);
     },
   },
   "high-frequency": {
     bucket: "high-frequency",
-    async run(provider, syncJobId, config) {
+    async run(providerRuntime, syncJobId, config) {
       const fixturePlan = await getHighFrequencyFixturePlan(config);
       const steps = [
-        await runLivescores(provider, syncJobId, config),
-        await runActiveFixtureDetails(provider, syncJobId, config, fixturePlan),
-        await runOdds(provider, syncJobId, config, fixturePlan),
-        await runBroadcasts(provider, syncJobId, config, fixturePlan),
+        await runLivescores(providerRuntime, syncJobId, config),
+        await runActiveFixtureDetails(providerRuntime, syncJobId, config, fixturePlan),
+        await runOdds(providerRuntime, syncJobId, config, fixturePlan),
+        await runBroadcasts(providerRuntime, syncJobId, config, fixturePlan),
       ];
       return summarizeJobSteps("high-frequency", steps, config);
     },
   },
   catalog: {
     bucket: "catalog",
-    async run(provider, syncJobId, config) {
+    async run(providerRuntime, syncJobId, config) {
       const steps = [
-        await runBookmakerCatalog(provider, syncJobId, config),
-        await runPredictions(provider, syncJobId, config),
+        await runBookmakerCatalog(providerRuntime, syncJobId, config),
+        await runPredictions(providerRuntime, syncJobId, config),
       ];
       return summarizeJobSteps("catalog", steps, config);
     },
@@ -684,8 +929,8 @@ export async function runSyncJob(jobName) {
     );
   }
 
+  await ensureSyncProviderChain(getSyncProviderCodes(config));
   await ensureProviderIsActive(config.provider);
-  const provider = createSportsProvider();
   const job = await startSyncJob({
     provider: config.provider,
     source: jobName,
@@ -693,7 +938,8 @@ export async function runSyncJob(jobName) {
   });
 
   try {
-    const summary = await jobDefinition.run(provider, job.id, config);
+    const providerRuntime = createSyncProviderRuntime(config);
+    const summary = await jobDefinition.run(providerRuntime, job.id, config);
     await completeSyncJob(job.id, summary);
     return { jobId: job.id, ...summary };
   } catch (error) {

@@ -80,4 +80,23 @@ describe("sports sync config", () => {
 
     expect(config.assetHosts).toEqual(["cdn.sportmonks.com", "assets.sportsmonks.com"]);
   });
+
+  it("resolves override config from the explicitly requested provider namespace", () => {
+    process.env.SPORTS_DATA_PROVIDER = "SPORTSMONKS";
+    process.env.SPORTSMONKS_API_KEY = "primary-key";
+    process.env.API_SPORTS_API_KEY = "fallback-key";
+    process.env.API_SPORTS_BASE_URL = "https://example.test/api-sports";
+    process.env.API_SPORTS_API_HOST = "api.example.test";
+
+    const config = getSportsSyncConfig("API_SPORTS");
+
+    expect(config).toMatchObject({
+      provider: "API_SPORTS",
+      providerEnvNamespace: "API_SPORTS",
+      apiKey: "fallback-key",
+      baseUrl: "https://example.test/api-sports",
+      apiHost: "api.example.test",
+      authLocation: "header",
+    });
+  });
 });

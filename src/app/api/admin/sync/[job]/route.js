@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminAccess } from "../../../../../lib/admin-auth";
-import { getCoreDataRevalidationTags } from "../../../../../lib/control-plane";
 import { runSyncJob, syncJobRegistry } from "../../../../../lib/sync/jobs";
 import { logAuditEvent } from "../../../../../lib/audit";
-import { revalidateTagsWithAudit } from "../../../../../lib/cache";
 
 export async function POST(request, { params }) {
   const { error, auditContext } = await requireAdminAccess(request, { stepUp: true });
@@ -27,13 +25,6 @@ export async function POST(request, { params }) {
       },
     });
     const result = await runSyncJob(job);
-    await revalidateTagsWithAudit(getCoreDataRevalidationTags(), {
-      ...auditContext,
-      source: "sync-job-complete",
-      metadata: {
-        job,
-      },
-    });
     return NextResponse.json({ ok: true, ...result });
   } catch (syncError) {
     await logAuditEvent({

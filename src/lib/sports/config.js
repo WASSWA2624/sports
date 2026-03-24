@@ -65,10 +65,11 @@ function readProviderEnvString(providerCode, suffix, fallback = "") {
   return readFirstString(...buildProviderEnvCandidates(providerCode, suffix)) || fallback;
 }
 
-export function getSportsSyncConfig() {
-  const provider = normalizeSportsProviderCode(
+export function getSportsSyncConfig(providerOverride = null) {
+  const selectedProvider = normalizeSportsProviderCode(
     process.env.SPORTS_DATA_PROVIDER || DEFAULT_SPORTS_PROVIDER_CODE
   );
+  const provider = normalizeSportsProviderCode(providerOverride, selectedProvider);
   const descriptor = getSportsProviderCatalogEntry(provider);
   const primarySport =
     readProviderEnvString(provider, "PRIMARY_SPORT") ||
@@ -116,9 +117,9 @@ export function getSportsSyncConfig() {
         descriptor?.defaultAssetHosts?.join(",") ||
         ""
     ),
-    fallbackProviders: parseCsv(process.env.SPORTS_SYNC_FAILOVER_PROVIDERS).map((entry) =>
-      normalizeSportsProviderCode(entry, entry)
-    ),
+    fallbackProviders: parseCsv(process.env.SPORTS_SYNC_FAILOVER_PROVIDERS)
+      .map((entry) => normalizeSportsProviderCode(entry, entry))
+      .filter((entry) => entry !== provider),
     trackedLeagueCodes: parseCsv(process.env.SPORTS_SYNC_LEAGUE_CODES),
     trackedSeasonRefs: parseCsv(process.env.SPORTS_SYNC_SEASON_IDS),
     trackedFixtureRefs: parseCsv(process.env.SPORTS_SYNC_FIXTURE_IDS),

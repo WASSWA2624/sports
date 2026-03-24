@@ -88,8 +88,8 @@ export function getProviderChain(
 }
 
 export function createSportsProvider(providerCode = getSportsSyncConfig().provider) {
-  const config = getSportsSyncConfig();
-  const normalizedCode = normalizeSportsProviderCode(providerCode, config.provider);
+  const config = getSportsSyncConfig(providerCode);
+  const normalizedCode = config.provider;
   const descriptor = getSportsProviderCatalogEntry(normalizedCode);
 
   if (!descriptor) {
@@ -99,20 +99,7 @@ export function createSportsProvider(providerCode = getSportsSyncConfig().provid
   const factory = adapterFactories[descriptor.adapterFamily];
   const provider =
     descriptor.implemented && typeof factory === "function"
-      ? factory(
-          normalizedCode === config.provider
-            ? config
-            : {
-                ...config,
-                provider: normalizedCode,
-                providerDescriptor: descriptor,
-                providerEnvNamespace: descriptor.envNamespace,
-                adapterFamily: descriptor.adapterFamily,
-                primarySport: descriptor.defaultPrimarySport || config.primarySport,
-                baseUrl: descriptor.defaultBaseUrl || config.baseUrl,
-              },
-          descriptor
-        )
+      ? factory(config, descriptor)
       : new UnimplementedSportsProvider(descriptor);
 
   return verifyProvider(normalizedCode, provider);

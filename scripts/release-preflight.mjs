@@ -102,6 +102,15 @@ function normalizeProviderCode(value, fallback = "SPORTSMONKS") {
   return normalized || fallback;
 }
 
+function parseProviderCsv(value) {
+  return [...new Set(
+    String(value || "")
+      .split(",")
+      .map((entry) => normalizeProviderCode(entry, ""))
+      .filter(Boolean)
+  )];
+}
+
 function buildProviderEnvCandidates(providerCode, suffix) {
   return [`SPORTS_PROVIDER_${suffix}`, `${normalizeProviderCode(providerCode)}_${suffix}`];
 }
@@ -177,6 +186,52 @@ function validateSelectedProviderImplementation(report, mode, providerCode) {
       ? `${providerCode} is implemented in this build.`
       : `${providerCode} is not release-ready in this build. Switch SPORTS_DATA_PROVIDER or add the adapter family before promotion.`
   );
+}
+
+function validateConfiguredFallbackProviders(report, mode, providerCodes = []) {
+  if (!isRequiredForMode(mode, STAGE_AND_PROD) || !providerCodes.length) {
+    return;
+  }
+
+  for (const providerCode of providerCodes) {
+    const isImplemented = IMPLEMENTED_PROVIDER_CODES.has(providerCode);
+    pushCheck(
+      report,
+      "providers",
+      `${providerCode} fallback readiness`,
+      isImplemented ? "pass" : "warn",
+      isImplemented
+        ? `${providerCode} is implemented and can participate in failover.`
+        : `${providerCode} is configured as a failover target, but its adapter family is not implemented in this build.`
+    );
+
+    if (!isImplemented) {
+      continue;
+    }
+
+    validateAnyStringSetting(
+      report,
+      mode,
+      "providers",
+      `${providerCode} fallback API key`,
+      buildProviderEnvCandidates(providerCode, "API_KEY"),
+      {
+        recommendedModes: STAGE_AND_PROD,
+        secret: true,
+      }
+    );
+    validateAnyStringSetting(
+      report,
+      mode,
+      "providers",
+      `${providerCode} fallback base URL`,
+      buildProviderEnvCandidates(providerCode, "BASE_URL"),
+      {
+        recommendedModes: STAGE_AND_PROD,
+        validate: (value) => value.startsWith("http://") || value.startsWith("https://"),
+      }
+    );
+  }
 }
 
 function getProviderAuthExpectation(providerCode) {
@@ -454,6 +509,11 @@ export async function runReleasePreflight(options = {}) {
   validateStringSetting(report, mode, "providers", "SPORTS_SYNC_FAILOVER_PROVIDERS", {
     requiredModes: STAGE_AND_PROD,
   });
+  validateConfiguredFallbackProviders(
+    report,
+    mode,
+    parseProviderCsv(readEnvString("SPORTS_SYNC_FAILOVER_PROVIDERS"))
+  );
   validateNumberSetting(report, mode, "providers", "SPORTS_DATA_ACCESS_TIMEOUT_MS", {
     requiredModes: STAGE_AND_PROD,
     integer: true,
