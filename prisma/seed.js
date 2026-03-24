@@ -1,4 +1,5 @@
 require("dotenv/config");
+const crypto = require("node:crypto");
 const mysql = require("mysql2/promise");
 
 function parseDatabaseUrl(url) {
@@ -49,6 +50,11 @@ async function fetchSingleRow(connection, table, whereClause, values, columns = 
 
 function toJson(value) {
   return value == null ? null : JSON.stringify(value);
+}
+
+function buildSeedPasswordHash(password, salt) {
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return `${salt}:${derivedKey.toString("hex")}`;
 }
 
 async function upsertProviderRef(connection, entry) {
@@ -1488,6 +1494,221 @@ async function seed() {
     ]) {
       await seedProviderRef(entry);
     }
+
+    const userRoleId = await fetchSingleId(connection, "Role", "name = 'USER'", []);
+    const communityPasswordHash = buildSeedPasswordHash(
+      "Password123!",
+      "sports-community-seed"
+    );
+
+    await connection.query(
+      `
+      INSERT INTO User (
+        id, email, phoneNumber, username, passwordHash, displayName, isActive, createdAt, updatedAt
+      )
+      VALUES
+        (UUID(), 'emma.tips@example.com', NULL, 'emma_tips', ?, 'Emma Tips', true, NOW(), NOW()),
+        (UUID(), 'sam.value@example.com', NULL, 'sam_value', ?, 'Sam Value', true, NOW(), NOW()),
+        (UUID(), 'nina.overs@example.com', NULL, 'nina_overs', ?, 'Nina Overs', true, NOW(), NOW())
+      ON DUPLICATE KEY UPDATE
+        passwordHash = VALUES(passwordHash),
+        displayName = VALUES(displayName),
+        isActive = VALUES(isActive),
+        updatedAt = NOW()
+      `,
+      [communityPasswordHash, communityPasswordHash, communityPasswordHash]
+    );
+
+    const emmaUserId = await fetchSingleId(connection, "User", "username = 'emma_tips'", []);
+    const samUserId = await fetchSingleId(connection, "User", "username = 'sam_value'", []);
+    const ninaUserId = await fetchSingleId(connection, "User", "username = 'nina_overs'", []);
+
+    await connection.query(
+      `
+      INSERT IGNORE INTO UserRole (userId, roleId, assignedAt)
+      VALUES
+        (?, ?, NOW()),
+        (?, ?, NOW()),
+        (?, ?, NOW())
+      `,
+      [emmaUserId, userRoleId, samUserId, userRoleId, ninaUserId, userRoleId]
+    );
+
+    await connection.query(
+      `
+      DELETE FROM CommunitySlipLike
+      WHERE communitySlipId IN (
+        SELECT id
+        FROM CommunitySlip
+        WHERE userId IN (?, ?, ?)
+      )
+      `,
+      [emmaUserId, samUserId, ninaUserId]
+    );
+
+    await connection.query(
+      `
+      DELETE FROM CommunitySlipSelection
+      WHERE communitySlipId IN (
+        SELECT id
+        FROM CommunitySlip
+        WHERE userId IN (?, ?, ?)
+      )
+      `,
+      [emmaUserId, samUserId, ninaUserId]
+    );
+
+    await connection.query(
+      `
+      DELETE FROM CommunitySlip
+      WHERE userId IN (?, ?, ?)
+      `,
+      [emmaUserId, samUserId, ninaUserId]
+    );
+
+    await connection.query(
+      `
+      INSERT INTO CommunitySlip (
+        id, userId, title, summary, status, visibility, stakeAmount, totalOdds, expectedPayout,
+        selectionCount, likeCount, publishedAt, settledAt, outcomeStatus, outcomeSummary, isFeatured,
+        metadata, createdAt, updatedAt
+      )
+      VALUES
+        (
+          UUID(), ?, 'Arsenal control the middle',
+          'Arsenal to win with the game staying controlled under the main line feels like the cleanest live angle.',
+          'PUBLISHED', 'PUBLIC', 12.00, 3.9600, 47.52,
+          2, 2, DATE_SUB(NOW(), INTERVAL 35 MINUTE), NULL, 'OPEN', NULL, true,
+          JSON_OBJECT('seeded', true, 'surface', 'community', 'tone', 'featured'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'City v Liverpool is still drawing me to the stalemate',
+          'Both sides can cancel each other out in long stretches, so the draw price still stands out.',
+          'PUBLISHED', 'PUBLIC', 8.00, 3.6000, 28.80,
+          1, 1, DATE_SUB(NOW(), INTERVAL 1 HOUR), NULL, 'OPEN', NULL, false,
+          JSON_OBJECT('seeded', true, 'surface', 'community', 'tone', 'value'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'Liverpool price is too big for the run-in swing match',
+          'The away number is still long enough to build around if Liverpool survive the opening pressure.',
+          'PUBLISHED', 'PUBLIC', 6.00, 3.4000, 20.40,
+          1, 0, DATE_SUB(NOW(), INTERVAL 2 HOUR), NULL, 'OPEN', NULL, false,
+          JSON_OBJECT('seeded', true, 'surface', 'community', 'tone', 'price'),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), ?, 'Late overs draft',
+          'Holding this one in draft until the tempo rises and the card line sharpens.',
+          'DRAFT', 'PRIVATE', 10.00, 1.9500, 19.50,
+          1, 0, NULL, NULL, 'OPEN', NULL, false,
+          JSON_OBJECT('seeded', true, 'surface', 'community', 'tone', 'draft'),
+          NOW(), NOW()
+        )
+      `,
+      [emmaUserId, samUserId, ninaUserId, emmaUserId]
+    );
+
+    const emmaFeaturedSlipId = await fetchSingleId(
+      connection,
+      "CommunitySlip",
+      "userId = ? AND title = 'Arsenal control the middle'",
+      [emmaUserId]
+    );
+    const samDrawSlipId = await fetchSingleId(
+      connection,
+      "CommunitySlip",
+      "userId = ? AND title = 'City v Liverpool is still drawing me to the stalemate'",
+      [samUserId]
+    );
+    const ninaPriceSlipId = await fetchSingleId(
+      connection,
+      "CommunitySlip",
+      "userId = ? AND title = 'Liverpool price is too big for the run-in swing match'",
+      [ninaUserId]
+    );
+    const emmaDraftSlipId = await fetchSingleId(
+      connection,
+      "CommunitySlip",
+      "userId = ? AND title = 'Late overs draft'",
+      [emmaUserId]
+    );
+
+    await connection.query(
+      `
+      INSERT INTO CommunitySlipSelection (
+        id, communitySlipId, fixtureId, oddsSelectionId, oddsMarketId, marketType, selectionLabel, line,
+        priceDecimal, bookmaker, fixtureLabel, sortOrder, metadata, createdAt, updatedAt
+      )
+      SELECT
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        os.priceDecimal, om.bookmaker, 'Arsenal vs Chelsea', 0,
+        JSON_OBJECT('fixtureRef', 'seed-live-ars-che', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MINUTE), '%Y-%m-%dT%H:%i:%sZ')),
+        NOW(), NOW()
+      FROM OddsSelection os
+      INNER JOIN OddsMarket om ON om.id = os.oddsMarketId
+      WHERE os.id = ?
+      UNION ALL
+      SELECT
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        os.priceDecimal, om.bookmaker, 'Arsenal vs Chelsea', 1,
+        JSON_OBJECT('fixtureRef', 'seed-live-ars-che', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MINUTE), '%Y-%m-%dT%H:%i:%sZ')),
+        NOW(), NOW()
+      FROM OddsSelection os
+      INNER JOIN OddsMarket om ON om.id = os.oddsMarketId
+      WHERE os.id = ?
+      UNION ALL
+      SELECT
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        os.priceDecimal, om.bookmaker, 'Manchester City vs Liverpool', 0,
+        JSON_OBJECT('fixtureRef', 'seed-upcoming-mci-liv', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 4 HOUR), '%Y-%m-%dT%H:%i:%sZ')),
+        NOW(), NOW()
+      FROM OddsSelection os
+      INNER JOIN OddsMarket om ON om.id = os.oddsMarketId
+      WHERE os.id = ?
+      UNION ALL
+      SELECT
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        os.priceDecimal, om.bookmaker, 'Manchester City vs Liverpool', 0,
+        JSON_OBJECT('fixtureRef', 'seed-upcoming-mci-liv', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 4 HOUR), '%Y-%m-%dT%H:%i:%sZ')),
+        NOW(), NOW()
+      FROM OddsSelection os
+      INNER JOIN OddsMarket om ON om.id = os.oddsMarketId
+      WHERE os.id = ?
+      UNION ALL
+      SELECT
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        os.priceDecimal, om.bookmaker, 'Arsenal vs Chelsea', 0,
+        JSON_OBJECT('fixtureRef', 'seed-live-ars-che', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MINUTE), '%Y-%m-%dT%H:%i:%sZ')),
+        NOW(), NOW()
+      FROM OddsSelection os
+      INNER JOIN OddsMarket om ON om.id = os.oddsMarketId
+      WHERE os.id = ?
+      `,
+      [
+        emmaFeaturedSlipId, liveHomeSelectionId,
+        emmaFeaturedSlipId, liveUnderSelectionId,
+        samDrawSlipId, upcomingDrawSelectionId,
+        ninaPriceSlipId, upcomingAwaySelectionId,
+        emmaDraftSlipId, liveOverSelectionId,
+      ]
+    );
+
+    await connection.query(
+      `
+      INSERT IGNORE INTO CommunitySlipLike (communitySlipId, userId, createdAt)
+      VALUES
+        (?, ?, NOW()),
+        (?, ?, NOW()),
+        (?, ?, NOW())
+      `,
+      [
+        emmaFeaturedSlipId, samUserId,
+        emmaFeaturedSlipId, ninaUserId,
+        samDrawSlipId, emmaUserId,
+      ]
+    );
 
     await connection.query(
       `

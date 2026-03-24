@@ -93,6 +93,25 @@ enum ConversionStatus {
   SETTLED
 }
 
+enum CommunitySlipStatus {
+  DRAFT
+  PUBLISHED
+  SETTLED
+  VOID
+}
+
+enum CommunitySlipVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum CommunitySlipOutcomeStatus {
+  OPEN
+  WON
+  LOST
+  VOID
+}
+
 model User {
   id                        String                     @id @default(cuid())
   email                     String?                    @unique
@@ -115,6 +134,8 @@ model User {
   assignedIssues            OpsIssue[]                 @relation("AssignedIssues")
   clickEvents               ClickEvent[]
   conversionEvents          ConversionEvent[]
+  communitySlips            CommunitySlip[]
+  communitySlipLikes        CommunitySlipLike[]
 }
 
 model Session {
@@ -579,6 +600,7 @@ model Fixture {
   clickEvents               ClickEvent[]
   conversionEvents          ConversionEvent[]
   predictionRecommendations PredictionRecommendation[]
+  communitySlipSelections   CommunitySlipSelection[]
 
   @@index([status, startsAt])
   @@index([sportId, startsAt])
@@ -663,6 +685,7 @@ model OddsMarket {
   fixture         Fixture         @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
   bookmakerRecord Bookmaker?      @relation(fields: [bookmakerId], references: [id], onDelete: SetNull)
   selections      OddsSelection[]
+  communitySlipSelections CommunitySlipSelection[]
 
   @@index([fixtureId, bookmaker])
   @@index([fixtureId, bookmakerId])
@@ -682,6 +705,7 @@ model OddsSelection {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   oddsMarket   OddsMarket @relation(fields: [oddsMarketId], references: [id], onDelete: Cascade)
+  communitySlipSelections CommunitySlipSelection[]
 
   @@index([oddsMarketId, isActive])
 }
@@ -1205,6 +1229,74 @@ model PredictionRecommendation {
   @@index([fixtureId, isPublished, publishedAt])
   @@index([competitionId, isPublished, publishedAt])
   @@index([bookmakerId, isPublished, publishedAt])
+}
+
+model CommunitySlip {
+  id             String                    @id @default(cuid())
+  userId         String
+  title          String
+  summary        String?                   @db.Text
+  status         CommunitySlipStatus       @default(DRAFT)
+  visibility     CommunitySlipVisibility   @default(PRIVATE)
+  stakeAmount    Decimal?                  @db.Decimal(12, 2)
+  totalOdds      Decimal?                  @db.Decimal(12, 4)
+  expectedPayout Decimal?                  @db.Decimal(12, 2)
+  selectionCount Int                       @default(0)
+  likeCount      Int                       @default(0)
+  publishedAt    DateTime?
+  settledAt      DateTime?
+  outcomeStatus  CommunitySlipOutcomeStatus @default(OPEN)
+  outcomeSummary String?
+  isFeatured     Boolean                   @default(false)
+  metadata       Json?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  user           User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selections     CommunitySlipSelection[]
+  likes          CommunitySlipLike[]
+
+  @@index([userId, status, updatedAt])
+  @@index([status, visibility, publishedAt])
+  @@index([isFeatured, publishedAt])
+}
+
+model CommunitySlipSelection {
+  id             String         @id @default(cuid())
+  communitySlipId String
+  fixtureId      String
+  oddsSelectionId String
+  oddsMarketId   String?
+  marketType     String?
+  selectionLabel String
+  line           Decimal?       @db.Decimal(10, 2)
+  priceDecimal   Decimal        @db.Decimal(10, 4)
+  bookmaker      String?
+  fixtureLabel   String?
+  sortOrder      Int            @default(0)
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  communitySlip  CommunitySlip  @relation(fields: [communitySlipId], references: [id], onDelete: Cascade)
+  fixture        Fixture        @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  oddsSelection  OddsSelection  @relation(fields: [oddsSelectionId], references: [id], onDelete: Cascade)
+  oddsMarket     OddsMarket?    @relation(fields: [oddsMarketId], references: [id], onDelete: SetNull)
+
+  @@unique([communitySlipId, oddsSelectionId])
+  @@index([communitySlipId, sortOrder])
+  @@index([fixtureId, createdAt])
+  @@index([oddsSelectionId])
+  @@index([oddsMarketId])
+}
+
+model CommunitySlipLike {
+  communitySlipId String
+  userId          String
+  createdAt       DateTime      @default(now())
+  communitySlip   CommunitySlip @relation(fields: [communitySlipId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([communitySlipId, userId])
+  @@index([userId, createdAt])
 }
 
 model MonetizationPlacement {

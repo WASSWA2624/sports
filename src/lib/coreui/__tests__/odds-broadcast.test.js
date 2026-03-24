@@ -6,12 +6,18 @@ import {
   resolveViewerTerritory,
 } from "../odds-broadcast";
 
+function recentIso(minutesAgo = 5) {
+  return new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
+}
+
 function buildFixture(overrides = {}) {
+  const syncedAt = recentIso();
+
   return {
     id: "fixture-1",
     externalRef: "fixture-1",
     startsAt: "2026-03-24T18:00:00.000Z",
-    lastSyncedAt: "2026-03-24T17:10:00.000Z",
+    lastSyncedAt: syncedAt,
     homeTeam: { name: "Arsenal" },
     awayTeam: { name: "Chelsea" },
     oddsMarkets: [
@@ -20,7 +26,7 @@ function buildFixture(overrides = {}) {
         bookmaker: "PulseBook",
         marketType: "1X2",
         suspended: false,
-        lastSyncedAt: "2026-03-24T17:10:00.000Z",
+        lastSyncedAt: syncedAt,
         selections: [
           { id: "sel-1", label: "Home", priceDecimal: 1.84, isActive: true },
           { id: "sel-2", label: "Draw", priceDecimal: 3.55, isActive: true },
@@ -122,7 +128,7 @@ describe("odds and broadcast read models", () => {
               bookmaker: "NorthLine",
               marketType: "1X2",
               suspended: false,
-              lastSyncedAt: "2000-01-01T17:30:00.000Z",
+              lastSyncedAt: recentIso(3),
               selections: [{ id: "sel-3", label: "Home", priceDecimal: 1.72, isActive: true }],
             },
           ],

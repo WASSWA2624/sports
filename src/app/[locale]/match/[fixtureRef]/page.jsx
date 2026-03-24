@@ -6,6 +6,7 @@ import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { LiveRefresh } from "../../../../components/coreui/live-refresh";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
 import { NewsModule } from "../../../../components/coreui/news-module";
+import { CommunitySlipHub } from "../../../../components/coreui/community-slip-hub";
 import { OddsPredictionWidgets } from "../../../../components/coreui/odds-prediction-widgets";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
@@ -38,6 +39,8 @@ import { getFixtureNewsModule } from "../../../../lib/coreui/news-read";
 import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import { getPersonalizationSnapshot, sortFixturesByPersonalization } from "../../../../lib/personalization";
+import { buildFixtureSlipCatalogEntry, getCommunitySlipHubData } from "../../../../lib/community-slips";
+import { getCurrentUserFromServer } from "../../../../lib/auth";
 
 const VALID_TABS = ["match", "h2h", "standings", "video"];
 
@@ -191,20 +194,21 @@ export default async function MatchDetailPage({ params, searchParams }) {
     territory: filters?.territory,
     headers: await headers(),
   });
-  const [fixture, flags, personalization] = await Promise.all([
+  const [fixture, flags, personalization, userContext] = await Promise.all([
     getLiveMatchDetail(fixtureRef, locale, viewerTerritory, {
       standingsView: selectedStandingView,
       includeMatchCentre: true,
     }),
     getPublicSurfaceFlags(),
     getPersonalizationSnapshot(),
+    getCurrentUserFromServer(),
   ]);
 
   if (!fixture) {
     notFound();
   }
 
-  const [relatedMatchesRaw, relatedNews] = await Promise.all([
+  const [relatedMatchesRaw, relatedNews, communityHubRaw] = await Promise.all([
     getRelatedMatchesModule(
       {
         fixtureId: fixture.id,
@@ -224,6 +228,12 @@ export default async function MatchDetailPage({ params, searchParams }) {
           4
         )
       : Promise.resolve({ articles: [], total: 0 }),
+    getCommunitySlipHubData({
+      locale,
+      viewerTerritory,
+      currentUserId: userContext?.user?.id || null,
+      fixtureId: fixture.id,
+    }),
   ]);
   const relatedMatches = sortFixturesByPersonalization(
     relatedMatchesRaw,
@@ -235,6 +245,15 @@ export default async function MatchDetailPage({ params, searchParams }) {
   const matchCentre = fixture.matchCentre;
   const odds = fixture.odds;
   const broadcast = fixture.broadcast;
+  const communityHubData = {
+    ...communityHubRaw,
+    catalog: [
+      buildFixtureSlipCatalogEntry(fixture, {
+        locale,
+        viewerTerritory,
+      }),
+    ].filter(Boolean),
+  };
   const relatedNewsExperience = flags.news
     ? await getNewsModuleExperience({
         locale,
@@ -364,6 +383,12 @@ export default async function MatchDetailPage({ params, searchParams }) {
       odds.ctaConfig?.funnelActions?.length ||
       broadcast.quickActions?.primary ||
       broadcast.quickActions?.message
+  );
+  const hasCommunitySlips = Boolean(
+    communityHubData.featured ||
+      communityHubData.latest?.length ||
+      communityHubData.mine?.length ||
+      communityHubData.catalog?.length
   );
 
   const oddsContent = (
@@ -697,6 +722,25 @@ export default async function MatchDetailPage({ params, searchParams }) {
           ) : null}
         </article>
       </div>
+
+      {activeTab === "match" && hasCommunitySlips ? (
+        <section className={styles.section}>
+          <CommunitySlipHub
+            locale={locale}
+            dictionary={dictionary}
+            surface="match-community-slips"
+            entityType="fixture"
+            entityId={fixture.id}
+            viewerTerritory={viewerTerritory}
+            initialData={communityHubData}
+            authHref={`/${locale}/auth`}
+            predictionsHref={`/${locale}/predictions`}
+            allowComposer
+            fixtureId={fixture.id}
+            compact
+          />
+        </section>
+      ) : null}
 
       {activeTab === "match" && hasMatchInsights ? (
         <section className={styles.section}>

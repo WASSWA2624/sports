@@ -14,6 +14,7 @@ import { LiveBoardGroupList } from "../../components/coreui/live-board-group-lis
 import { LiveBoardMonetization } from "../../components/coreui/live-board-monetization";
 import { LiveRefresh } from "../../components/coreui/live-refresh";
 import { NewsModule } from "../../components/coreui/news-module";
+import { CommunitySlipHub } from "../../components/coreui/community-slip-hub";
 import { OnboardingPanel } from "../../components/coreui/onboarding-panel";
 import { PersonalizationUsageTracker } from "../../components/coreui/personalization-usage-tracker";
 import {
@@ -43,6 +44,8 @@ import {
 import { getPreferenceSnapshot } from "../../lib/coreui/preferences-server";
 import { getPlatformPublicSnapshotData } from "../../lib/platform/env";
 import { getProfileComplianceSnapshot } from "../../lib/profile-preferences";
+import { getCurrentUserFromServer } from "../../lib/auth";
+import { getCommunitySlipHubData } from "../../lib/community-slips";
 import {
   buildWebsiteSearchStructuredData,
   buildWebPageStructuredData,
@@ -61,7 +64,7 @@ export default async function LocaleHomePage({ params }) {
   const viewerTerritory = resolveViewerTerritory({
     headers: await headers(),
   });
-  const [snapshot, homeBoardFeed, homeNews, flags, personalization] = await Promise.all([
+  const [snapshot, homeBoardFeed, homeNews, flags, personalization, userContext] = await Promise.all([
     getHomeSnapshot(),
     getLiveMatchdayFeed({
       locale,
@@ -70,7 +73,13 @@ export default async function LocaleHomePage({ params }) {
     getHomepageNewsModule(),
     getPublicSurfaceFlags(),
     getPersonalizationSnapshot(),
+    getCurrentUserFromServer(),
   ]);
+  const communitySlipHub = await getCommunitySlipHubData({
+    locale,
+    viewerTerritory,
+    currentUserId: userContext?.user?.id || null,
+  });
   const usage = getPersonalizationUsage(personalization);
   const [
     topCompetitionsRaw,
@@ -187,6 +196,18 @@ export default async function LocaleHomePage({ params }) {
           })}
         </p>
       </section>
+
+      <CommunitySlipHub
+        locale={locale}
+        dictionary={dictionary}
+        surface="home-community-slips"
+        entityType="home"
+        entityId={locale}
+        viewerTerritory={viewerTerritory}
+        initialData={communitySlipHub}
+        authHref={`/${locale}/auth`}
+        predictionsHref={`/${locale}/predictions`}
+      />
 
       <section className={styles.homeBoard}>
         <header className={styles.pageHeader}>
