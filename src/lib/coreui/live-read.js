@@ -8,7 +8,14 @@ import {
   ensureStableSportsDataFresh,
   ensureVolatileSportsDataFresh,
 } from "../sports/freshness";
-import { buildGroupStandingsPreview, buildBestOddsCards, buildBoardGroupSummary, buildCompletedFixtureSummary, buildPredictionCards } from "./live-board";
+import {
+  buildBestOddsCards,
+  buildBoardGroupSummary,
+  buildCompletedFixtureSummary,
+  buildGroupStandingsPreview,
+  buildLiveBoardFixtureSignals,
+  buildPredictionCards,
+} from "./live-board";
 import { buildStandingTable } from "./competition-standings";
 import { buildFixtureBettingExperience } from "./odds-experience";
 import { getPublicSurfaceFlags } from "./feature-flags";
@@ -287,7 +294,50 @@ function serializeLiveBoardStandingsPreview(preview) {
   };
 }
 
-export function serializeLiveBoardFixture(fixture) {
+function serializeLiveBoardSignals(signals) {
+  if (!signals) {
+    return null;
+  }
+
+  return {
+    minuteLabel: signals.minuteLabel || null,
+    statusLabel: signals.statusLabel || null,
+    refresh: signals.refresh
+      ? {
+          enabled: Boolean(signals.refresh.enabled),
+          intervalMs: signals.refresh.intervalMs || 0,
+          until: serializeLiveBoardDate(signals.refresh.until),
+          label: signals.refresh.label || null,
+        }
+      : null,
+    stale: Boolean(signals.stale),
+    staleLabel: signals.staleLabel || null,
+    incidentCounts: {
+      goals: signals.incidentCounts?.goals || 0,
+      yellowCards: signals.incidentCounts?.yellowCards || 0,
+      redCards: signals.incidentCounts?.redCards || 0,
+      varChecks: signals.incidentCounts?.varChecks || 0,
+    },
+    incidentIndicators: signals.incidentIndicators || [],
+    teamCards: {
+      home: {
+        yellow: signals.teamCards?.home?.yellow || 0,
+        red: signals.teamCards?.home?.red || 0,
+      },
+      away: {
+        yellow: signals.teamCards?.away?.yellow || 0,
+        red: signals.teamCards?.away?.red || 0,
+      },
+    },
+    keyMomentLabel: signals.keyMomentLabel || null,
+    isTerminal: Boolean(signals.isTerminal),
+    isFrozen: Boolean(signals.isFrozen),
+    isSettling: Boolean(signals.isSettling),
+    freezeLabel: signals.freezeLabel || null,
+  };
+}
+
+export function serializeLiveBoardFixture(fixture, locale = "en") {
   if (!fixture) {
     return null;
   }
@@ -307,6 +357,7 @@ export function serializeLiveBoardFixture(fixture) {
     homeTeam: serializeLiveBoardTeam(fixture.homeTeam),
     awayTeam: serializeLiveBoardTeam(fixture.awayTeam),
     resultSnapshot: serializeLiveBoardResultSnapshot(fixture.resultSnapshot),
+    boardSignals: serializeLiveBoardSignals(buildLiveBoardFixtureSignals(fixture, locale)),
   };
 }
 
@@ -345,7 +396,9 @@ export function buildBoardGroups(fixtures, standingsBySeasonId, locale) {
 
       return {
         ...group,
-        fixtures: group.fixtures.map(serializeLiveBoardFixture).filter(Boolean),
+        fixtures: group.fixtures
+          .map((fixture) => serializeLiveBoardFixture(fixture, locale))
+          .filter(Boolean),
         summary: buildBoardGroupSummary(group.fixtures),
         completedSummary: buildCompletedFixtureSummary(group.fixtures, locale),
         standingsPreview: serializeLiveBoardStandingsPreview(standingsPreview),

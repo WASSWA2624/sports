@@ -825,3 +825,54 @@ export function buildFixtureIncidentIndicators(fixture, locale = "en") {
     counts.varChecks ? formatDictionaryText(dictionary.incidentVar, { count: counts.varChecks }) : null,
   ].filter(Boolean);
 }
+
+export function buildFixtureCardSummary(fixture, locale = "en") {
+  const timeline = buildTimelineItems(fixture, getFixturePayload(fixture), locale);
+
+  return timeline.reduce(
+    (summary, entry) => {
+      const side =
+        entry.side === "home" || entry.side === "away"
+          ? entry.side
+          : null;
+
+      if (!side) {
+        return summary;
+      }
+
+      if (entry.typeKey.includes("YELLOW")) {
+        summary[side].yellow += 1;
+      }
+
+      if (entry.typeKey.includes("RED")) {
+        summary[side].red += 1;
+      }
+
+      return summary;
+    },
+    {
+      home: { yellow: 0, red: 0 },
+      away: { yellow: 0, red: 0 },
+    }
+  );
+}
+
+export function buildFixtureKeyMomentLabel(fixture, locale = "en") {
+  const timeline = [...buildTimelineItems(fixture, getFixturePayload(fixture), locale)].sort(
+    (left, right) => right.sortValue - left.sortValue
+  );
+  const primary = timeline.find((entry) => entry.featured) || timeline[0];
+
+  if (!primary) {
+    return null;
+  }
+
+  const suffix = primary.actor || primary.score || primary.description || null;
+  const lead = [primary.minuteLabel, primary.title].filter(Boolean).join(" ");
+
+  if (!lead) {
+    return suffix;
+  }
+
+  return suffix ? `${lead} - ${suffix}` : lead;
+}

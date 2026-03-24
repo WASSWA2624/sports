@@ -522,3 +522,169 @@
     padding-bottom: 0.15rem;
   }
 }
+
+.fixtureRowLive {
+  border-color: rgba(228, 71, 71, 0.18);
+  background:
+    linear-gradient(135deg, rgba(228, 71, 71, 0.08), transparent 34%),
+    var(--surface-raised);
+}
+
+.groupCard {
+  position: relative;
+  overflow: hidden;
+  padding: 1.1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 32%),
+    var(--surface);
+}
+
+.toolbar {
+  gap: 1rem;
+}
+
+.fixtureRow {
+  grid-template-columns: 132px minmax(0, 1fr) minmax(200px, auto);
+  align-items: start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+.rowState {
+  gap: 0.42rem;
+  align-items: flex-start;
+}
+
+.rowBody {
+  min-width: 0;
+}
+
+.rowMainLink {
+  gap: 0.72rem;
+}
+
+.rowTopline,
+.rowUtilityActions,
+.rowPrimaryActions,
+.rowTeamSignals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.rowTeams {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rowTeam {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+}
+
+.rowTeamName {
+  line-height: 1.25;
+}
+
+.rowTeamSignals {
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.rowScore {
+  min-width: 1.8rem;
+}
+
+.rowMoment {
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.rowActions {
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.rowUtilityActions,
+.rowPrimaryActions {
+  justify-content: flex-end;
+}
+
+.signalList {
+  gap: 0.42rem;
+}
+
+.signalChip,
+.signalChipWarning,
+.signalChipSuccess {
+  max-width: 100%;
+}
+
+.standingsPreview {
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+@media (max-width: 1180px) {
+  .fixtureRow {
+    grid-template-columns: 118px minmax(0, 1fr);
+  }
+
+  .rowActions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 720px) {
+  .groupCard {
+    padding: 0.95rem;
+  }
+
+  .fixtureRow {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    padding: 0.9rem;
+  }
+
+  .rowState {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.38rem 0.55rem;
+  }
+
+  .rowActions,
+  .rowUtilityActions,
+  .rowPrimaryActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .rowPrimaryActions > a {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .toolbarMeta,
+  .groupMetrics,
+  .groupControls {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: 0.15rem;
+    scrollbar-width: none;
+  }
+
+  .toolbarMeta::-webkit-scrollbar,
+  .groupMetrics::-webkit-scrollbar,
+  .groupControls::-webkit-scrollbar {
+    display: none;
+  }
+}

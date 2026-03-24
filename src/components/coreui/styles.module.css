@@ -4650,6 +4650,71 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.liveBoardShell {
+  gap: 1rem;
+}
+
+.liveBoardHeader {
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.liveBoardTitleBlock {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.liveBoardHeaderStats,
+.liveBoardRail {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.liveBoardHeaderStats {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.liveCommandDeck,
+.liveBoardCommandCard,
+.liveMetricGrid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.liveBoardCommandCard {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%),
+    var(--surface-strong);
+}
+
+.liveBoardRail {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+}
+
+.liveBoardRail::-webkit-scrollbar {
+  display: none;
+}
+
+.liveMetricGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.liveMetricCard {
+  min-height: 100%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 38%),
+    var(--surface);
+}
+
 @media (max-width: 899px) {
   .headerMarketBadge {
     display: none;
@@ -4671,10 +4736,24 @@
   .footerGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .liveMetricGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
   .footerGrid {
     grid-template-columns: 1fr;
+  }
+
+  .liveBoardCommandCard {
+    padding: 0.85rem;
+  }
+
+  .liveBoardHeader,
+  .liveBoardHeaderStats {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

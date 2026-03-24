@@ -86,6 +86,16 @@ export default async function LivePage({ params, searchParams }) {
         articles: latestNews.articles,
       })
     : { promo: null };
+  const isCurrentDate = feed.selectedDate === new Date().toISOString().slice(0, 10);
+  const selectedStatusLabel =
+    feed.selectedStatus === "ALL"
+      ? dictionary.browseAll
+      : formatFixtureStatus(feed.selectedStatus, locale);
+  const selectedLeagueLabel =
+    feed.selectedLeague === "all"
+      ? dictionary.allLeagues
+      : feed.leaguePivots.find((pivot) => pivot.code === feed.selectedLeague)?.label ||
+        dictionary.allLeagues;
 
   return (
     <section className={styles.section}>
@@ -101,159 +111,206 @@ export default async function LivePage({ params, searchParams }) {
         until={feed.refresh.until}
       />
 
-      <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>{dictionary.livePageEyebrow}</p>
-          <h1 className={styles.pageTitle}>{dictionary.liveNow}</h1>
-          <p className={styles.pageLead}>
-            {formatDictionaryText(dictionary.livePageLead, {
-              live: feed.summary.LIVE,
-              scheduled: feed.summary.SCHEDULED,
-              finished: feed.summary.FINISHED,
-              date: selectedDateLabel,
+      <section className={`${styles.homeBoard} ${styles.liveBoardShell}`}>
+        <header className={`${styles.pageHeader} ${styles.liveBoardHeader}`}>
+          <div className={styles.liveBoardTitleBlock}>
+            <p className={styles.eyebrow}>{dictionary.livePageEyebrow}</p>
+            <h1 className={styles.pageTitle}>{dictionary.liveNow}</h1>
+            <p className={styles.pageLead}>
+              {formatDictionaryText(dictionary.livePageLead, {
+                live: feed.summary.LIVE,
+                scheduled: feed.summary.SCHEDULED,
+                finished: feed.summary.FINISHED,
+                date: selectedDateLabel,
+              })}
+            </p>
+
+            <div className={styles.liveBoardContextPills}>
+              <span className={styles.badge}>{selectedDateLabel}</span>
+              <span className={styles.badge}>{selectedStatusLabel}</span>
+              <span className={styles.badge}>{selectedLeagueLabel}</span>
+            </div>
+          </div>
+
+          <div className={styles.liveBoardHeaderStats}>
+            <span className={styles.liveBadge}>{feed.summary.LIVE}</span>
+            <span className={styles.badge}>{feed.refresh.label}</span>
+            <span className={styles.badge}>{selectedDateLabel}</span>
+          </div>
+        </header>
+
+        <div className={styles.liveCommandDeck}>
+          <div className={styles.liveBoardCommandCard}>
+            <div className={styles.liveBoardControlGrid}>
+              <section className={styles.liveBoardControlBlock}>
+                <div className={styles.liveBoardControlHead}>
+                  <p className={styles.eyebrow}>{dictionary.matchday}</p>
+                  <p className={styles.liveBoardControlHint}>{selectedDateLabel}</p>
+                </div>
+
+                <div className={styles.liveBoardRail}>
+                  <Link
+                    href={buildLiveHref(
+                      locale,
+                      feed.selectedStatus,
+                      feed.selectedLeague,
+                      shiftDate(feed.selectedDate, -1),
+                      filters?.geo
+                    )}
+                    className={styles.filterChip}
+                  >
+                    {dictionary.previousDay}
+                  </Link>
+                  <span className={styles.filterChipActive}>{selectedDateLabel}</span>
+                  <Link
+                    href={buildLiveHref(
+                      locale,
+                      feed.selectedStatus,
+                      feed.selectedLeague,
+                      shiftDate(feed.selectedDate, 1),
+                      filters?.geo
+                    )}
+                    className={styles.filterChip}
+                  >
+                    {dictionary.nextDay}
+                  </Link>
+                  {!isCurrentDate ? (
+                    <Link
+                      href={buildLiveHref(
+                        locale,
+                        feed.selectedStatus,
+                        feed.selectedLeague,
+                        new Date().toISOString().slice(0, 10),
+                        filters?.geo
+                      )}
+                      className={styles.filterChip}
+                    >
+                      {dictionary.liveNow}
+                    </Link>
+                  ) : null}
+                </div>
+              </section>
+
+              <section className={styles.liveBoardControlBlock}>
+                <div className={styles.liveBoardControlHead}>
+                  <p className={styles.eyebrow}>{dictionary.live}</p>
+                  <p className={styles.liveBoardControlHint}>{selectedStatusLabel}</p>
+                </div>
+
+                <div className={styles.liveBoardRail}>
+                  {feed.statusOptions.map((option) => {
+                    const href = buildLiveHref(
+                      locale,
+                      option.value,
+                      feed.selectedLeague,
+                      feed.selectedDate,
+                      filters?.geo
+                    );
+                    const label =
+                      option.value === "ALL"
+                        ? dictionary.browseAll
+                        : formatFixtureStatus(option.value, locale);
+
+                    return (
+                      <Link
+                        key={option.value}
+                        href={href}
+                        className={
+                          option.value === feed.selectedStatus ? styles.filterChipActive : styles.filterChip
+                        }
+                      >
+                        {label}
+                        <span className={styles.filterCount}>{option.count}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className={styles.liveBoardControlBlock}>
+                <div className={styles.liveBoardControlHead}>
+                  <p className={styles.eyebrow}>{dictionary.competition}</p>
+                  <p className={styles.liveBoardControlHint}>{selectedLeagueLabel}</p>
+                </div>
+
+                <div className={styles.liveBoardRail}>
+                  <Link
+                    href={buildLiveHref(locale, feed.selectedStatus, "all", feed.selectedDate, filters?.geo)}
+                    className={feed.selectedLeague === "all" ? styles.filterChipActive : styles.filterChip}
+                  >
+                    {dictionary.allLeagues}
+                    <span className={styles.filterCount}>
+                      {feed.selectedStatus === "ALL"
+                        ? feed.summary.total
+                        : feed.statusOptions.find((option) => option.value === feed.selectedStatus)?.count || 0}
+                    </span>
+                  </Link>
+
+                  {feed.leaguePivots.map((pivot) => (
+                    <Link
+                      key={pivot.code}
+                      href={buildLiveHref(
+                        locale,
+                        feed.selectedStatus,
+                        pivot.code,
+                        feed.selectedDate,
+                        filters?.geo
+                      )}
+                      className={pivot.code === feed.selectedLeague ? styles.filterChipActive : styles.filterChip}
+                    >
+                      {pivot.label}
+                      <span className={styles.filterCount}>{pivot.count}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div className={styles.liveMetricGrid}>
+            <article className={`${styles.panel} ${styles.liveMetricCard}`}>
+              <strong className={styles.summaryValue}>{feed.summary.LIVE}</strong>
+              <p className={styles.muted}>{dictionary.liveMatches}</p>
+            </article>
+            <article className={`${styles.panel} ${styles.liveMetricCard}`}>
+              <strong className={styles.summaryValue}>{feed.summary.SCHEDULED}</strong>
+              <p className={styles.muted}>{dictionary.kickoffWindow}</p>
+            </article>
+            <article className={`${styles.panel} ${styles.liveMetricCard}`}>
+              <strong className={styles.summaryValue}>{feed.summary.FINISHED}</strong>
+              <p className={styles.muted}>{dictionary.resultSnapshots}</p>
+            </article>
+          </div>
+        </div>
+
+        {feed.surfaceState.degraded ? (
+          <div className={styles.infoBanner}>{dictionary.liveDataDegraded}</div>
+        ) : null}
+
+        {feed.surfaceState.stale ? (
+          <div className={styles.infoBanner}>
+            {formatDictionaryText(dictionary.liveDataStale, {
+              count: feed.surfaceState.staleCount,
             })}
-          </p>
-        </div>
-        <div className={styles.sectionTools}>
-          <span className={styles.liveBadge}>{feed.summary.LIVE}</span>
-          <span className={styles.badge}>{feed.refresh.label}</span>
-        </div>
-      </header>
+          </div>
+        ) : null}
 
-      <div className={styles.filterRow}>
-        <Link
-          href={buildLiveHref(
-            locale,
-            feed.selectedStatus,
-            feed.selectedLeague,
-            shiftDate(feed.selectedDate, -1),
-            filters?.geo
-          )}
-          className={styles.filterChip}
-        >
-          {dictionary.previousDay}
-        </Link>
-        <span className={styles.filterChipActive}>{selectedDateLabel}</span>
-        <Link
-          href={buildLiveHref(
-            locale,
-            feed.selectedStatus,
-            feed.selectedLeague,
-            shiftDate(feed.selectedDate, 1),
-            filters?.geo
-          )}
-          className={styles.filterChip}
-        >
-          {dictionary.nextDay}
-        </Link>
-      </div>
+        <LiveBoardGroupList
+          locale={locale}
+          dictionary={dictionary}
+          groups={feed.groups}
+          monetization={feed.monetization}
+          surface="live-board"
+          emptyLabel={dictionary.liveFilterEmpty}
+        />
 
-      {feed.surfaceState.degraded ? (
-        <div className={styles.infoBanner}>{dictionary.liveDataDegraded}</div>
-      ) : null}
-
-      {feed.surfaceState.stale ? (
-        <div className={styles.infoBanner}>
-          {formatDictionaryText(dictionary.liveDataStale, {
-            count: feed.surfaceState.staleCount,
-          })}
-        </div>
-      ) : null}
-
-      <div className={styles.grid}>
-        <article className={styles.panel}>
-          <strong className={styles.summaryValue}>{feed.summary.LIVE}</strong>
-          <p className={styles.muted}>{dictionary.liveMatches}</p>
-        </article>
-        <article className={styles.panel}>
-          <strong className={styles.summaryValue}>{feed.summary.SCHEDULED}</strong>
-          <p className={styles.muted}>{dictionary.kickoffWindow}</p>
-        </article>
-        <article className={styles.panel}>
-          <strong className={styles.summaryValue}>{feed.summary.FINISHED}</strong>
-          <p className={styles.muted}>{dictionary.resultSnapshots}</p>
-        </article>
-      </div>
-
-      <div className={styles.filterStack}>
-        <div className={styles.filterRow}>
-          {feed.statusOptions.map((option) => {
-            const href = buildLiveHref(
-              locale,
-              option.value,
-              feed.selectedLeague,
-              feed.selectedDate,
-              filters?.geo
-            );
-            const label =
-              option.value === "ALL"
-                ? dictionary.browseAll
-                : formatFixtureStatus(option.value, locale);
-
-            return (
-              <Link
-                key={option.value}
-                href={href}
-                className={
-                  option.value === feed.selectedStatus ? styles.filterChipActive : styles.filterChip
-                }
-              >
-                {label}
-                <span className={styles.filterCount}>{option.count}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className={styles.filterRow}>
-          <Link
-            href={buildLiveHref(locale, feed.selectedStatus, "all", feed.selectedDate, filters?.geo)}
-            className={feed.selectedLeague === "all" ? styles.filterChipActive : styles.filterChip}
-          >
-            {dictionary.allLeagues}
-            <span className={styles.filterCount}>
-              {feed.selectedStatus === "ALL"
-                ? feed.summary.total
-                : feed.statusOptions.find((option) => option.value === feed.selectedStatus)?.count || 0}
-            </span>
-          </Link>
-
-          {feed.leaguePivots.map((pivot) => (
-            <Link
-              key={pivot.code}
-              href={buildLiveHref(
-                locale,
-                feed.selectedStatus,
-                pivot.code,
-                feed.selectedDate,
-                filters?.geo
-              )}
-              className={
-                pivot.code === feed.selectedLeague ? styles.filterChipActive : styles.filterChip
-              }
-            >
-              {pivot.label}
-              <span className={styles.filterCount}>{pivot.count}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <LiveBoardMonetization
-        locale={locale}
-        dictionary={dictionary}
-        monetization={feed.monetization}
-        surface="live-board"
-      />
-
-      <LiveBoardGroupList
-        locale={locale}
-        dictionary={dictionary}
-        groups={feed.groups}
-        monetization={feed.monetization}
-        surface="live-board"
-        emptyLabel={dictionary.liveFilterEmpty}
-      />
+        <LiveBoardMonetization
+          locale={locale}
+          dictionary={dictionary}
+          monetization={feed.monetization}
+          surface="live-board"
+        />
+      </section>
 
       {feed.flags?.liveNews ? (
         <NewsModule

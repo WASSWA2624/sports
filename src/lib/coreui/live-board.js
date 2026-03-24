@@ -1,6 +1,14 @@
 import { buildStandingTable } from "./competition-standings";
 import { getDictionary } from "./dictionaries";
-import { buildFixtureIncidentCounts, buildFixtureIncidentIndicators, buildFixtureRefreshProfile, getFixtureMinute, isTerminalStatus } from "./live-detail";
+import {
+  buildFixtureCardSummary,
+  buildFixtureIncidentCounts,
+  buildFixtureIncidentIndicators,
+  buildFixtureKeyMomentLabel,
+  buildFixtureRefreshProfile,
+  getFixtureMinute,
+  isTerminalStatus,
+} from "./live-detail";
 import { formatFixtureStatus, formatSnapshotTime } from "./format";
 
 const LIVE_STALE_MS = 1000 * 60 * 8;
@@ -76,6 +84,29 @@ export function buildBoardGroupSummary(fixtures = []) {
 }
 
 export function buildLiveBoardFixtureSignals(fixture, locale = "en") {
+  if (fixture?.boardSignals) {
+    return {
+      ...fixture.boardSignals,
+      incidentCounts: fixture.boardSignals.incidentCounts || {
+        goals: 0,
+        yellowCards: 0,
+        redCards: 0,
+        varChecks: 0,
+      },
+      incidentIndicators: fixture.boardSignals.incidentIndicators || [],
+      teamCards: fixture.boardSignals.teamCards || {
+        home: { yellow: 0, red: 0 },
+        away: { yellow: 0, red: 0 },
+      },
+      refresh: fixture.boardSignals.refresh || {
+        enabled: false,
+        intervalMs: 0,
+        until: null,
+        label: null,
+      },
+    };
+  }
+
   const dictionary = getDictionary(locale);
   const refresh = buildFixtureRefreshProfile(fixture, locale);
   const minuteLabel = fixture?.status === "LIVE" ? getFixtureMinute(fixture, locale) : null;
@@ -91,6 +122,8 @@ export function buildLiveBoardFixtureSignals(fixture, locale = "en") {
     staleLabel: stale ? dictionary.liveRowStale : null,
     incidentCounts,
     incidentIndicators: buildFixtureIncidentIndicators(fixture, locale),
+    teamCards: buildFixtureCardSummary(fixture, locale),
+    keyMomentLabel: buildFixtureKeyMomentLabel(fixture, locale),
     isTerminal: isTerminalStatus(fixture?.status),
     isFrozen: isTerminalStatus(fixture?.status) && Boolean(snapshotCapturedAt) && !refresh.enabled,
     isSettling: isTerminalStatus(fixture?.status) && Boolean(snapshotCapturedAt) && refresh.enabled,

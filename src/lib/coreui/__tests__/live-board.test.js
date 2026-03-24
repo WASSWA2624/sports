@@ -67,6 +67,11 @@ describe("live board helpers", () => {
       yellowCards: 1,
       redCards: 0,
     });
+    expect(liveSignals.teamCards).toEqual({
+      home: { yellow: 0, red: 0 },
+      away: { yellow: 0, red: 0 },
+    });
+    expect(liveSignals.keyMomentLabel).toContain("Goal");
     expect(finishedSignals.isFrozen).toBe(true);
     expect(finishedSignals.freezeLabel).toContain("Snapshot frozen");
   });

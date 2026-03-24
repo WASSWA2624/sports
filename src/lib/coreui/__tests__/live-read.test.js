@@ -183,6 +183,32 @@ describe("live read helpers", () => {
         statusText: "82'",
         capturedAt: "2026-03-24T18:08:10.000Z",
       },
+      boardSignals: {
+        minuteLabel: null,
+        statusLabel: "Live",
+        refresh: expect.objectContaining({
+          enabled: true,
+          intervalMs: 20000,
+        }),
+        stale: false,
+        staleLabel: null,
+        incidentCounts: {
+          goals: 0,
+          yellowCards: 0,
+          redCards: 0,
+          varChecks: 0,
+        },
+        incidentIndicators: [],
+        teamCards: {
+          home: { yellow: 0, red: 0 },
+          away: { yellow: 0, red: 0 },
+        },
+        keyMomentLabel: null,
+        isTerminal: false,
+        isFrozen: false,
+        isSettling: false,
+        freezeLabel: expect.stringContaining("Snapshot frozen"),
+      },
     });
     expect(groups[0].fixtures[0]).not.toHaveProperty("oddsMarkets");
   });
