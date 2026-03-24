@@ -14,6 +14,7 @@ const sw = {
   leagues: "Ligi",
   teams: "Timu",
   scores: "Matokeo",
+  bettingSlips: "Slips za kubeti",
   news: "Habari",
   search: "Tafuta",
   login: "Ingia",
@@ -609,6 +610,7 @@ const sw = {
   communitySlipsToday: "Zilizochapishwa leo",
   communitySlipsAuthors: "Waandishi hai",
   communitySlipsFixtures: "Mechi zinazofuatiliwa",
+  communitySlipsCreateAction: "Tengeneza slip sasa",
   communitySlipsOpenPredictions: "Fungua hub ya slips",
   communitySlipsSignInAction: "Ingia ili kuchapisha",
   communitySlipsRefreshFailed: "Imeshindikana kusasisha slips za jamii.",
@@ -619,6 +621,8 @@ const sw = {
   communitySlipsComposerTitle: "Tengeneza slip yako",
   communitySlipsComposerLead:
     "Chagua odds zilizo hai, ongeza maelezo mafupi, kisha hifadhi kama draft au chapisha mara moja.",
+  communitySlipsComposerAcrossSportsLead:
+    "Changanya football, tennis, basketball na mingine kwenye slip moja bila kutoka kwenye composer.",
   communitySlipsComposerFixture: "Chagua mechi",
   communitySlipsComposerTitleLabel: "Kichwa cha slip",
   communitySlipsComposerTitlePlaceholder: "Banker ya wikiendi, multi ya late goals, mtazamo wa derby...",
@@ -626,9 +630,17 @@ const sw = {
   communitySlipsComposerSummaryPlaceholder:
     "Weka sababu fupi ili watu wengine waone unachoona kwenye picks hizi.",
   communitySlipsComposerStakeLabel: "Stake",
+  communitySlipsSportFilterLabel: "Chagua sport",
+  communitySlipsAllSports: "Sports zote",
+  communitySlipsSearchFixturesLabel: "Tafuta mechi",
+  communitySlipsSearchFixturesPlaceholder: "Tafuta timu, mashindano au sports",
+  communitySlipsAvailableFixtures: "Mechi zinazopatikana",
+  communitySlipsSelectedFixtureLabel: "Mechi iliyochaguliwa",
   communitySlipsComposerMarkets: "Masoko yaliyopo",
   communitySlipsComposerPicks: "Picks za sasa",
   communitySlipsNoMarkets: "Hakuna odds hai zinazopatikana kwa mechi hii kwa sasa.",
+  communitySlipsNoFixturesMatch:
+    "Hakuna mechi inayolingana na sport au utafutaji huu kwa sasa.",
   communitySlipsEmptyComposer: "Ongeza pick moja au zaidi ili kuanza slip yako.",
   communitySlipsUpdateDraft: "Sasisha draft",
   communitySlipsSaveDraft: "Hifadhi draft",
@@ -640,6 +652,7 @@ const sw = {
     "Kwanza tazama slips za umma, kisha ingia ili kuhifadhi drafts na predictions zako kwenye sessions na vifaa tofauti.",
   communitySlipsFeatured: "Slip iliyoangaziwa",
   communitySlipsCommunityPulse: "Mdundo wa jamii",
+  communitySlipsAcrossSportsBadge: "Builder wa multi-sport",
   communitySlipsLatest: "Slips mpya za jamii",
   communitySlipsMineTitle: "Slips zako",
   communitySlipsMineEmpty: "Bado huna slip iliyohifadhiwa.",
@@ -676,6 +689,7 @@ const sw = {
   predictionsSurfaceTitle: "Makabidhiano ya surface",
   predictionsSurfaceBody:
     "Njia za competition na match tayari zinaweza kurithi moduli za predictions bila kubadili shell au muundo wa routes.",
+  createSlip: "Tengeneza slip",
   openLeagueDirectory: "Fungua orodha ya ligi",
   affiliatesEyebrow: "Msingi wa affiliate",
   affiliatesTitle: "Eneo la affiliate",

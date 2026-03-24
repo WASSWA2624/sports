@@ -14,6 +14,7 @@ const fr = {
   leagues: "Ligues",
   teams: "Équipes",
   scores: "Scores",
+  bettingSlips: "Slips de paris",
   news: "Actualités",
   search: "Rechercher",
   login: "Connexion",
@@ -607,6 +608,7 @@ const fr = {
   communitySlipsToday: "Publies aujourd'hui",
   communitySlipsAuthors: "Auteurs actifs",
   communitySlipsFixtures: "Matchs suivis",
+  communitySlipsCreateAction: "Creer un slip maintenant",
   communitySlipsOpenPredictions: "Ouvrir le hub",
   communitySlipsSignInAction: "Se connecter pour publier",
   communitySlipsRefreshFailed: "Impossible de rafraichir les slips de la communaute.",
@@ -617,6 +619,8 @@ const fr = {
   communitySlipsComposerTitle: "Creez votre slip",
   communitySlipsComposerLead:
     "Choisissez des cotes actives, ajoutez une courte lecture, puis gardez le slip en brouillon ou publiez-le.",
+  communitySlipsComposerAcrossSportsLead:
+    "Melangez football, tennis, basketball et plus encore dans un seul slip sans quitter le composeur.",
   communitySlipsComposerFixture: "Choisir un match",
   communitySlipsComposerTitleLabel: "Titre du slip",
   communitySlipsComposerTitlePlaceholder: "Banker du week-end, multi buts tardifs, lecture du derby...",
@@ -624,9 +628,17 @@ const fr = {
   communitySlipsComposerSummaryPlaceholder:
     "Ajoutez une raison courte pour montrer a la communaute ce que vous voyez dans ces selections.",
   communitySlipsComposerStakeLabel: "Mise",
+  communitySlipsSportFilterLabel: "Choisir un sport",
+  communitySlipsAllSports: "Tous les sports",
+  communitySlipsSearchFixturesLabel: "Trouver un match",
+  communitySlipsSearchFixturesPlaceholder: "Chercher equipes, competitions ou sports",
+  communitySlipsAvailableFixtures: "Matchs disponibles",
+  communitySlipsSelectedFixtureLabel: "Match selectionne",
   communitySlipsComposerMarkets: "Marches disponibles",
   communitySlipsComposerPicks: "Selections en cours",
   communitySlipsNoMarkets: "Aucune cote active n'est disponible pour ce match pour le moment.",
+  communitySlipsNoFixturesMatch:
+    "Aucun match ne correspond encore a ce sport ou a cette recherche.",
   communitySlipsEmptyComposer: "Ajoutez au moins une selection pour demarrer votre slip.",
   communitySlipsUpdateDraft: "Mettre a jour le brouillon",
   communitySlipsSaveDraft: "Enregistrer le brouillon",
@@ -638,6 +650,7 @@ const fr = {
     "Consultez d'abord les slips publics, puis connectez-vous pour garder vos propres brouillons et predictions sur tous vos appareils.",
   communitySlipsFeatured: "Slip en vedette",
   communitySlipsCommunityPulse: "Tendance communaute",
+  communitySlipsAcrossSportsBadge: "Builder multi-sport",
   communitySlipsLatest: "Derniers slips publics",
   communitySlipsMineTitle: "Vos slips",
   communitySlipsMineEmpty: "Vous n'avez pas encore de slip enregistre.",
@@ -674,6 +687,7 @@ const fr = {
   predictionsSurfaceTitle: "Handoff de surface",
   predictionsSurfaceBody:
     "Les routes competition et match sont deja pretes a recevoir des modules predictions sans changer le shell ni le modele de route.",
+  createSlip: "Creer un slip",
   openLeagueDirectory: "Ouvrir le repertoire des ligues",
   affiliatesEyebrow: "Base affiliate",
   affiliatesTitle: "Espace affiliate",

@@ -63,9 +63,15 @@
 .heroActions,
 .cardActions,
 .composerActions,
-.fixtureTabs,
 .metaRow,
 .badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.heroSports,
+.sportFilters {
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
@@ -102,6 +108,38 @@
   color: color-mix(in srgb, var(--text-secondary) 88%, #334155 12%);
   font-size: 1rem;
   line-height: 1.6;
+}
+
+.heroSportPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.52rem;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.82rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, rgba(255, 255, 255, 0.34));
+  background: rgba(255, 255, 255, 0.46);
+  color: color-mix(in srgb, var(--text-primary) 90%, #7c2d12 10%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+
+.heroSportPill strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  font-size: 0.74rem;
+}
+
+.heroSportIcon {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
 .stats {
@@ -356,6 +394,8 @@
 }
 
 .composerCard {
+  display: grid;
+  gap: 1rem;
   background:
     radial-gradient(circle at top right, rgba(251, 191, 36, 0.14), transparent 26%),
     linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 48%),
@@ -363,6 +403,8 @@
 }
 
 .signInCard {
+  display: grid;
+  gap: 0.9rem;
   background:
     radial-gradient(circle at top left, rgba(251, 191, 36, 0.14), transparent 24%),
     linear-gradient(145deg, color-mix(in srgb, var(--surface-raised) 85%, white 15%), var(--surface-base));
@@ -489,12 +531,23 @@
   margin-top: 0.2rem;
 }
 
-.selectionItem,
-.pickItem {
+.selectionItem {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.85rem;
+  width: 100%;
+  padding: 0.88rem 0.92rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(255, 255, 255, 0.3));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 100%),
+    color-mix(in srgb, var(--surface-overlay) 84%, rgba(255, 255, 255, 0.2));
+}
+
+.pickItem {
+  display: grid;
+  gap: 0.82rem;
   width: 100%;
   padding: 0.88rem 0.92rem;
   border-radius: 1rem;
@@ -577,9 +630,22 @@
 .field,
 .stack,
 .marketGroup,
-.inlineReasonField {
+.inlineReasonField,
+.composerBrowser {
   display: grid;
   gap: 0.85rem;
+}
+
+.composerHighlight {
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(249, 115, 22, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 122, 24, 0.12), rgba(251, 113, 133, 0.12)),
+    color-mix(in srgb, var(--surface-overlay) 86%, rgba(255, 255, 255, 0.22));
+  color: color-mix(in srgb, var(--text-primary) 88%, #7c2d12 12%);
+  font-weight: 600;
+  line-height: 1.55;
 }
 
 .field {
@@ -616,15 +682,12 @@
   resize: vertical;
 }
 
-.fixtureTabs {
-  gap: 0.55rem;
-}
-
-.fixtureTabActive,
-.fixtureTab {
+.sportFilter,
+.sportFilterActive {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.45rem;
   min-height: 2.35rem;
   padding: 0.5rem 0.92rem;
   border-radius: 999px;
@@ -638,15 +701,118 @@
     background 150ms ease;
 }
 
-.fixtureTabActive {
+.sportFilter strong,
+.sportFilterActive strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  padding: 0 0.24rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  font-size: 0.72rem;
+}
+
+.sportFilterActive {
   background: linear-gradient(135deg, rgba(255, 122, 24, 0.18), rgba(251, 113, 133, 0.18));
   border-color: rgba(249, 115, 22, 0.3);
   color: var(--text-primary);
 }
 
-.fixtureTab {
+.sportFilter {
   background: color-mix(in srgb, var(--surface-overlay) 88%, rgba(255, 255, 255, 0.2));
   color: var(--text-secondary);
+}
+
+.filterIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.fixtureBrowser {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.8rem;
+}
+
+.fixtureCard,
+.fixtureCardActive {
+  display: grid;
+  gap: 0.72rem;
+  width: 100%;
+  padding: 0.92rem;
+  border-radius: 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, rgba(255, 255, 255, 0.3));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 100%),
+    color-mix(in srgb, var(--surface-overlay) 84%, rgba(255, 255, 255, 0.2));
+  text-align: left;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.fixtureCard:hover,
+.fixtureCardActive:hover {
+  transform: translateY(-2px);
+}
+
+.fixtureCardActive {
+  border-color: rgba(249, 115, 22, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 122, 24, 0.18), rgba(251, 113, 133, 0.14)),
+    color-mix(in srgb, var(--surface-overlay) 84%, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 14px 24px rgba(249, 115, 22, 0.12);
+}
+
+.fixtureCardHeader,
+.fixtureCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.fixtureSportBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 1.8rem;
+  padding: 0.22rem 0.64rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.fixtureSportIcon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.fixtureTime {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fixtureCardTitle {
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.fixtureCardMeta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
 .marketGroupTitle {
@@ -740,6 +906,14 @@
   padding: 1rem;
 }
 
+.formGrid {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.formGrid > :nth-child(2) {
+  grid-column: 1 / -1;
+}
+
 @media (min-width: 780px) {
   .heroLayout {
     grid-template-columns: minmax(0, 1.18fr) minmax(18rem, 0.82fr);
@@ -765,9 +939,18 @@
 
   .cardHeader,
   .selectionItem,
-  .pickItem,
   .spotlightSelection {
     flex-direction: column;
+  }
+
+  .fixtureCardHeader,
+  .fixtureCardFooter,
+  .pickBody {
+    align-items: flex-start;
+  }
+
+  .formGrid > :nth-child(2) {
+    grid-column: auto;
   }
 
   .price {
