@@ -1,0 +1,97 @@
+.dock {
+  position: fixed;
+  left: max(0.75rem, env(safe-area-inset-left));
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 36;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dockInner {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: min(100%, 28rem);
+  padding: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 100%),
+    var(--surface-tint);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(20px);
+}
+
+.action,
+.createAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.85rem;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(0.78rem, 2.3vw, 0.88rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.action {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.actionActive,
+.action:hover {
+  background: var(--shell-chip-bg);
+  border-color: var(--shell-bar-border);
+  transform: translateY(-1px);
+}
+
+.createAction {
+  border: 1px solid rgba(255, 31, 89, 0.26);
+  background: linear-gradient(135deg, rgba(255, 31, 89, 0.92), rgba(33, 109, 255, 0.72));
+  color: #fff9fb;
+  box-shadow: 0 12px 22px rgba(255, 31, 89, 0.18);
+}
+
+.createAction:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(255, 31, 89, 0.24);
+}
+
+.actionContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+@media (min-width: 900px) {
+  .dock {
+    justify-content: flex-end;
+  }
+
+  .dockInner {
+    width: auto;
+    min-width: 25rem;
+  }
+}
