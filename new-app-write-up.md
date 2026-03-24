@@ -86,7 +86,7 @@ Every high-traffic surface must:
 * logo
 * Scores / News switch
 * search
-* login/profile
+* register/login/profile
 * utility actions
 
 ---

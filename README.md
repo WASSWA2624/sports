@@ -99,6 +99,25 @@ BASE_URL=https://sports.example npm run test:smoke
 
 `npm run release:artifact` creates a versioned bundle under `build/releases/<release-version>/`.
 
+## Handoff and Maintenance
+
+Primary handoff docs:
+
+- `docs/handoff-technical-2026-03-24.md`
+- `docs/handoff-operations-2026-03-24.md`
+- `docs/handoff-roadmap-2026-03-24.md`
+- `docs/handoff-maintenance-2026-03-24.md`
+- `docs/handoff-walkthroughs-2026-03-24.md`
+- `docs/baseline-metrics-2026-03-24.md`
+
+Baseline archive command:
+
+```bash
+npm run maintenance:baseline
+```
+
+The baseline archive is written to `build/baselines/` and is intended to be refreshed during recurring maintenance reviews.
+
 ## Operational Health
 
 Public health endpoint: `GET /api/health`
