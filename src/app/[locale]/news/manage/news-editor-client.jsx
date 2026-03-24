@@ -142,6 +142,35 @@ function buildQualityPreview(form, options) {
   });
 }
 
+function predictionToForm(prediction) {
+  return {
+    title: prediction?.title || "",
+    summary: prediction?.summary || "",
+    recommendationType: prediction?.recommendationType || "PICK",
+    marketType: prediction?.marketType || "",
+    selectionLabel: prediction?.selectionLabel || "",
+    confidence:
+      Number.isFinite(prediction?.confidence) || prediction?.confidence === 0
+        ? String(prediction.confidence)
+        : "",
+    edgeScore:
+      Number.isFinite(prediction?.edgeScore) || prediction?.edgeScore === 0
+        ? String(prediction.edgeScore)
+        : "",
+    isPublished: Boolean(prediction?.isPublished),
+    publishedAt: toDateTimeLocal(prediction?.publishedAt),
+    expiresAt: toDateTimeLocal(prediction?.expiresAt),
+    reviewStatus: prediction?.reviewStatus || "PENDING",
+    reviewNotes: prediction?.reviewNotes || "",
+  };
+}
+
+function buildPredictionDrafts(predictions = []) {
+  return Object.fromEntries(
+    predictions.map((prediction) => [prediction.key, predictionToForm(prediction)])
+  );
+}
+
 async function loadWorkspace() {
   const response = await fetch("/api/news/articles?includeDrafts=1");
   const payload = await response.json();
@@ -164,6 +193,10 @@ export default function NewsEditorClient({
   );
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [predictionDrafts, setPredictionDrafts] = useState(() =>
+    buildPredictionDrafts(initialWorkspace.predictions || [])
+  );
+  const [predictionWorkingKey, setPredictionWorkingKey] = useState("");
 
   const selectedArticle =
     workspace.articles.find((article) => article.id === selectedArticleId) || null;
@@ -208,11 +241,22 @@ export default function NewsEditorClient({
   async function refreshWorkspace(nextSelectedArticleId = selectedArticleId) {
     const nextWorkspace = await loadWorkspace();
     setWorkspace(nextWorkspace);
+    setPredictionDrafts(buildPredictionDrafts(nextWorkspace.predictions || []));
 
     const nextSelected =
       nextWorkspace.articles.find((article) => article.id === nextSelectedArticleId) || null;
     setSelectedArticleId(nextSelected?.id || null);
     setForm(articleToForm(nextSelected, nextWorkspace.categories));
+  }
+
+  function updatePredictionField(key, patch) {
+    setPredictionDrafts((current) => ({
+      ...current,
+      [key]: {
+        ...current[key],
+        ...patch,
+      },
+    }));
   }
 
   async function handleSave(event) {
@@ -276,6 +320,34 @@ export default function NewsEditorClient({
     setMessage("");
   }
 
+  async function savePredictionReview(key) {
+    setPredictionWorkingKey(key);
+    setMessage("");
+
+    const draft = predictionDrafts[key];
+    const response = await fetch(`/api/news/predictions/${key}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ...draft,
+        confidence: draft.confidence === "" ? null : Number(draft.confidence),
+        edgeScore: draft.edgeScore === "" ? null : Number(draft.edgeScore),
+        publishedAt: toIsoDateTime(draft.publishedAt),
+        expiresAt: toIsoDateTime(draft.expiresAt),
+      }),
+    });
+    const data = await response.json();
+    setPredictionWorkingKey("");
+
+    if (!response.ok) {
+      setMessage(data.error || dictionary.newsManagePredictionSaveFailed);
+      return;
+    }
+
+    await refreshWorkspace(selectedArticleId);
+    setMessage(dictionary.newsManagePredictionSaved);
+  }
+
   const groupedOptions = [
     {
       entityType: "SPORT",
@@ -334,6 +406,12 @@ export default function NewsEditorClient({
         </div>
         <div className={sharedStyles.inlineBadgeRow}>
           <span className={sharedStyles.badge}>{workspace.summary.total}</span>
+          <span className={sharedStyles.badge}>
+            {dictionary.newsManagePredictionPending}: {workspace.summary.predictionsPendingReview}
+          </span>
+          <span className={sharedStyles.badge}>
+            {dictionary.newsManagePredictionPublishedCount}: {workspace.summary.publishedPredictions}
+          </span>
           <button type="button" className={sharedStyles.actionLink} onClick={createDraft}>
             {dictionary.newsManageNew}
           </button>
@@ -372,7 +450,7 @@ export default function NewsEditorClient({
                   <span className={sharedStyles.badge}>{article.status}</span>
                   {article.openIssueCount ? (
                     <span className={sharedStyles.indicatorBadge}>
-                      Open issues {article.openIssueCount}
+                      {dictionary.newsManageOpenIssues}: {article.openIssueCount}
                     </span>
                   ) : null}
                 </div>
@@ -505,7 +583,7 @@ export default function NewsEditorClient({
             </div>
 
             <label className={editorStyles.field}>
-              <span>Homepage rank</span>
+              <span>{dictionary.newsManageHomepageRank}</span>
               <input
                 type="number"
                 min="1"
@@ -692,6 +770,227 @@ export default function NewsEditorClient({
                   </div>
                 </section>
               ))}
+            </div>
+          </article>
+
+          <article className={sharedStyles.panel}>
+            <div className={sharedStyles.sectionHeader}>
+              <div>
+                <p className={sharedStyles.eyebrow}>{dictionary.newsManagePredictionReview}</p>
+                <h2 className={sharedStyles.cardTitle}>
+                  {dictionary.newsManagePredictionReviewTitle}
+                </h2>
+              </div>
+              <span className={sharedStyles.badge}>{workspace.predictions.length}</span>
+            </div>
+
+            <div className={editorStyles.predictionList}>
+              {workspace.predictions.map((prediction) => {
+                const draft = predictionDrafts[prediction.key] || predictionToForm(prediction);
+
+                return (
+                  <div key={prediction.key} className={editorStyles.predictionCard}>
+                    <div className={sharedStyles.inlineBadgeRow}>
+                      <span className={sharedStyles.badge}>{prediction.key}</span>
+                      <span className={sharedStyles.badge}>
+                        {prediction.isPublished
+                          ? dictionary.newsManagePredictionPublished
+                          : dictionary.newsManagePredictionDraft}
+                      </span>
+                      <span className={sharedStyles.badge}>
+                        {draft.reviewStatus || prediction.reviewStatus}
+                      </span>
+                    </div>
+
+                    <div className={editorStyles.predictionMeta}>
+                      {prediction.fixtureLabel ? <strong>{prediction.fixtureLabel}</strong> : null}
+                      {prediction.competitionLabel ? (
+                        <span className={sharedStyles.muted}>{prediction.competitionLabel}</span>
+                      ) : null}
+                      {prediction.bookmakerLabel ? (
+                        <span className={sharedStyles.muted}>{prediction.bookmakerLabel}</span>
+                      ) : null}
+                    </div>
+
+                    <div className={editorStyles.formGrid}>
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionTitle}</span>
+                        <input
+                          value={draft.title}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, { title: event.target.value })
+                          }
+                        />
+                      </label>
+
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionType}</span>
+                        <input
+                          value={draft.recommendationType}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              recommendationType: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <label className={editorStyles.field}>
+                      <span>{dictionary.newsManagePredictionSummary}</span>
+                      <textarea
+                        rows={3}
+                        value={draft.summary}
+                        onChange={(event) =>
+                          updatePredictionField(prediction.key, { summary: event.target.value })
+                        }
+                      />
+                    </label>
+
+                    <div className={editorStyles.formGrid}>
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionSelection}</span>
+                        <input
+                          value={draft.selectionLabel}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              selectionLabel: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionMarket}</span>
+                        <input
+                          value={draft.marketType}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              marketType: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div className={editorStyles.formGrid}>
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionConfidence}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={draft.confidence}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              confidence: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionEdge}</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={draft.edgeScore}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              edgeScore: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div className={editorStyles.formGrid}>
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionPublishedAt}</span>
+                        <input
+                          type="datetime-local"
+                          value={draft.publishedAt}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              publishedAt: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionExpiresAt}</span>
+                        <input
+                          type="datetime-local"
+                          value={draft.expiresAt}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              expiresAt: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div className={editorStyles.formGrid}>
+                      <label className={editorStyles.field}>
+                        <span>{dictionary.newsManagePredictionReviewStatus}</span>
+                        <select
+                          value={draft.reviewStatus}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              reviewStatus: event.target.value,
+                            })
+                          }
+                        >
+                          <option value="PENDING">{dictionary.newsManagePredictionPending}</option>
+                          <option value="APPROVED">{dictionary.newsManagePredictionApproved}</option>
+                          <option value="HOLD">{dictionary.newsManagePredictionHold}</option>
+                        </select>
+                      </label>
+
+                      <label className={editorStyles.checkbox}>
+                        <input
+                          type="checkbox"
+                          checked={draft.isPublished}
+                          onChange={(event) =>
+                            updatePredictionField(prediction.key, {
+                              isPublished: event.target.checked,
+                            })
+                          }
+                        />
+                        <span>{dictionary.newsManagePredictionPublishedToggle}</span>
+                      </label>
+                    </div>
+
+                    <label className={editorStyles.field}>
+                      <span>{dictionary.newsManagePredictionReviewNotes}</span>
+                      <textarea
+                        rows={3}
+                        value={draft.reviewNotes}
+                        onChange={(event) =>
+                          updatePredictionField(prediction.key, {
+                            reviewNotes: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <div className={editorStyles.actions}>
+                      <button
+                        type="button"
+                        className={sharedStyles.actionLink}
+                        disabled={predictionWorkingKey === prediction.key}
+                        onClick={() => savePredictionReview(prediction.key)}
+                      >
+                        {predictionWorkingKey === prediction.key
+                          ? dictionary.newsManageSaving
+                          : dictionary.newsManagePredictionSave}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </article>
 

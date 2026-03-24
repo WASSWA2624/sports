@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildBoardGroups,
   buildFixtureRefereeSummary,
   buildFixtureVenueSummary,
   buildHeadToHeadSummary,
@@ -91,5 +92,98 @@ describe("live read helpers", () => {
       countryName: "England",
       capacity: 60260,
     });
+  });
+
+  it("serializes grouped live-board fixtures before they reach client components", () => {
+    const groups = buildBoardGroups(
+      [
+        {
+          id: "fixture-live",
+          leagueId: "league-prem",
+          seasonId: "season-2026",
+          competitionId: "comp-prem",
+          homeTeamId: "ars",
+          awayTeamId: "che",
+          externalRef: "fixture-ext-1",
+          startsAt: "2026-03-24T18:00:00.000Z",
+          status: "LIVE",
+          venue: "Emirates Stadium",
+          round: "Matchday 30",
+          lastSyncedAt: "2026-03-24T18:08:00.000Z",
+          league: {
+            id: "league-prem",
+            code: "EPL",
+            name: "Premier League",
+            country: "England",
+          },
+          homeTeam: {
+            id: "ars",
+            name: "Arsenal",
+            shortName: "ARS",
+          },
+          awayTeam: {
+            id: "che",
+            name: "Chelsea",
+            shortName: "CHE",
+          },
+          resultSnapshot: {
+            homeScore: 2,
+            awayScore: 1,
+            statusText: "82'",
+            capturedAt: "2026-03-24T18:08:10.000Z",
+          },
+          oddsMarkets: [
+            {
+              id: "market-1",
+              selections: [
+                {
+                  id: "selection-1",
+                  line: { value: "1.5" },
+                  priceDecimal: { value: "1.84" },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      new Map(),
+      "en"
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].fixtures[0]).toEqual({
+      id: "fixture-live",
+      externalRef: "fixture-ext-1",
+      homeTeamId: "ars",
+      awayTeamId: "che",
+      startsAt: "2026-03-24T18:00:00.000Z",
+      status: "LIVE",
+      venue: "Emirates Stadium",
+      round: "Matchday 30",
+      stateReason: null,
+      lastSyncedAt: "2026-03-24T18:08:00.000Z",
+      league: {
+        id: "league-prem",
+        code: "EPL",
+        name: "Premier League",
+      },
+      homeTeam: {
+        id: "ars",
+        name: "Arsenal",
+        shortName: "ARS",
+      },
+      awayTeam: {
+        id: "che",
+        name: "Chelsea",
+        shortName: "CHE",
+      },
+      resultSnapshot: {
+        homeScore: 2,
+        awayScore: 1,
+        statusText: "82'",
+        capturedAt: "2026-03-24T18:08:10.000Z",
+      },
+    });
+    expect(groups[0].fixtures[0]).not.toHaveProperty("oddsMarkets");
   });
 });

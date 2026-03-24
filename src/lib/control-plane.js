@@ -3,6 +3,7 @@ import {
   COREUI_CACHE_TAGS,
   FEATURE_CACHE_TAGS,
   KNOWN_CACHE_TAGS,
+  NEWS_CACHE_TAGS,
   revalidateTagsWithAudit,
 } from "./cache";
 import { getAssetDeliverySnapshot } from "./assets-server";
@@ -15,11 +16,25 @@ import { getProviderChain, getRegisteredSportsProviders } from "./sports/provide
 import { getUserLoginIdentifier } from "./auth-identifiers";
 
 const ROLE_NAMES = ["USER", "EDITOR", "ADMIN"];
-const ISSUE_TYPES = ["DATA_DISPUTE", "WRONG_SCORE", "BROKEN_ARTICLE_CONTENT"];
+const ISSUE_TYPES = [
+  "DATA_DISPUTE",
+  "WRONG_SCORE",
+  "BROKEN_ARTICLE_CONTENT",
+  "BROKEN_AFFILIATE_DESTINATION",
+  "PROVIDER_SWITCH_INCIDENT",
+  "COMPLIANCE_INCIDENT",
+];
 const ISSUE_STATUSES = ["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"];
 const ISSUE_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+const REVIEW_STATES = ["PENDING", "APPROVED", "HOLD"];
 
 const STRING_MAX = 191;
+const URL_OR_EMPTY_SCHEMA = z.union([z.string().url(), z.literal(""), z.null()]).optional();
+const DATE_OR_EMPTY_SCHEMA = z.union([z.string().datetime(), z.literal(""), z.null()]).optional();
+const GEO_LIST_SCHEMA = z.array(z.string().min(2).max(16)).max(32).optional().nullable();
+const COMMERCIAL_CACHE_TAGS = [
+  ...new Set([...COREUI_CACHE_TAGS, ...NEWS_CACHE_TAGS, ...FEATURE_CACHE_TAGS]),
+];
 const CACHE_TAG_DEPENDENCIES = [
   { tag: "coreui:home", label: "Home board", source: "sync" },
   { tag: "coreui:live", label: "Live board", source: "sync" },
@@ -58,10 +73,42 @@ export const EMPTY_CONTROL_PLANE_WORKSPACE = {
   providers: [],
   providerRegistry: [],
   providerChain: [],
+  providerSelection: {
+    code: null,
+    name: null,
+    adapterFamily: null,
+    implemented: false,
+    envNamespace: null,
+    supportedSports: [],
+    capabilities: [],
+    fallbackProviders: [],
+  },
   featureFlags: [],
   shellModules: [],
   adSlots: [],
   consentTexts: [],
+  commercial: {
+    bookmakers: [],
+    affiliateLinks: [],
+    funnelEntries: [],
+    predictionRecommendations: [],
+    monetizationPlacements: [],
+    topSurfaces: [],
+    summary: {
+      activeBookmakers: 0,
+      activeAffiliateLinks: 0,
+      activeFunnelEntries: 0,
+      livePlacements: 0,
+      publishedPredictions: 0,
+      clicksLast24Hours: 0,
+      conversionsLast24Hours: 0,
+      qualifiedConversionsLast24Hours: 0,
+      conversionRate: null,
+      activeAdSlots: 0,
+      adSlotsWithoutPlacements: 0,
+      placementAttentionCount: 0,
+    },
+  },
   sync: {
     recentJobs: [],
     checkpoints: [],
@@ -150,6 +197,7 @@ export const EMPTY_CONTROL_PLANE_WORKSPACE = {
     cacheAttentionCount: 0,
     drillRunsLast24Hours: 0,
     routeErrorsLastHour: 0,
+    commercialAttentionCount: 0,
   },
   degraded: true,
 };
@@ -204,6 +252,72 @@ const consentTextUpdateSchema = z.object({
   metadata: jsonSchema,
 });
 
+const bookmakerUpdateSchema = z.object({
+  name: z.string().min(2).max(STRING_MAX).optional(),
+  shortName: z.string().max(80).optional().nullable(),
+  websiteUrl: URL_OR_EMPTY_SCHEMA,
+  affiliateBaseUrl: URL_OR_EMPTY_SCHEMA,
+  isActive: z.boolean().optional(),
+  metadata: jsonSchema,
+});
+
+const affiliateLinkUpdateSchema = z.object({
+  territory: z.string().max(16).optional().nullable(),
+  locale: z.string().max(16).optional().nullable(),
+  surface: z.string().max(32).optional().nullable(),
+  linkType: z.string().max(40).optional().nullable(),
+  destinationUrl: z.string().url().optional(),
+  trackingTemplate: z.string().max(4000).optional().nullable(),
+  fallbackUrl: URL_OR_EMPTY_SCHEMA,
+  isDefault: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  priority: z.number().int().min(0).max(9999).optional(),
+  metadata: jsonSchema,
+});
+
+const funnelEntryUpdateSchema = z.object({
+  channel: z.string().min(2).max(STRING_MAX).optional(),
+  surface: z.string().min(2).max(STRING_MAX).optional(),
+  title: z.string().min(2).max(STRING_MAX).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  ctaLabel: z.string().min(2).max(80).optional(),
+  ctaUrl: z.string().url().optional(),
+  territory: z.string().max(16).optional().nullable(),
+  enabledGeos: GEO_LIST_SCHEMA,
+  isActive: z.boolean().optional(),
+  priority: z.number().int().min(0).max(9999).optional(),
+  metadata: jsonSchema,
+});
+
+const predictionRecommendationUpdateSchema = z.object({
+  title: z.string().min(4).max(STRING_MAX).optional(),
+  summary: z.string().max(3000).optional().nullable(),
+  recommendationType: z.string().max(64).optional().nullable(),
+  marketType: z.string().max(64).optional().nullable(),
+  selectionLabel: z.string().max(120).optional().nullable(),
+  confidence: z.number().int().min(0).max(100).optional().nullable(),
+  edgeScore: z.number().min(-100).max(100).optional().nullable(),
+  isPublished: z.boolean().optional(),
+  publishedAt: DATE_OR_EMPTY_SCHEMA,
+  expiresAt: DATE_OR_EMPTY_SCHEMA,
+  reviewStatus: z.enum(REVIEW_STATES).optional(),
+  reviewNotes: z.string().max(2000).optional().nullable(),
+  metadata: jsonSchema,
+});
+
+const monetizationPlacementUpdateSchema = z.object({
+  surface: z.string().min(2).max(STRING_MAX).optional(),
+  slotKey: z.string().min(2).max(STRING_MAX).optional(),
+  placementType: z.string().min(2).max(STRING_MAX).optional(),
+  title: z.string().max(STRING_MAX).optional().nullable(),
+  description: z.string().max(3000).optional().nullable(),
+  priority: z.number().int().min(0).max(9999).optional(),
+  isActive: z.boolean().optional(),
+  startsAt: DATE_OR_EMPTY_SCHEMA,
+  endsAt: DATE_OR_EMPTY_SCHEMA,
+  metadata: jsonSchema,
+});
+
 const issueCreateSchema = z.object({
   issueType: z.enum(ISSUE_TYPES),
   priority: z.enum(ISSUE_PRIORITIES).default("MEDIUM"),
@@ -249,6 +363,72 @@ function mergeMetadata(existingMetadata, nextMetadata = null) {
     existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {};
   const patch = nextMetadata && typeof nextMetadata === "object" ? nextMetadata : {};
   return { ...existing, ...patch };
+}
+
+function normalizeStringArray(value, { uppercase = false } = {}) {
+  const items = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
+
+  return [...new Set(
+    items
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean)
+      .map((entry) => (uppercase ? entry.toUpperCase() : entry))
+  )];
+}
+
+function parseOptionalDate(value) {
+  const normalized = cleanOptionalString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function roundMetric(value, digits = 4) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+function mergeReviewMetadata(existingMetadata, { status, notes, actorUserId }) {
+  const merged = mergeMetadata(existingMetadata, {});
+
+  merged.editorialReview = {
+    ...(merged.editorialReview && typeof merged.editorialReview === "object"
+      ? merged.editorialReview
+      : {}),
+    ...(status ? { status } : {}),
+    ...(notes !== undefined ? { notes: cleanOptionalString(notes) } : {}),
+    reviewedBy: actorUserId || null,
+    reviewedAt: new Date().toISOString(),
+  };
+
+  return merged;
+}
+
+function readReviewMetadata(metadata) {
+  const review =
+    metadata?.editorialReview && typeof metadata.editorialReview === "object"
+      ? metadata.editorialReview
+      : {};
+
+  return {
+    reviewStatus: REVIEW_STATES.includes(String(review.status || "").toUpperCase())
+      ? String(review.status).toUpperCase()
+      : "PENDING",
+    reviewNotes: cleanOptionalString(review.notes),
+    reviewedBy: cleanOptionalString(review.reviewedBy),
+    reviewedAt: review.reviewedAt || null,
+  };
 }
 
 function ageInMinutes(value) {
@@ -337,6 +517,183 @@ function serializeAuditLog(entry) {
         }
       : null,
   };
+}
+
+function serializeBookmaker(bookmaker) {
+  return {
+    ...bookmaker,
+    sourceProvider: bookmaker.sourceProvider
+      ? {
+          id: bookmaker.sourceProvider.id,
+          code: bookmaker.sourceProvider.code,
+          name: bookmaker.sourceProvider.name,
+        }
+      : null,
+    mappingCount: bookmaker._count?.affiliateLinks || 0,
+    oddsMarketCount: bookmaker._count?.oddsMarkets || 0,
+    predictionCount: bookmaker._count?.predictionRecommendations || 0,
+  };
+}
+
+function serializeAffiliateLink(link) {
+  return {
+    ...link,
+    bookmaker: link.bookmaker
+      ? {
+          id: link.bookmaker.id,
+          code: link.bookmaker.code,
+          slug: link.bookmaker.slug,
+          name: link.bookmaker.name,
+          shortName: link.bookmaker.shortName,
+          isActive: link.bookmaker.isActive,
+        }
+      : null,
+  };
+}
+
+function serializeFunnelEntry(entry) {
+  return {
+    ...entry,
+    enabledGeos: normalizeStringArray(entry.enabledGeos, { uppercase: true }),
+  };
+}
+
+function serializePredictionRecommendation(entry) {
+  const review = readReviewMetadata(entry.metadata);
+
+  return {
+    ...entry,
+    ...review,
+    sourceProvider: entry.sourceProvider
+      ? {
+          id: entry.sourceProvider.id,
+          code: entry.sourceProvider.code,
+          name: entry.sourceProvider.name,
+        }
+      : null,
+    fixture: entry.fixture
+      ? {
+          id: entry.fixture.id,
+          externalRef: entry.fixture.externalRef,
+          status: entry.fixture.status,
+          startsAt: entry.fixture.startsAt,
+          label: `${entry.fixture.homeTeam?.name || "Home"} vs ${entry.fixture.awayTeam?.name || "Away"}`,
+        }
+      : null,
+    competition: entry.competition
+      ? {
+          id: entry.competition.id,
+          code: entry.competition.code,
+          name: entry.competition.name,
+          shortName: entry.competition.shortName,
+        }
+      : null,
+    bookmaker: entry.bookmaker
+      ? {
+          id: entry.bookmaker.id,
+          code: entry.bookmaker.code,
+          slug: entry.bookmaker.slug,
+          name: entry.bookmaker.name,
+          shortName: entry.bookmaker.shortName,
+          isActive: entry.bookmaker.isActive,
+        }
+      : null,
+  };
+}
+
+function getPlacementState(entry) {
+  if (!entry?.isActive) {
+    return "paused";
+  }
+
+  const now = Date.now();
+  if (entry.startsAt && new Date(entry.startsAt).getTime() > now) {
+    return "scheduled";
+  }
+
+  if (entry.endsAt && new Date(entry.endsAt).getTime() < now) {
+    return "expired";
+  }
+
+  return "live";
+}
+
+function serializeMonetizationPlacement(entry) {
+  const review = readReviewMetadata(entry.metadata);
+
+  return {
+    ...entry,
+    ...review,
+    state: getPlacementState(entry),
+    bookmaker: entry.bookmaker
+      ? {
+          id: entry.bookmaker.id,
+          code: entry.bookmaker.code,
+          name: entry.bookmaker.name,
+          shortName: entry.bookmaker.shortName,
+        }
+      : null,
+    affiliateLink: entry.affiliateLink
+      ? {
+          id: entry.affiliateLink.id,
+          key: entry.affiliateLink.key,
+          territory: entry.affiliateLink.territory,
+          surface: entry.affiliateLink.surface,
+        }
+      : null,
+    funnelEntry: entry.funnelEntry
+      ? {
+          id: entry.funnelEntry.id,
+          key: entry.funnelEntry.key,
+          channel: entry.funnelEntry.channel,
+          surface: entry.funnelEntry.surface,
+        }
+      : null,
+    predictionRecommendation: entry.predictionRecommendation
+      ? {
+          id: entry.predictionRecommendation.id,
+          key: entry.predictionRecommendation.key,
+          title: entry.predictionRecommendation.title,
+          isPublished: entry.predictionRecommendation.isPublished,
+        }
+      : null,
+    adSlot: entry.adSlot
+      ? {
+          id: entry.adSlot.id,
+          key: entry.adSlot.key,
+          name: entry.adSlot.name,
+          isEnabled: entry.adSlot.isEnabled,
+        }
+      : null,
+    shellModule: entry.shellModule
+      ? {
+          id: entry.shellModule.id,
+          key: entry.shellModule.key,
+          name: entry.shellModule.name,
+          effectiveEnabled:
+            Boolean(entry.shellModule.isEnabled) &&
+            !Boolean(entry.shellModule.emergencyDisabled),
+        }
+      : null,
+  };
+}
+
+function buildCommercialSurfaceSummary(clickEvents = []) {
+  return [...clickEvents.reduce((accumulator, event) => {
+    const surface = event.surface || "unknown";
+
+    if (!accumulator.has(surface)) {
+      accumulator.set(surface, {
+        surface,
+        clicks: 0,
+      });
+    }
+
+    accumulator.get(surface).clicks += 1;
+    return accumulator;
+  }, new Map()).values()]
+    .sort((left, right) => right.clicks - left.clicks)
+    .slice(0, 8);
 }
 
 function checkpointBudgetMs(key) {
@@ -529,7 +886,12 @@ export async function getPublicControlState() {
     db.featureFlag.findMany({
       where: {
         key: {
-          in: ["news_hub_enabled", "odds_surfaces_enabled", "broadcast_surfaces_enabled"],
+          in: [
+            "news_hub_enabled",
+            "odds_surfaces_enabled",
+            "broadcast_surfaces_enabled",
+            "predictions_surfaces_enabled",
+          ],
         },
       },
       select: {
@@ -564,6 +926,7 @@ export async function getPublicControlState() {
     competitionOdds:
       (featureFlagMap.odds_surfaces_enabled ?? true) && moduleMap.competition_odds,
     broadcast: featureFlagMap.broadcast_surfaces_enabled ?? true,
+    predictions: featureFlagMap.predictions_surfaces_enabled ?? true,
     fixtureBroadcast:
       (featureFlagMap.broadcast_surfaces_enabled ?? true) && moduleMap.fixture_broadcast,
     shellAdSlot: moduleMap.shell_right_rail_ad_slot,
@@ -589,6 +952,11 @@ export async function getControlPlaneWorkspace() {
       shellModules,
       adSlots,
       consentTexts,
+      bookmakers,
+      affiliateLinks,
+      funnelEntries,
+      predictionRecommendations,
+      monetizationPlacements,
       recentSyncJobs,
       recentCheckpoints,
       issues,
@@ -599,6 +967,10 @@ export async function getControlPlaneWorkspace() {
       staleOddsCount,
       staleBroadcastCount,
       failedJobCount,
+      clicksLast24Hours,
+      conversionsLast24Hours,
+      qualifiedConversionsLast24Hours,
+      recentClickEvents,
       latestSuccessfulSync,
       latestNewsUpdate,
       latestFeatureUpdate,
@@ -640,6 +1012,150 @@ export async function getControlPlaneWorkspace() {
     }),
     db.consentText.findMany({
       orderBy: [{ key: "asc" }, { locale: "asc" }, { version: "desc" }],
+    }),
+    db.bookmaker.findMany({
+      orderBy: [{ name: "asc" }],
+      take: 24,
+      include: {
+        sourceProvider: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            affiliateLinks: true,
+            oddsMarkets: true,
+            predictionRecommendations: true,
+          },
+        },
+      },
+    }),
+    db.affiliateLink.findMany({
+      orderBy: [{ priority: "asc" }, { key: "asc" }],
+      take: 40,
+      include: {
+        bookmaker: {
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+            shortName: true,
+            isActive: true,
+          },
+        },
+      },
+    }),
+    db.funnelEntry.findMany({
+      orderBy: [{ priority: "asc" }, { key: "asc" }],
+      take: 24,
+    }),
+    db.predictionRecommendation.findMany({
+      orderBy: [{ updatedAt: "desc" }],
+      take: 24,
+      include: {
+        sourceProvider: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
+        fixture: {
+          select: {
+            id: true,
+            externalRef: true,
+            status: true,
+            startsAt: true,
+            homeTeam: {
+              select: {
+                name: true,
+              },
+            },
+            awayTeam: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        competition: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            shortName: true,
+          },
+        },
+        bookmaker: {
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+            shortName: true,
+            isActive: true,
+          },
+        },
+      },
+    }),
+    db.monetizationPlacement.findMany({
+      orderBy: [{ surface: "asc" }, { priority: "asc" }, { key: "asc" }],
+      take: 40,
+      include: {
+        bookmaker: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            shortName: true,
+          },
+        },
+        affiliateLink: {
+          select: {
+            id: true,
+            key: true,
+            territory: true,
+            surface: true,
+          },
+        },
+        funnelEntry: {
+          select: {
+            id: true,
+            key: true,
+            channel: true,
+            surface: true,
+          },
+        },
+        predictionRecommendation: {
+          select: {
+            id: true,
+            key: true,
+            title: true,
+            isPublished: true,
+          },
+        },
+        adSlot: {
+          select: {
+            id: true,
+            key: true,
+            name: true,
+            isEnabled: true,
+          },
+        },
+        shellModule: {
+          select: {
+            id: true,
+            key: true,
+            name: true,
+            isEnabled: true,
+            emergencyDisabled: true,
+          },
+        },
+      },
     }),
     db.syncJob.findMany({
       orderBy: [{ createdAt: "desc" }],
@@ -771,6 +1287,42 @@ export async function getControlPlaneWorkspace() {
         },
       },
     }),
+    db.clickEvent.count({
+      where: {
+        createdAt: {
+          gte: oneDayAgo,
+        },
+      },
+    }),
+    db.conversionEvent.count({
+      where: {
+        createdAt: {
+          gte: oneDayAgo,
+        },
+      },
+    }),
+    db.conversionEvent.count({
+      where: {
+        createdAt: {
+          gte: oneDayAgo,
+        },
+        status: {
+          in: ["APPROVED", "SETTLED"],
+        },
+      },
+    }),
+    db.clickEvent.findMany({
+      where: {
+        createdAt: {
+          gte: oneDayAgo,
+        },
+      },
+      orderBy: [{ createdAt: "desc" }],
+      take: 200,
+      select: {
+        surface: true,
+      },
+    }),
     db.syncJob.findFirst({
       where: {
         status: "SUCCESS",
@@ -818,6 +1370,39 @@ export async function getControlPlaneWorkspace() {
     const openIssues = issues.filter(
       (issue) => !["RESOLVED", "DISMISSED"].includes(issue.status)
     );
+    const serializedPlacements = monetizationPlacements.map(serializeMonetizationPlacement);
+    const livePlacements = serializedPlacements.filter((entry) => entry.state === "live");
+    const placementAttentionCount = serializedPlacements.filter((entry) => {
+      const hasBackingReference =
+        entry.affiliateLink ||
+        entry.funnelEntry ||
+        entry.predictionRecommendation ||
+        entry.adSlot ||
+        entry.shellModule;
+
+      return entry.isActive && (entry.state !== "live" || !hasBackingReference);
+    }).length;
+    const adSlotsWithoutPlacements = adSlots.filter(
+      (slot) =>
+        slot.isEnabled &&
+        !livePlacements.some((placement) => placement.adSlot?.id === slot.id)
+    ).length;
+    const commercialSummary = {
+      activeBookmakers: bookmakers.filter((entry) => entry.isActive).length,
+      activeAffiliateLinks: affiliateLinks.filter((entry) => entry.isActive).length,
+      activeFunnelEntries: funnelEntries.filter((entry) => entry.isActive).length,
+      livePlacements: livePlacements.length,
+      publishedPredictions: predictionRecommendations.filter((entry) => entry.isPublished).length,
+      clicksLast24Hours,
+      conversionsLast24Hours,
+      qualifiedConversionsLast24Hours,
+      conversionRate: clicksLast24Hours
+        ? roundMetric(qualifiedConversionsLast24Hours / clicksLast24Hours)
+        : null,
+      activeAdSlots: adSlots.filter((entry) => entry.isEnabled).length,
+      adSlotsWithoutPlacements,
+      placementAttentionCount,
+    };
 
     return {
       roles: roles.map((entry) => entry.name),
@@ -832,10 +1417,41 @@ export async function getControlPlaneWorkspace() {
       }),
       providerRegistry,
       providerChain,
+      providerSelection: {
+        code: syncConfig.provider,
+        name: syncConfig.providerDescriptor?.name || syncConfig.provider,
+        adapterFamily: syncConfig.adapterFamily,
+        implemented: syncConfig.providerImplemented,
+        envNamespace: syncConfig.providerEnvNamespace,
+        supportedSports: syncConfig.supportedSports || [],
+        capabilities: syncConfig.providerDescriptor?.capabilities || [],
+        enabledCapabilities: Object.entries(syncConfig.supports || {})
+          .filter(([, enabled]) => enabled)
+          .map(([capability]) => capability),
+        fallbackProviders: providerChain
+          .filter((entry) => entry.code !== syncConfig.provider)
+          .map((entry) => ({
+            code: entry.code,
+            name: entry.name,
+            implemented: entry.implemented,
+            capabilities: entry.capabilities,
+          })),
+      },
       featureFlags,
       shellModules: shellModules.map(serializeShellModule),
       adSlots,
       consentTexts,
+      commercial: {
+        bookmakers: bookmakers.map(serializeBookmaker),
+        affiliateLinks: affiliateLinks.map(serializeAffiliateLink),
+        funnelEntries: funnelEntries.map(serializeFunnelEntry),
+        predictionRecommendations: predictionRecommendations.map(
+          serializePredictionRecommendation
+        ),
+        monetizationPlacements: serializedPlacements,
+        topSurfaces: buildCommercialSurfaceSummary(recentClickEvents),
+        summary: commercialSummary,
+      },
       sync: {
         recentJobs: recentSyncJobs,
         checkpoints: checkpointHealth,
@@ -876,6 +1492,12 @@ export async function getControlPlaneWorkspace() {
         cacheAttentionCount: cacheHealth.filter((entry) => entry.state === "attention").length,
         drillRunsLast24Hours: observability.summary.drillRunsLast24Hours,
         routeErrorsLastHour: observability.summary.routeErrorsLastHour,
+        commercialAttentionCount:
+          placementAttentionCount +
+          adSlotsWithoutPlacements +
+          openIssues.filter((issue) =>
+            ["BROKEN_AFFILIATE_DESTINATION", "COMPLIANCE_INCIDENT"].includes(issue.issueType)
+          ).length,
       },
     };
   }, EMPTY_CONTROL_PLANE_WORKSPACE, {
@@ -1234,6 +1856,520 @@ export async function updateConsentTextControl(key, payload, auditContext = {}) 
   });
 
   return consentText;
+}
+
+async function revalidateCommercialReads(source, auditContext, metadata = {}) {
+  await revalidateTagsWithAudit(COMMERCIAL_CACHE_TAGS, {
+    ...auditContext,
+    source,
+    metadata,
+  });
+}
+
+export async function updateBookmakerControl(code, payload, auditContext = {}) {
+  const input = bookmakerUpdateSchema.parse(payload);
+  const existing = await db.bookmaker.findUnique({
+    where: {
+      code,
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Bookmaker not found.");
+  }
+
+  const bookmaker = await db.bookmaker.update({
+    where: {
+      code,
+    },
+    data: {
+      ...(input.name ? { name: input.name.trim() } : {}),
+      ...(input.shortName !== undefined ? { shortName: cleanOptionalString(input.shortName) } : {}),
+      ...(input.websiteUrl !== undefined
+        ? { websiteUrl: cleanOptionalString(input.websiteUrl) }
+        : {}),
+      ...(input.affiliateBaseUrl !== undefined
+        ? { affiliateBaseUrl: cleanOptionalString(input.affiliateBaseUrl) }
+        : {}),
+      ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+      ...(input.metadata ? { metadata: mergeMetadata(existing.metadata, input.metadata) } : {}),
+    },
+    include: {
+      sourceProvider: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+      },
+      _count: {
+        select: {
+          affiliateLinks: true,
+          oddsMarkets: true,
+          predictionRecommendations: true,
+        },
+      },
+    },
+  });
+
+  await logAuditEvent({
+    ...auditContext,
+    action: "admin.bookmaker.updated",
+    entityType: "Bookmaker",
+    entityId: code,
+    metadata: input,
+  });
+
+  await revalidateCommercialReads("bookmaker-update", auditContext, { code });
+
+  return serializeBookmaker(bookmaker);
+}
+
+export async function updateAffiliateLinkControl(key, payload, auditContext = {}) {
+  const input = affiliateLinkUpdateSchema.parse(payload);
+
+  const affiliateLink = await db.$transaction(async (tx) => {
+    const existing = await tx.affiliateLink.findUnique({
+      where: {
+        key,
+      },
+      include: {
+        bookmaker: {
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+            shortName: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new Error("Affiliate link not found.");
+    }
+
+    const nextTerritory =
+      input.territory !== undefined ? cleanOptionalString(input.territory) : existing.territory;
+    const nextSurface =
+      input.surface !== undefined ? cleanOptionalString(input.surface) : existing.surface;
+    const nextLocale =
+      input.locale !== undefined ? cleanOptionalString(input.locale) : existing.locale;
+
+    if (input.isDefault === true) {
+      await tx.affiliateLink.updateMany({
+        where: {
+          id: {
+            not: existing.id,
+          },
+          bookmakerId: existing.bookmakerId,
+          territory: nextTerritory,
+          surface: nextSurface,
+          locale: nextLocale,
+        },
+        data: {
+          isDefault: false,
+        },
+      });
+    }
+
+    return tx.affiliateLink.update({
+      where: {
+        key,
+      },
+      data: {
+        ...(input.territory !== undefined ? { territory: nextTerritory } : {}),
+        ...(input.locale !== undefined ? { locale: nextLocale } : {}),
+        ...(input.surface !== undefined ? { surface: nextSurface } : {}),
+        ...(input.linkType !== undefined ? { linkType: cleanOptionalString(input.linkType) } : {}),
+        ...(input.destinationUrl ? { destinationUrl: input.destinationUrl.trim() } : {}),
+        ...(input.trackingTemplate !== undefined
+          ? { trackingTemplate: cleanOptionalString(input.trackingTemplate) }
+          : {}),
+        ...(input.fallbackUrl !== undefined
+          ? { fallbackUrl: cleanOptionalString(input.fallbackUrl) }
+          : {}),
+        ...(typeof input.isDefault === "boolean" ? { isDefault: input.isDefault } : {}),
+        ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+        ...(Number.isFinite(input.priority) ? { priority: input.priority } : {}),
+        ...(input.metadata ? { metadata: mergeMetadata(existing.metadata, input.metadata) } : {}),
+      },
+      include: {
+        bookmaker: {
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+            shortName: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+  });
+
+  await logAuditEvent({
+    ...auditContext,
+    action: "admin.affiliate_link.updated",
+    entityType: "AffiliateLink",
+    entityId: key,
+    metadata: input,
+  });
+
+  await revalidateCommercialReads("affiliate-link-update", auditContext, { key });
+
+  return serializeAffiliateLink(affiliateLink);
+}
+
+export async function updateFunnelEntryControl(key, payload, auditContext = {}) {
+  const input = funnelEntryUpdateSchema.parse(payload);
+  const existing = await db.funnelEntry.findUnique({
+    where: {
+      key,
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Funnel entry not found.");
+  }
+
+  const funnelEntry = await db.funnelEntry.update({
+    where: {
+      key,
+    },
+    data: {
+      ...(input.channel ? { channel: input.channel.trim() } : {}),
+      ...(input.surface ? { surface: input.surface.trim() } : {}),
+      ...(input.title ? { title: input.title.trim() } : {}),
+      ...(input.description !== undefined ? { description: cleanOptionalString(input.description) } : {}),
+      ...(input.ctaLabel ? { ctaLabel: input.ctaLabel.trim() } : {}),
+      ...(input.ctaUrl ? { ctaUrl: input.ctaUrl.trim() } : {}),
+      ...(input.territory !== undefined ? { territory: cleanOptionalString(input.territory) } : {}),
+      ...(input.enabledGeos !== undefined
+        ? { enabledGeos: normalizeStringArray(input.enabledGeos, { uppercase: true }) }
+        : {}),
+      ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+      ...(Number.isFinite(input.priority) ? { priority: input.priority } : {}),
+      ...(input.metadata ? { metadata: mergeMetadata(existing.metadata, input.metadata) } : {}),
+    },
+  });
+
+  await logAuditEvent({
+    ...auditContext,
+    action: "admin.funnel_entry.updated",
+    entityType: "FunnelEntry",
+    entityId: key,
+    metadata: input,
+  });
+
+  await revalidateCommercialReads("funnel-entry-update", auditContext, { key });
+
+  return serializeFunnelEntry(funnelEntry);
+}
+
+export async function updatePredictionRecommendationControl(
+  key,
+  payload,
+  auditContext = {}
+) {
+  const input = predictionRecommendationUpdateSchema.parse(payload);
+  const existing = await db.predictionRecommendation.findUnique({
+    where: {
+      key,
+    },
+    include: {
+      sourceProvider: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+      },
+      fixture: {
+        select: {
+          id: true,
+          externalRef: true,
+          status: true,
+          startsAt: true,
+          homeTeam: {
+            select: {
+              name: true,
+            },
+          },
+          awayTeam: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      competition: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          shortName: true,
+        },
+      },
+      bookmaker: {
+        select: {
+          id: true,
+          code: true,
+          slug: true,
+          name: true,
+          shortName: true,
+          isActive: true,
+        },
+      },
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Prediction recommendation not found.");
+  }
+
+  const metadataBase =
+    input.reviewStatus || input.reviewNotes !== undefined
+      ? mergeReviewMetadata(existing.metadata, {
+          status: input.reviewStatus,
+          notes: input.reviewNotes,
+          actorUserId: auditContext.actorUserId || null,
+        })
+      : mergeMetadata(existing.metadata, input.metadata);
+  const metadata =
+    input.metadata && (input.reviewStatus || input.reviewNotes !== undefined)
+      ? mergeMetadata(metadataBase, input.metadata)
+      : metadataBase;
+
+  const recommendation = await db.predictionRecommendation.update({
+    where: {
+      key,
+    },
+    data: {
+      ...(input.title ? { title: input.title.trim() } : {}),
+      ...(input.summary !== undefined ? { summary: cleanOptionalString(input.summary) } : {}),
+      ...(input.recommendationType !== undefined
+        ? { recommendationType: cleanOptionalString(input.recommendationType) || "PICK" }
+        : {}),
+      ...(input.marketType !== undefined ? { marketType: cleanOptionalString(input.marketType) } : {}),
+      ...(input.selectionLabel !== undefined
+        ? { selectionLabel: cleanOptionalString(input.selectionLabel) }
+        : {}),
+      ...(input.confidence !== undefined ? { confidence: input.confidence } : {}),
+      ...(input.edgeScore !== undefined ? { edgeScore: input.edgeScore } : {}),
+      ...(typeof input.isPublished === "boolean" ? { isPublished: input.isPublished } : {}),
+      ...(input.publishedAt !== undefined ? { publishedAt: parseOptionalDate(input.publishedAt) } : {}),
+      ...(input.expiresAt !== undefined ? { expiresAt: parseOptionalDate(input.expiresAt) } : {}),
+      metadata,
+    },
+    include: {
+      sourceProvider: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+      },
+      fixture: {
+        select: {
+          id: true,
+          externalRef: true,
+          status: true,
+          startsAt: true,
+          homeTeam: {
+            select: {
+              name: true,
+            },
+          },
+          awayTeam: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      competition: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          shortName: true,
+        },
+      },
+      bookmaker: {
+        select: {
+          id: true,
+          code: true,
+          slug: true,
+          name: true,
+          shortName: true,
+          isActive: true,
+        },
+      },
+    },
+  });
+
+  await logAuditEvent({
+    ...auditContext,
+    action: "editor.prediction_recommendation.updated",
+    entityType: "PredictionRecommendation",
+    entityId: key,
+    metadata: input,
+  });
+
+  await revalidateCommercialReads("prediction-recommendation-update", auditContext, { key });
+
+  return serializePredictionRecommendation(recommendation);
+}
+
+export async function updateMonetizationPlacementControl(key, payload, auditContext = {}) {
+  const input = monetizationPlacementUpdateSchema.parse(payload);
+  const existing = await db.monetizationPlacement.findUnique({
+    where: {
+      key,
+    },
+    include: {
+      bookmaker: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          shortName: true,
+        },
+      },
+      affiliateLink: {
+        select: {
+          id: true,
+          key: true,
+          territory: true,
+          surface: true,
+        },
+      },
+      funnelEntry: {
+        select: {
+          id: true,
+          key: true,
+          channel: true,
+          surface: true,
+        },
+      },
+      predictionRecommendation: {
+        select: {
+          id: true,
+          key: true,
+          title: true,
+          isPublished: true,
+        },
+      },
+      adSlot: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          isEnabled: true,
+        },
+      },
+      shellModule: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          isEnabled: true,
+          emergencyDisabled: true,
+        },
+      },
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Monetization placement not found.");
+  }
+
+  const placement = await db.monetizationPlacement.update({
+    where: {
+      key,
+    },
+    data: {
+      ...(input.surface ? { surface: input.surface.trim() } : {}),
+      ...(input.slotKey ? { slotKey: input.slotKey.trim() } : {}),
+      ...(input.placementType ? { placementType: input.placementType.trim() } : {}),
+      ...(input.title !== undefined ? { title: cleanOptionalString(input.title) } : {}),
+      ...(input.description !== undefined
+        ? { description: cleanOptionalString(input.description) }
+        : {}),
+      ...(Number.isFinite(input.priority) ? { priority: input.priority } : {}),
+      ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+      ...(input.startsAt !== undefined ? { startsAt: parseOptionalDate(input.startsAt) } : {}),
+      ...(input.endsAt !== undefined ? { endsAt: parseOptionalDate(input.endsAt) } : {}),
+      ...(input.metadata ? { metadata: mergeMetadata(existing.metadata, input.metadata) } : {}),
+    },
+    include: {
+      bookmaker: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          shortName: true,
+        },
+      },
+      affiliateLink: {
+        select: {
+          id: true,
+          key: true,
+          territory: true,
+          surface: true,
+        },
+      },
+      funnelEntry: {
+        select: {
+          id: true,
+          key: true,
+          channel: true,
+          surface: true,
+        },
+      },
+      predictionRecommendation: {
+        select: {
+          id: true,
+          key: true,
+          title: true,
+          isPublished: true,
+        },
+      },
+      adSlot: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          isEnabled: true,
+        },
+      },
+      shellModule: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          isEnabled: true,
+          emergencyDisabled: true,
+        },
+      },
+    },
+  });
+
+  await logAuditEvent({
+    ...auditContext,
+    action: "admin.monetization_placement.updated",
+    entityType: "MonetizationPlacement",
+    entityId: key,
+    metadata: input,
+  });
+
+  await revalidateCommercialReads("monetization-placement-update", auditContext, { key });
+
+  return serializeMonetizationPlacement(placement);
 }
 
 export async function createOpsIssue(payload, auditContext = {}) {

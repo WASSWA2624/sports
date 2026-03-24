@@ -202,12 +202,13 @@ export function OddsPredictionWidgets({
   const affiliateActionLabel = dictionary.betNow;
   const primaryLead =
     surface === "match-detail" ? dictionary.matchInsightsLead : dictionary.competitionInsightsLead;
+  const predictionsVisible = insights?.predictionsEnabled !== false;
   const hasContent =
-    bestBet ||
+    (predictionsVisible && bestBet) ||
     broadcastQuickActions?.primary ||
     broadcastQuickActions?.message ||
-    insights?.topPicks?.length ||
-    insights?.valueBets?.length ||
+    (predictionsVisible && insights?.topPicks?.length) ||
+    (predictionsVisible && insights?.valueBets?.length) ||
     insights?.bestOdds?.length ||
     insights?.highOddsMatches?.length ||
     ctaConfig?.primaryAffiliate?.href ||
@@ -219,7 +220,7 @@ export function OddsPredictionWidgets({
 
   return (
     <div className={styles.insightGrid}>
-      {bestBet ? (
+      {predictionsVisible && bestBet ? (
         <ModuleEngagementTracker
           moduleType="best_bet_highlight"
           entityType={entityType}
@@ -367,36 +368,38 @@ export function OddsPredictionWidgets({
         </ModuleEngagementTracker>
       ) : null}
 
-      <InsightCard
-        moduleType="top_picks_widget"
-        surface={surface}
-        entityType={entityType}
-        entityId={entityId}
-        geo={ctaConfig?.geo || null}
-        title={dictionary.liveBoardTopPicks}
-        lead={primaryLead}
-      >
-        {insights?.topPicks?.length ? (
-          <div className={styles.insightList}>
-            {insights.topPicks.map((entry) => (
-              <PredictionItem
-                key={entry.key}
-                locale={locale}
-                surface={surface}
-                pageEntityType={entityType}
-                pageEntityId={entityId}
-                entry={entry}
-                dictionary={dictionary}
-                affiliateActionLabel={affiliateActionLabel}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            {insights?.predictionMessage || dictionary.predictionRecommendationsEmpty}
-          </div>
-        )}
-      </InsightCard>
+      {predictionsVisible ? (
+        <InsightCard
+          moduleType="top_picks_widget"
+          surface={surface}
+          entityType={entityType}
+          entityId={entityId}
+          geo={ctaConfig?.geo || null}
+          title={dictionary.liveBoardTopPicks}
+          lead={primaryLead}
+        >
+          {insights?.topPicks?.length ? (
+            <div className={styles.insightList}>
+              {insights.topPicks.map((entry) => (
+                <PredictionItem
+                  key={entry.key}
+                  locale={locale}
+                  surface={surface}
+                  pageEntityType={entityType}
+                  pageEntityId={entityId}
+                  entry={entry}
+                  dictionary={dictionary}
+                  affiliateActionLabel={affiliateActionLabel}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              {insights?.predictionMessage || dictionary.predictionRecommendationsEmpty}
+            </div>
+          )}
+        </InsightCard>
+      ) : null}
 
       <InsightCard
         moduleType="best_odds_widget"
@@ -456,36 +459,38 @@ export function OddsPredictionWidgets({
         )}
       </InsightCard>
 
-      <InsightCard
-        moduleType="value_bets_widget"
-        surface={surface}
-        entityType={entityType}
-        entityId={entityId}
-        geo={ctaConfig?.geo || null}
-        title={dictionary.liveBoardValueBets}
-        lead={dictionary.liveBoardValueBetsLead}
-      >
-        {insights?.valueBets?.length ? (
-          <div className={styles.insightList}>
-            {insights.valueBets.map((entry) => (
-              <PredictionItem
-                key={entry.key}
-                locale={locale}
-                surface={surface}
-                pageEntityType={entityType}
-                pageEntityId={entityId}
-                entry={entry}
-                dictionary={dictionary}
-                affiliateActionLabel={affiliateActionLabel}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            {insights?.predictionMessage || dictionary.predictionRecommendationsEmpty}
-          </div>
-        )}
-      </InsightCard>
+      {predictionsVisible ? (
+        <InsightCard
+          moduleType="value_bets_widget"
+          surface={surface}
+          entityType={entityType}
+          entityId={entityId}
+          geo={ctaConfig?.geo || null}
+          title={dictionary.liveBoardValueBets}
+          lead={dictionary.liveBoardValueBetsLead}
+        >
+          {insights?.valueBets?.length ? (
+            <div className={styles.insightList}>
+              {insights.valueBets.map((entry) => (
+                <PredictionItem
+                  key={entry.key}
+                  locale={locale}
+                  surface={surface}
+                  pageEntityType={entityType}
+                  pageEntityId={entityId}
+                  entry={entry}
+                  dictionary={dictionary}
+                  affiliateActionLabel={affiliateActionLabel}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              {insights?.predictionMessage || dictionary.predictionRecommendationsEmpty}
+            </div>
+          )}
+        </InsightCard>
+      ) : null}
 
       {ctaConfig?.primaryAffiliate?.href || ctaConfig?.funnelActions?.length ? (
         <ModuleEngagementTracker

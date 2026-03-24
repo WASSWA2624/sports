@@ -11,7 +11,10 @@
 .issueList,
 .entityGrid,
 .entityGroup,
-.entityList {
+.entityList,
+.predictionList,
+.predictionCard,
+.predictionMeta {
   display: grid;
   gap: 0.9rem;
 }
@@ -102,6 +105,13 @@
 .entityOption span {
   display: grid;
   gap: 0.12rem;
+}
+
+.predictionCard {
+  padding: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-strong);
 }
 
 .actions {

@@ -6,6 +6,8 @@ import {
   groupNewsHubArticles,
 } from "./news";
 
+const REVIEW_STATES = ["PENDING", "APPROVED", "HOLD"];
+
 function articleInclude() {
   return {
     category: true,
@@ -42,6 +44,38 @@ function fixtureNewsInclude() {
       },
     },
     resultSnapshot: true,
+  };
+}
+
+function readEditorialReview(metadata) {
+  const review =
+    metadata?.editorialReview && typeof metadata.editorialReview === "object"
+      ? metadata.editorialReview
+      : {};
+  const status = String(review.status || "").toUpperCase();
+
+  return {
+    reviewStatus: REVIEW_STATES.includes(status) ? status : "PENDING",
+    reviewNotes:
+      typeof review.notes === "string" && review.notes.trim() ? review.notes.trim() : "",
+    reviewedBy:
+      typeof review.reviewedBy === "string" && review.reviewedBy.trim()
+        ? review.reviewedBy.trim()
+        : "",
+    reviewedAt: review.reviewedAt || null,
+  };
+}
+
+function serializeEditorialPredictionRecommendation(entry) {
+  return {
+    ...entry,
+    ...readEditorialReview(entry.metadata),
+    fixtureLabel: entry.fixture
+      ? `${entry.fixture.homeTeam?.name || "Home"} vs ${entry.fixture.awayTeam?.name || "Away"}`
+      : "",
+    competitionLabel: entry.competition?.name || "",
+    bookmakerLabel:
+      entry.bookmaker?.shortName || entry.bookmaker?.name || entry.bookmaker?.code || "",
   };
 }
 
@@ -457,7 +491,16 @@ export async function getNewsArticleDetail(slug, { includeUnpublished = false } 
 
 export async function getEditorialNewsWorkspace() {
   return safeDataRead(async () => {
-    const [rawArticles, categories, sports, countries, competitions, teams, fixtures] = await Promise.all([
+    const [
+      rawArticles,
+      categories,
+      sports,
+      countries,
+      competitions,
+      teams,
+      fixtures,
+      predictions,
+    ] = await Promise.all([
       db.newsArticle.findMany({
         orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
         take: 48,
@@ -508,6 +551,48 @@ export async function getEditorialNewsWorkspace() {
         take: 16,
         include: fixtureNewsInclude(),
       }),
+      db.predictionRecommendation.findMany({
+        orderBy: [{ updatedAt: "desc" }],
+        take: 24,
+        include: {
+          fixture: {
+            select: {
+              id: true,
+              externalRef: true,
+              status: true,
+              startsAt: true,
+              homeTeam: {
+                select: {
+                  name: true,
+                },
+              },
+              awayTeam: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          competition: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              shortName: true,
+            },
+          },
+          bookmaker: {
+            select: {
+              id: true,
+              code: true,
+              slug: true,
+              name: true,
+              shortName: true,
+              isActive: true,
+            },
+          },
+        },
+      }),
     ]);
 
     const issueMap = new Map();
@@ -550,6 +635,7 @@ export async function getEditorialNewsWorkspace() {
 
     return {
       articles,
+      predictions: predictions.map(serializeEditorialPredictionRecommendation),
       categories,
       options: {
         sports,
@@ -569,11 +655,16 @@ export async function getEditorialNewsWorkspace() {
           DRAFT: 0,
           PUBLISHED: 0,
           ARCHIVED: 0,
+          predictionsPendingReview: predictions.filter(
+            (entry) => readEditorialReview(entry.metadata).reviewStatus !== "APPROVED"
+          ).length,
+          publishedPredictions: predictions.filter((entry) => entry.isPublished).length,
         }
       ),
     };
   }, {
     articles: [],
+    predictions: [],
     categories: [],
     options: {
       sports: [],
@@ -587,6 +678,8 @@ export async function getEditorialNewsWorkspace() {
       DRAFT: 0,
       PUBLISHED: 0,
       ARCHIVED: 0,
+      predictionsPendingReview: 0,
+      publishedPredictions: 0,
     },
   });
 }

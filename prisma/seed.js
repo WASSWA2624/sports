@@ -135,7 +135,8 @@ async function seed() {
         (UUID(), 'scores_live_refresh', 'Enable live board refresh behavior', true, NOW(), NOW()),
         (UUID(), 'news_hub_enabled', 'Enable news mode and editorial modules', true, NOW(), NOW()),
         (UUID(), 'odds_surfaces_enabled', 'Enable informational odds surfaces', true, NOW(), NOW()),
-        (UUID(), 'broadcast_surfaces_enabled', 'Enable broadcast guide surfaces', true, NOW(), NOW())
+        (UUID(), 'broadcast_surfaces_enabled', 'Enable broadcast guide surfaces', true, NOW(), NOW()),
+        (UUID(), 'predictions_surfaces_enabled', 'Enable editorially reviewed prediction surfaces', true, NOW(), NOW())
       ON DUPLICATE KEY UPDATE
         description = VALUES(description),
         enabled = VALUES(enabled),
@@ -1818,7 +1819,10 @@ async function seed() {
       DELETE FROM OpsIssue
       WHERE title IN (
         'Live score dispute for Arsenal vs Chelsea',
-        'Archived transfer-watch brief needs follow-up'
+        'Archived transfer-watch brief needs follow-up',
+        'Uganda affiliate route returned a broken landing page',
+        'Provider failover rehearsal needs acknowledgement',
+        'Kenya compliance disclaimer copy needs revision'
       )
       `
     );
@@ -1844,6 +1848,30 @@ async function seed() {
           'NewsArticle', ?, NULL, ?,
           JSON_OBJECT('queue', 'content', 'reportedSource', 'ops-seed'),
           NOW(), NOW(), NULL
+        ),
+        (
+          UUID(), 'BROKEN_AFFILIATE_DESTINATION', 'OPEN', 'CRITICAL',
+          'Uganda affiliate route returned a broken landing page',
+          'Revenue ops flagged the Uganda primary affiliate destination after a redirect loop blocked the bookmaker handoff.',
+          'AffiliateLink', ?, NULL, NULL,
+          JSON_OBJECT('queue', 'affiliate', 'reportedSource', 'ops-seed', 'geo', 'UG'),
+          NOW(), NOW(), NULL
+        ),
+        (
+          UUID(), 'PROVIDER_SWITCH_INCIDENT', 'INVESTIGATING', 'HIGH',
+          'Provider failover rehearsal needs acknowledgement',
+          'Operations observed a provider-switch drill result that should be reviewed before the next live outage rehearsal.',
+          'SourceProvider', ?, NULL, NULL,
+          JSON_OBJECT('queue', 'provider', 'reportedSource', 'ops-seed'),
+          NOW(), NOW(), NULL
+        ),
+        (
+          UUID(), 'COMPLIANCE_INCIDENT', 'OPEN', 'HIGH',
+          'Kenya compliance disclaimer copy needs revision',
+          'Compliance review flagged outdated regulated-content language on a monetized sports surface targeting Kenya.',
+          'ConsentText', 'shell_right_rail:en', NULL, NULL,
+          JSON_OBJECT('queue', 'compliance', 'reportedSource', 'ops-seed', 'geo', 'KE'),
+          NOW(), NOW(), NULL
         )
       `,
       [
@@ -1851,6 +1879,8 @@ async function seed() {
         liveFixtureId,
         transferWatchArticleId,
         transferWatchArticleId,
+        pulseBookHomeLinkId,
+        sportsmonksProviderId,
       ]
     );
 

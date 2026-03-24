@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../cache", () => ({
   COREUI_CACHE_TAGS: [],
   FEATURE_CACHE_TAGS: [],
+  NEWS_CACHE_TAGS: [],
   KNOWN_CACHE_TAGS: ["coreui:home", "coreui:shell"],
   revalidateTagsWithAudit: vi.fn(),
 }));
@@ -78,7 +79,13 @@ describe("control-plane release defaults", () => {
       cacheAttentionCount: 0,
       drillRunsLast24Hours: 0,
       routeErrorsLastHour: 0,
+      commercialAttentionCount: 0,
     });
     expect(EMPTY_CONTROL_PLANE_WORKSPACE.degraded).toBe(true);
+    expect(EMPTY_CONTROL_PLANE_WORKSPACE.commercial.summary).toMatchObject({
+      clicksLast24Hours: 0,
+      conversionsLast24Hours: 0,
+      activeAffiliateLinks: 0,
+    });
   });
 });

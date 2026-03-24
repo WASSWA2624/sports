@@ -10,6 +10,7 @@ const DEFAULT_PUBLIC_SURFACE_FLAGS = {
   liveNews: true,
   resultsNews: true,
   odds: true,
+  predictions: true,
   fixtureOdds: true,
   competitionOdds: true,
   broadcast: true,

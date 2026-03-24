@@ -72,60 +72,63 @@ export function LiveBoardMonetization({
   const bestOdds = monetization.bestOdds || [];
   const valueBets = monetization.valueBets || [];
   const funnelActions = monetization.funnelActions || [];
+  const predictionsVisible = monetization.predictionsEnabled !== false;
   const hasBannerRow = Boolean(monetization.affiliate?.href) || funnelActions.length > 0;
 
   return (
     <section className={sharedStyles.section}>
       <div className={boardStyles.widgetGrid}>
-        <WidgetCard
-          eyebrow={dictionary.liveBoardWidgetsEyebrow}
-          title={dictionary.liveBoardTopPicks}
-          lead={dictionary.liveBoardWidgetsLead}
-          toneClass={boardStyles.widgetCardAccent}
-          tracker={{
-            moduleType: "board_top_picks",
-            entityId: `${surface}-top-picks`,
-            surface,
-            metadata: { geo: monetization.geo },
-          }}
-        >
-          {topPicks.length ? (
-            topPicks.map((entry) => (
-              <article key={entry.key} className={boardStyles.widgetItem}>
-                <div className={boardStyles.widgetMeta}>
-                  <span className={boardStyles.widgetConfidence}>{entry.confidenceLabel || "--"}</span>
-                  {entry.bookmaker ? <span className={sharedStyles.badge}>{entry.bookmaker}</span> : null}
-                </div>
-                <div className={boardStyles.widgetCopy}>
-                  <h3 className={boardStyles.widgetItemTitle}>{entry.title}</h3>
-                  {entry.fixtureLabel ? <p className={boardStyles.widgetLead}>{entry.fixtureLabel}</p> : null}
-                  {entry.summary ? <p className={boardStyles.widgetLead}>{entry.summary}</p> : null}
-                </div>
-                <div className={boardStyles.widgetFoot}>
-                  {entry.selectionLabel ? <span className={sharedStyles.badge}>{entry.selectionLabel}</span> : null}
-                  {entry.priceLabel ? <strong className={boardStyles.widgetPrice}>{entry.priceLabel}</strong> : null}
-                </div>
-                <div className={boardStyles.bannerActions}>
-                  <ActionLink
-                    href={entry.fixtureRef ? buildMatchHref(locale, { externalRef: entry.fixtureRef }) : null}
-                    label={dictionary.liveBoardOpenCenter}
-                    className={sharedStyles.sectionAction}
-                    action="top-pick-match"
-                  />
-                  <ActionLink
-                    href={entry.ctaHref}
-                    label={dictionary.liveBoardAffiliateAction}
-                    className={sharedStyles.actionLink}
-                    action="top-pick-affiliate"
-                    external={entry.ctaExternal}
-                  />
-                </div>
-              </article>
-            ))
-          ) : (
-            <div className={boardStyles.widgetEmpty}>{dictionary.liveBoardPredictionEmpty}</div>
-          )}
-        </WidgetCard>
+        {predictionsVisible ? (
+          <WidgetCard
+            eyebrow={dictionary.liveBoardWidgetsEyebrow}
+            title={dictionary.liveBoardTopPicks}
+            lead={dictionary.liveBoardWidgetsLead}
+            toneClass={boardStyles.widgetCardAccent}
+            tracker={{
+              moduleType: "board_top_picks",
+              entityId: `${surface}-top-picks`,
+              surface,
+              metadata: { geo: monetization.geo },
+            }}
+          >
+            {topPicks.length ? (
+              topPicks.map((entry) => (
+                <article key={entry.key} className={boardStyles.widgetItem}>
+                  <div className={boardStyles.widgetMeta}>
+                    <span className={boardStyles.widgetConfidence}>{entry.confidenceLabel || "--"}</span>
+                    {entry.bookmaker ? <span className={sharedStyles.badge}>{entry.bookmaker}</span> : null}
+                  </div>
+                  <div className={boardStyles.widgetCopy}>
+                    <h3 className={boardStyles.widgetItemTitle}>{entry.title}</h3>
+                    {entry.fixtureLabel ? <p className={boardStyles.widgetLead}>{entry.fixtureLabel}</p> : null}
+                    {entry.summary ? <p className={boardStyles.widgetLead}>{entry.summary}</p> : null}
+                  </div>
+                  <div className={boardStyles.widgetFoot}>
+                    {entry.selectionLabel ? <span className={sharedStyles.badge}>{entry.selectionLabel}</span> : null}
+                    {entry.priceLabel ? <strong className={boardStyles.widgetPrice}>{entry.priceLabel}</strong> : null}
+                  </div>
+                  <div className={boardStyles.bannerActions}>
+                    <ActionLink
+                      href={entry.fixtureRef ? buildMatchHref(locale, { externalRef: entry.fixtureRef }) : null}
+                      label={dictionary.liveBoardOpenCenter}
+                      className={sharedStyles.sectionAction}
+                      action="top-pick-match"
+                    />
+                    <ActionLink
+                      href={entry.ctaHref}
+                      label={dictionary.liveBoardAffiliateAction}
+                      className={sharedStyles.actionLink}
+                      action="top-pick-affiliate"
+                      external={entry.ctaExternal}
+                    />
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className={boardStyles.widgetEmpty}>{dictionary.liveBoardPredictionEmpty}</div>
+            )}
+          </WidgetCard>
+        ) : null}
 
         <WidgetCard
           eyebrow={dictionary.liveBoardWidgetsEyebrow}
@@ -175,56 +178,60 @@ export function LiveBoardMonetization({
           )}
         </WidgetCard>
 
-        <WidgetCard
-          eyebrow={dictionary.liveBoardWidgetsEyebrow}
-          title={dictionary.liveBoardValueBets}
-          lead={dictionary.liveBoardValueBetsLead}
-          toneClass={boardStyles.widgetCardWarm}
-          tracker={{
-            moduleType: "board_value_bets",
-            entityId: `${surface}-value-bets`,
-            surface,
-            metadata: { geo: monetization.geo },
-          }}
-        >
-          {valueBets.length ? (
-            valueBets.map((entry) => (
-              <article key={entry.key} className={boardStyles.widgetItem}>
-                <div className={boardStyles.widgetMeta}>
-                  {entry.edgeScore != null ? (
-                    <span className={boardStyles.widgetMetric}>Edge {entry.edgeScore.toFixed(1)}</span>
-                  ) : null}
-                  {entry.bookmaker ? <span className={sharedStyles.badge}>{entry.bookmaker}</span> : null}
-                </div>
-                <div className={boardStyles.widgetCopy}>
-                  <h3 className={boardStyles.widgetItemTitle}>{entry.title}</h3>
-                  {entry.fixtureLabel ? <p className={boardStyles.widgetLead}>{entry.fixtureLabel}</p> : null}
-                  {entry.selectionLabel ? <p className={boardStyles.widgetLead}>{entry.selectionLabel}</p> : null}
-                </div>
-                <div className={boardStyles.widgetFoot}>
-                  {entry.priceLabel ? <strong className={boardStyles.widgetPrice}>{entry.priceLabel}</strong> : null}
-                </div>
-                <div className={boardStyles.bannerActions}>
-                  <ActionLink
-                    href={entry.fixtureRef ? buildMatchHref(locale, { externalRef: entry.fixtureRef }) : null}
-                    label={dictionary.liveBoardOpenCenter}
-                    className={sharedStyles.sectionAction}
-                    action="value-bet-match"
-                  />
-                  <ActionLink
-                    href={entry.ctaHref}
-                    label={dictionary.liveBoardAffiliateAction}
-                    className={sharedStyles.actionLink}
-                    action="value-bet-affiliate"
-                    external={entry.ctaExternal}
-                  />
-                </div>
-              </article>
-            ))
-          ) : (
-            <div className={boardStyles.widgetEmpty}>{dictionary.liveBoardPredictionEmpty}</div>
-          )}
-        </WidgetCard>
+        {predictionsVisible ? (
+          <WidgetCard
+            eyebrow={dictionary.liveBoardWidgetsEyebrow}
+            title={dictionary.liveBoardValueBets}
+            lead={dictionary.liveBoardValueBetsLead}
+            toneClass={boardStyles.widgetCardWarm}
+            tracker={{
+              moduleType: "board_value_bets",
+              entityId: `${surface}-value-bets`,
+              surface,
+              metadata: { geo: monetization.geo },
+            }}
+          >
+            {valueBets.length ? (
+              valueBets.map((entry) => (
+                <article key={entry.key} className={boardStyles.widgetItem}>
+                  <div className={boardStyles.widgetMeta}>
+                    {entry.edgeScore != null ? (
+                      <span className={boardStyles.widgetMetric}>
+                        {dictionary.predictionEdge} {entry.edgeScore.toFixed(1)}
+                      </span>
+                    ) : null}
+                    {entry.bookmaker ? <span className={sharedStyles.badge}>{entry.bookmaker}</span> : null}
+                  </div>
+                  <div className={boardStyles.widgetCopy}>
+                    <h3 className={boardStyles.widgetItemTitle}>{entry.title}</h3>
+                    {entry.fixtureLabel ? <p className={boardStyles.widgetLead}>{entry.fixtureLabel}</p> : null}
+                    {entry.selectionLabel ? <p className={boardStyles.widgetLead}>{entry.selectionLabel}</p> : null}
+                  </div>
+                  <div className={boardStyles.widgetFoot}>
+                    {entry.priceLabel ? <strong className={boardStyles.widgetPrice}>{entry.priceLabel}</strong> : null}
+                  </div>
+                  <div className={boardStyles.bannerActions}>
+                    <ActionLink
+                      href={entry.fixtureRef ? buildMatchHref(locale, { externalRef: entry.fixtureRef }) : null}
+                      label={dictionary.liveBoardOpenCenter}
+                      className={sharedStyles.sectionAction}
+                      action="value-bet-match"
+                    />
+                    <ActionLink
+                      href={entry.ctaHref}
+                      label={dictionary.liveBoardAffiliateAction}
+                      className={sharedStyles.actionLink}
+                      action="value-bet-affiliate"
+                      external={entry.ctaExternal}
+                    />
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className={boardStyles.widgetEmpty}>{dictionary.liveBoardPredictionEmpty}</div>
+            )}
+          </WidgetCard>
+        ) : null}
       </div>
 
       {hasBannerRow ? (

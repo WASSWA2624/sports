@@ -648,6 +648,7 @@ function buildBroadcastQuickActions(broadcast, context) {
 
 function buildSurfaceInsights({
   predictions = [],
+  predictionsEnabled = true,
   fixtures = [],
   affiliateLinks = [],
   targetTerritory,
@@ -659,7 +660,7 @@ function buildSurfaceInsights({
   includeBestBet = false,
   predictionMessage = null,
 }) {
-  const predictionCards = buildPredictionCards(predictions, { locale });
+  const predictionCards = predictionsEnabled ? buildPredictionCards(predictions, { locale }) : [];
   const topPicks = [...predictionCards]
     .sort((left, right) => (right.confidence || 0) - (left.confidence || 0))
     .slice(0, 3)
@@ -724,6 +725,7 @@ function buildSurfaceInsights({
     : null;
 
   return {
+    predictionsEnabled,
     predictionMessage,
     topPicks,
     valueBets,
@@ -999,6 +1001,7 @@ export async function buildFixtureBettingExperience(
   const geo = normalizeGeo(viewerTerritory, DEFAULT_MARKET_GEO);
   const oddsEnabled = Boolean(flags?.fixtureOdds) && capability.oddsSupported;
   const broadcastEnabled = Boolean(flags?.fixtureBroadcast) && capability.broadcastSupported;
+  const predictionsEnabled = Boolean(flags?.predictions) && capability.predictionsSupported;
   const baseOdds = buildFixtureOddsModule(fixture, {
     locale,
     viewerTerritory,
@@ -1012,7 +1015,7 @@ export async function buildFixtureBettingExperience(
   const [platform, predictions, relatedFixtures, affiliateLinks, funnelEntries] =
     await Promise.all([
       getPlatformPublicSnapshotData(),
-      readFixturePredictions(fixture, capability),
+      predictionsEnabled ? readFixturePredictions(fixture, capability) : Promise.resolve([]),
       readRelatedOddsFixtures(fixture, capability),
       readAffiliateLinks({
         locale,
@@ -1073,11 +1076,10 @@ export async function buildFixtureBettingExperience(
     fixtureId: fixture.id,
     competitionId: fixture.competitionId || null,
     includeBestBet: true,
-    predictionMessage: buildPredictionStateMessage(
-      capability.predictionsSupported,
-      dictionary,
-      capability
-    ),
+    predictionsEnabled,
+    predictionMessage: predictionsEnabled
+      ? buildPredictionStateMessage(capability.predictionsSupported, dictionary, capability)
+      : null,
   });
 
   return {
@@ -1124,6 +1126,7 @@ export async function buildCompetitionBettingExperience(
   const capability = buildCapabilitySummary();
   const territory = normalizeTerritory(viewerTerritory, DEFAULT_MARKET_GEO);
   const geo = normalizeGeo(viewerTerritory, DEFAULT_MARKET_GEO);
+  const predictionsEnabled = Boolean(flags?.predictions) && capability.predictionsSupported;
   const fixtures = league.oddsFixtures || league.fixtures || [];
   const baseCompetitionOdds = buildCompetitionOddsModule(
     { ...league, fixtures },
@@ -1135,7 +1138,7 @@ export async function buildCompetitionBettingExperience(
   );
   const [platform, predictions, affiliateLinks, funnelEntries] = await Promise.all([
     getPlatformPublicSnapshotData(),
-    readCompetitionPredictions(league, capability),
+    predictionsEnabled ? readCompetitionPredictions(league, capability) : Promise.resolve([]),
     readAffiliateLinks({
       locale,
       geo: territory,
@@ -1181,11 +1184,10 @@ export async function buildCompetitionBettingExperience(
     geo,
     competitionId: league.competitionId || null,
     includeBestBet: false,
-    predictionMessage: buildPredictionStateMessage(
-      capability.predictionsSupported,
-      dictionary,
-      capability
-    ),
+    predictionsEnabled,
+    predictionMessage: predictionsEnabled
+      ? buildPredictionStateMessage(capability.predictionsSupported, dictionary, capability)
+      : null,
   });
 
   return {

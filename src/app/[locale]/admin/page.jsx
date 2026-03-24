@@ -8,10 +8,12 @@ import AdminConsoleClient from "./admin-console-client";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
+  const dictionary = getDictionary(locale);
   return buildPageMetadata(
     locale,
-    "Admin Control Room",
-    "Operational dashboard for admin controls, editorial safety, and platform health.",
+    dictionary.adminControlRoomTitle || "Admin Control Room",
+    dictionary.adminControlRoomLead ||
+      "Operational dashboard for admin controls, editorial safety, and platform health.",
     "/admin"
   );
 }
@@ -30,9 +32,12 @@ export default async function AdminPage({ params }) {
         <header className={sharedStyles.pageHeader}>
           <div>
             <p className={sharedStyles.eyebrow}>Admin</p>
-            <h1 className={sharedStyles.pageTitle}>Admin Control Room</h1>
+            <h1 className={sharedStyles.pageTitle}>
+              {dictionary.adminControlRoomTitle || "Admin Control Room"}
+            </h1>
             <p className={sharedStyles.pageLead}>
-              Administrator access is required to operate the control plane.
+              {dictionary.adminControlRoomAccessRequired ||
+                "Administrator access is required to operate the control plane."}
             </p>
           </div>
         </header>

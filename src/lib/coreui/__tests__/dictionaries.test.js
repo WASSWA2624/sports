@@ -121,6 +121,29 @@ const SHELL_DICTIONARY_KEYS = [
   "watchlistEmpty",
 ];
 
+const ADMIN_EDITOR_KEYS = [
+  "adminControlRoomTitle",
+  "adminControlRoomLead",
+  "adminControlRoomAccessRequired",
+  "adminRevenueTitle",
+  "adminSelectedProvider",
+  "adminSaveBookmaker",
+  "adminSaveAffiliate",
+  "adminSaveFunnel",
+  "adminSavePlacement",
+  "adminSavePrediction",
+  "newsManageHomepageRank",
+  "newsManageOpenIssues",
+  "newsManagePredictionReview",
+  "newsManagePredictionReviewTitle",
+  "newsManagePredictionPending",
+  "newsManagePredictionApproved",
+  "newsManagePredictionHold",
+  "newsManagePredictionPublishedCount",
+  "newsManagePredictionTitle",
+  "newsManagePredictionSave",
+];
+
 describe("shell dictionaries", () => {
   it.each(SUPPORTED_DICTIONARY_LOCALES)(
     "provides every shell key for %s",
@@ -142,4 +165,15 @@ describe("shell dictionaries", () => {
       }
     }
   });
+
+  it.each(SUPPORTED_DICTIONARY_LOCALES)(
+    "provides admin and editorial control keys for %s",
+    (locale) => {
+      const dictionary = getDictionary(locale);
+
+      for (const key of ADMIN_EDITOR_KEYS) {
+        expect(dictionary[key], `${locale}:${key}`).toBeTruthy();
+      }
+    }
+  );
 });
