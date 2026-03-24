@@ -18,6 +18,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
   const leftRailRef = useRef(null);
   const centerRailRef = useRef(null);
   const rightRailRef = useRef(null);
+  const footerContentRef = useRef(null);
   const {
     compliance,
     ctaGeo,
@@ -174,6 +175,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     const desktopMedia = window.matchMedia("(min-width: 1121px)");
     const railRefs = [leftRailRef, centerRailRef, rightRailRef];
 
+    function getFooterHoldDistance() {
+      const footerHeight = footerContentRef.current?.scrollHeight || 0;
+      return Math.max(120, footerHeight + 24);
+    }
+
     function isFooterRevealPoint(node) {
       if (!node) {
         return false;
@@ -184,7 +190,8 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
         return false;
       }
 
-      return node.scrollTop + node.clientHeight >= node.scrollHeight - 24;
+      const threshold = footerVisible ? getFooterHoldDistance() : 24;
+      return node.scrollTop + node.clientHeight >= node.scrollHeight - threshold;
     }
 
     function updateFooterVisibility() {
@@ -218,7 +225,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
       desktopMedia.removeEventListener("change", updateFooterVisibility);
       window.removeEventListener("resize", updateFooterVisibility);
     };
-  }, [pathname]);
+  }, [pathname, footerVisible]);
 
   return (
     <div className={styles.shell}>
@@ -904,7 +911,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
       <footer className={`${styles.footer} ${footerVisible ? styles.footerVisible : ""}`}>
         <div className={styles.footerInner}>
-          <div className={styles.footerContent}>
+          <div ref={footerContentRef} className={styles.footerContent}>
             <div className={styles.footerGrid}>
               <section className={styles.footerLead}>
                 <div className={styles.footerBrandRow}>

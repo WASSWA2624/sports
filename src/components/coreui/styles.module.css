@@ -2185,7 +2185,7 @@
   .rightRail {
     min-height: 0;
     overflow-y: auto;
-    padding-bottom: clamp(8rem, 16vh, 10.5rem);
+    padding-bottom: 1.25rem;
     overscroll-behavior: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -2206,22 +2206,22 @@
   }
 
   .footer {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 18;
+    position: relative;
     flex-shrink: 0;
     padding: 0;
+    max-height: 0;
+    overflow: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(100%);
+    transform: translateY(1rem);
     transition:
+      max-height 220ms ease,
       opacity 180ms ease,
       transform 180ms ease;
   }
 
   .footerVisible {
+    max-height: 32rem;
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
