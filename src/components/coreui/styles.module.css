@@ -3504,7 +3504,7 @@
   }
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1180px) {
   .headerInner {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
     align-items: center;
@@ -3538,10 +3538,18 @@
     grid-row: 1;
     grid-column: 3;
     width: 100%;
+    min-width: 0;
     flex-wrap: nowrap;
     gap: 0.22rem;
     padding: 0.22rem;
     border-radius: 999px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .sportsStrip::-webkit-scrollbar {
+    display: none;
   }
 
   .headerControls {
