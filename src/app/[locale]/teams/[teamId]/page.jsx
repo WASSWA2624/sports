@@ -228,6 +228,17 @@ export default async function TeamDetailPage({ params, searchParams }) {
       : team.country && team.sport && team.league?.countryRecord
         ? buildCountryHref(locale, team.league.countryRecord, team.sport)
         : null;
+  const teamOddsSurface = team.competitionOdds;
+  const shouldGateOdds = teamOddsSurface?.enabled && teamOddsSurface?.tabs?.length > 0;
+  const hasCompetitionInsights = Boolean(
+    teamOddsSurface?.insights?.bestBet ||
+      teamOddsSurface?.insights?.topPicks?.length ||
+      teamOddsSurface?.insights?.valueBets?.length ||
+      teamOddsSurface?.insights?.bestOdds?.length ||
+      teamOddsSurface?.insights?.highOddsMatches?.length ||
+      teamOddsSurface?.ctaConfig?.primaryAffiliate?.href ||
+      teamOddsSurface?.ctaConfig?.funnelActions?.length
+  );
   const structuredData = [
     buildBreadcrumbStructuredData([
       { name: dictionary.home, path: `/${locale}` },
@@ -303,17 +314,6 @@ export default async function TeamDetailPage({ params, searchParams }) {
         })
       : null,
   ];
-  const teamOddsSurface = team.competitionOdds;
-  const shouldGateOdds = teamOddsSurface?.enabled && teamOddsSurface?.tabs?.length > 0;
-  const hasCompetitionInsights = Boolean(
-    teamOddsSurface?.insights?.bestBet ||
-      teamOddsSurface?.insights?.topPicks?.length ||
-      teamOddsSurface?.insights?.valueBets?.length ||
-      teamOddsSurface?.insights?.bestOdds?.length ||
-      teamOddsSurface?.insights?.highOddsMatches?.length ||
-      teamOddsSurface?.ctaConfig?.primaryAffiliate?.href ||
-      teamOddsSurface?.ctaConfig?.funnelActions?.length
-  );
 
   const oddsContent = teamOddsSurface ? (
     <div className={styles.surfaceStack}>

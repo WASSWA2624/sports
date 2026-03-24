@@ -267,35 +267,48 @@ export function LiveBoardGroupList({
 
   return (
     <section className={sharedStyles.section}>
-      <div className={boardStyles.toolbar}>
+      <div className={boardStyles.boardSectionHeader}>
+        <div className={boardStyles.boardSectionIntro}>
+          <p className={sharedStyles.eyebrow}>{dictionary.liveNow}</p>
+          <h2 className={sharedStyles.sectionTitle}>{dictionary.leagues}</h2>
+        </div>
+
+        <div className={boardStyles.toolbar}>
+          <div className={boardStyles.toolbarMeta}>
+            <span className={sharedStyles.badge}>{orderedGroups.length}</span>
+            <span className={sharedStyles.badge}>{dictionary.fixtures}: {groups.reduce((count, group) => count + (group.summary?.total || 0), 0)}</span>
+          </div>
+
+          <div className={boardStyles.groupControls}>
+            <button
+              type="button"
+              className={allCollapsed ? boardStyles.groupToggle : boardStyles.groupToggleActive}
+              onClick={() => setEveryGroupCollapsed(false)}
+              data-analytics-action="expand-all-groups"
+            >
+              {dictionary.liveBoardExpandAll}
+            </button>
+            <button
+              type="button"
+              className={allCollapsed ? boardStyles.groupToggleActive : boardStyles.groupToggle}
+              onClick={() => setEveryGroupCollapsed(true)}
+              data-analytics-action="collapse-all-groups"
+            >
+              {dictionary.liveBoardCollapseAll}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {pinnedCount ? (
         <div className={boardStyles.toolbarMeta}>
           {pinnedCount ? (
             <span className={sharedStyles.badge}>
               {dictionary.liveBoardPinnedFirst} {pinnedCount}
             </span>
           ) : null}
-          <span className={sharedStyles.badge}>{orderedGroups.length}</span>
         </div>
-
-        <div className={boardStyles.groupControls}>
-          <button
-            type="button"
-            className={allCollapsed ? boardStyles.groupToggle : boardStyles.groupToggleActive}
-            onClick={() => setEveryGroupCollapsed(false)}
-            data-analytics-action="expand-all-groups"
-          >
-            {dictionary.liveBoardExpandAll}
-          </button>
-          <button
-            type="button"
-            className={allCollapsed ? boardStyles.groupToggleActive : boardStyles.groupToggle}
-            onClick={() => setEveryGroupCollapsed(true)}
-            data-analytics-action="collapse-all-groups"
-          >
-            {dictionary.liveBoardCollapseAll}
-          </button>
-        </div>
-      </div>
+      ) : null}
 
       <div className={boardStyles.groupList}>
         {orderedGroups.map((group, index) => {
@@ -308,29 +321,38 @@ export function LiveBoardGroupList({
             <div key={group.key} className={boardStyles.groupList}>
               <section className={boardStyles.groupCard}>
                 <div className={boardStyles.groupHeader}>
-                  <div className={boardStyles.groupCopy}>
-                    <p className={sharedStyles.eyebrow}>{group.country || dictionary.international}</p>
-                    <h2 className={sharedStyles.sectionTitle}>
-                      {competitionHref ? (
-                        <Link href={competitionHref}>{group.leagueName || dictionary.competition}</Link>
-                      ) : (
-                        group.leagueName || dictionary.competition
-                      )}
-                    </h2>
-                    <div className={boardStyles.groupMetrics}>
-                      <span className={sharedStyles.badge}>
-                        {dictionary.live}: {group.summary?.LIVE || 0}
-                      </span>
-                      <span className={sharedStyles.badge}>
-                        {dictionary.results}: {group.summary?.FINISHED || 0}
-                      </span>
-                      <span className={sharedStyles.badge}>
-                        {dictionary.fixtures}: {group.summary?.SCHEDULED || 0}
-                      </span>
-                      {group.completedSummary ? (
-                        <span className={sharedStyles.badge}>{group.completedSummary.label}</span>
-                      ) : null}
+                  <div className={boardStyles.groupOverview}>
+                    <div className={boardStyles.groupCopy}>
+                      <p className={sharedStyles.eyebrow}>{group.country || dictionary.international}</p>
+                      <h2 className={sharedStyles.sectionTitle}>
+                        {competitionHref ? (
+                          <Link href={competitionHref}>{group.leagueName || dictionary.competition}</Link>
+                        ) : (
+                          group.leagueName || dictionary.competition
+                        )}
+                      </h2>
                     </div>
+
+                    <div className={boardStyles.groupSummaryGrid}>
+                      <div className={boardStyles.groupSummaryStat}>
+                        <strong>{group.summary?.LIVE || 0}</strong>
+                        <span>{dictionary.live}</span>
+                      </div>
+                      <div className={boardStyles.groupSummaryStat}>
+                        <strong>{group.summary?.FINISHED || 0}</strong>
+                        <span>{dictionary.results}</span>
+                      </div>
+                      <div className={boardStyles.groupSummaryStat}>
+                        <strong>{group.summary?.SCHEDULED || 0}</strong>
+                        <span>{dictionary.fixtures}</span>
+                      </div>
+                    </div>
+
+                    {group.completedSummary ? (
+                      <div className={boardStyles.groupHighlightPills}>
+                        <span className={sharedStyles.badge}>{group.completedSummary.label}</span>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className={boardStyles.groupControls}>
@@ -364,6 +386,28 @@ export function LiveBoardGroupList({
 
                 {isOpen ? (
                   <>
+                    <div className={boardStyles.groupFixtureHead}>
+                      <div className={boardStyles.groupCopy}>
+                        <p className={sharedStyles.eyebrow}>{dictionary.fixtures}</p>
+                        <p className={boardStyles.groupFixtureSummary}>
+                          {group.summary?.total || 0} · {dictionary.fixtures}
+                        </p>
+                      </div>
+
+                      <div className={boardStyles.groupHighlightPills}>
+                        {(group.summary?.LIVE || 0) > 0 ? (
+                          <span className={sharedStyles.liveBadge}>
+                            {dictionary.live} {group.summary?.LIVE || 0}
+                          </span>
+                        ) : null}
+                        {(group.summary?.FINISHED || 0) > 0 ? (
+                          <span className={sharedStyles.badge}>
+                            {dictionary.results} {group.summary?.FINISHED || 0}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
                     <div className={boardStyles.fixtureRows}>
                       {[...(group.fixtures || [])]
                         .sort((leftFixture, rightFixture) => {

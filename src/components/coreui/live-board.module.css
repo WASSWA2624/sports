@@ -6,6 +6,23 @@
   gap: 0.75rem;
 }
 
+.boardSectionHeader,
+.boardSectionIntro,
+.groupOverview,
+.groupHighlightPills,
+.groupFixtureHead {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.boardSectionHeader {
+  gap: 0.9rem;
+}
+
+.boardSectionIntro {
+  gap: 0.18rem;
+}
+
 .toolbarMeta {
   display: inline-flex;
   flex-wrap: wrap;
@@ -234,8 +251,49 @@
   gap: 0.35rem;
 }
 
+.groupOverview {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .groupMetrics {
   display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.groupSummaryGrid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.groupSummaryStat {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.95rem;
+  background: var(--surface-strong);
+}
+
+.groupSummaryStat strong {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.2rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.groupSummaryStat span,
+.groupFixtureSummary {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.groupHighlightPills {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
@@ -288,6 +346,13 @@
 .fixtureRows {
   display: grid;
   gap: 0.75rem;
+}
+
+.groupFixtureHead {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.8rem;
+  margin: 0.2rem 0 0.1rem;
 }
 
 .fixtureRow {
@@ -499,10 +564,19 @@
   .groupControls {
     justify-content: flex-start;
   }
+
+  .groupFixtureHead {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
 }
 
 @media (max-width: 720px) {
   .widgetGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .groupSummaryGrid {
     grid-template-columns: 1fr;
   }
 

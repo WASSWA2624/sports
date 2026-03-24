@@ -61,6 +61,10 @@ export function LiveBoardFixtureRow({ fixture, locale, dictionary, surface = "li
   const competitionHref = fixture.league?.code ? buildCompetitionHref(locale, fixture.league) : null;
   const fixtureLabel = `${fixture.homeTeam?.name} vs ${fixture.awayTeam?.name}`;
   const signals = buildLiveBoardFixtureSignals(fixture, locale);
+  const statusDetail =
+    fixture.resultSnapshot?.statusText && fixture.resultSnapshot.statusText !== signals.statusLabel
+      ? fixture.resultSnapshot.statusText
+      : null;
   const homeCards = signals.teamCards?.home || { yellow: 0, red: 0 };
   const awayCards = signals.teamCards?.away || { yellow: 0, red: 0 };
   const signalBadges = [
@@ -93,12 +97,11 @@ export function LiveBoardFixtureRow({ fixture, locale, dictionary, surface = "li
 
       <div className={boardStyles.rowBody}>
         <Link href={matchHref} className={boardStyles.rowMainLink} data-analytics-action="open-match-center">
-          <div className={boardStyles.rowTopline}>
-            {fixture.league?.name ? <span className={sharedStyles.badge}>{fixture.league.name}</span> : null}
-            {fixture.resultSnapshot?.statusText ? (
-              <span className={sharedStyles.badge}>{fixture.resultSnapshot.statusText}</span>
-            ) : null}
-          </div>
+          {statusDetail ? (
+            <div className={boardStyles.rowTopline}>
+              <span className={sharedStyles.badge}>{statusDetail}</span>
+            </div>
+          ) : null}
 
           <div className={boardStyles.rowTeams}>
             <div className={boardStyles.rowTeam}>
