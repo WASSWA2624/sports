@@ -1446,6 +1446,8 @@
 
 .railLink,
 .railLinkActive {
+  display: inline-flex;
+  align-items: center;
   justify-content: flex-start;
   padding: 0.7rem 1rem;
   border: 0;
@@ -3936,6 +3938,13 @@
   gap: 0.58rem;
 }
 
+.scoreViewItemContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-width: 0;
+}
+
 .mobileMenuLink,
 .mobileMenuLinkActive,
 .mobileMenuClose,
@@ -3983,7 +3992,8 @@
 .mobileMenuCountryRow span:first-child,
 .mobileMenuLink span:last-child,
 .mobileMenuLinkActive span:last-child,
-.mobileMenuSportRow span:first-child {
+.mobileMenuSportRow span:first-child,
+.scoreViewItemContent span:last-child {
   min-width: 0;
 }
 

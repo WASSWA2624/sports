@@ -143,6 +143,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
   const primarySports = rankedSports.slice(0, 3);
   const overflowSports = rankedSports.slice(3);
   const activeSport = rankedSports.find((sport) => sport.enabled) || rankedSports[0] || null;
+  const renderScoreViewContent = (item) => (
+    <span className={styles.scoreViewItemContent}>
+      <ShellIcon name={item.key} className={styles.controlIcon} />
+      <span>{getScoreViewLabel(item.key, dictionary)}</span>
+    </span>
+  );
   const modeSwitchLink = {
     href: isNewsMode ? `/${locale}` : `/${locale}/news`,
     label: isNewsMode ? dictionary.scores : dictionary.news,
@@ -480,7 +486,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                           className={active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          {getScoreViewLabel(item.key, dictionary)}
+                          {renderScoreViewContent(item)}
                         </Link>
                       );
                     })}
@@ -665,7 +671,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                         href={href}
                         className={active ? styles.railLinkActive : styles.railLink}
                       >
-                        {getScoreViewLabel(item.key, dictionary)}
+                        {renderScoreViewContent(item)}
                       </Link>
                     );
                   })}

@@ -11,6 +11,69 @@ export function ShellIcon({ name, className }) {
   };
 
   switch (name) {
+    case "home":
+      return (
+        <svg {...props}>
+          <path d="M4.5 10.5 12 4l7.5 6.5" />
+          <path d="M6.5 9.2v9.3h11V9.2" />
+          <path d="M10 18.5v-5h4v5" />
+        </svg>
+      );
+    case "live":
+      return (
+        <svg {...props}>
+          <circle cx="12" cy="12" r="2.2" />
+          <path d="M7.8 7.8a6 6 0 0 0 0 8.4" />
+          <path d="M16.2 7.8a6 6 0 0 1 0 8.4" />
+          <path d="M5.1 5.1a9.8 9.8 0 0 0 0 13.8" />
+          <path d="M18.9 5.1a9.8 9.8 0 0 1 0 13.8" />
+        </svg>
+      );
+    case "fixtures":
+      return (
+        <svg {...props}>
+          <rect x="4.5" y="5.5" width="15" height="14" rx="2.2" />
+          <path d="M8 3.8v3.4" />
+          <path d="M16 3.8v3.4" />
+          <path d="M4.5 9.5h15" />
+          <path d="M8 13h3" />
+          <path d="M13 13h3" />
+        </svg>
+      );
+    case "results":
+      return (
+        <svg {...props}>
+          <rect x="4.5" y="5" width="15" height="14" rx="2.2" />
+          <path d="M8 9h7.5" />
+          <path d="M8 12.5h4.5" />
+          <path d="m8.2 16 1.3 1.3 2.6-2.8" />
+        </svg>
+      );
+    case "tables":
+      return (
+        <svg {...props}>
+          <rect x="4.5" y="5" width="15" height="14" rx="2.2" />
+          <path d="M4.5 9.5h15" />
+          <path d="M4.5 14h15" />
+          <path d="M9.5 5v14" />
+        </svg>
+      );
+    case "leagues":
+      return (
+        <svg {...props}>
+          <path d="M12 4.5 17.5 7v5c0 3.5-2.2 5.9-5.5 7-3.3-1.1-5.5-3.5-5.5-7V7L12 4.5Z" />
+          <path d="M9.5 11.5 11.2 13l3.3-3.5" />
+        </svg>
+      );
+    case "teams":
+      return (
+        <svg {...props}>
+          <circle cx="9" cy="9" r="2.6" />
+          <circle cx="15.8" cy="10.2" r="2.1" />
+          <path d="M4.8 18c1.1-2.6 3.2-3.9 6-3.9 2.4 0 4.4 1 5.6 3" />
+          <path d="M14.2 18c.6-1.8 2-2.8 4.1-3" />
+        </svg>
+      );
     case "scores":
       return (
         <svg {...props}>
