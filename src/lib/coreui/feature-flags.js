@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { getPublicControlState } from "../control-plane";
+import { safeDataRead } from "../data-access";
 
 const DEFAULT_PUBLIC_SURFACE_FLAGS = {
   news: true,
@@ -19,17 +20,11 @@ const DEFAULT_PUBLIC_SURFACE_FLAGS = {
   moduleMap: {},
 };
 
-async function safely(query, fallback) {
-  try {
-    return await query();
-  } catch (error) {
-    return fallback;
-  }
-}
-
 export const getPublicSurfaceFlags = unstable_cache(
   async () =>
-    safely(() => getPublicControlState(), DEFAULT_PUBLIC_SURFACE_FLAGS),
+    safeDataRead(() => getPublicControlState(), DEFAULT_PUBLIC_SURFACE_FLAGS, {
+      label: "Public surface flags",
+    }),
   ["coreui:public-surface-flags"],
   { revalidate: 300, tags: ["feature-flags", "coreui:shell"] }
 );

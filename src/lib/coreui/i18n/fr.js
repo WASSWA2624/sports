@@ -24,6 +24,8 @@ const fr = {
   scoreViews: "Vues scores",
   searchPlaceholder: "Rechercher des Ã©quipes, compÃ©titions et matchs",
   searchHelp: "L'indexation de recherche arrivera plus tard. Utilisez ces raccourcis pour le moment.",
+  searchDegradedMessage:
+    "La recherche fonctionne temporairement en mode degrade pendant la reprise de la plateforme.",
   supportRail: "Support",
   supportRailBody:
     "Les modules de la colonne droite restent optionnels pour garder le tableau des scores lisible mÃªme sans publicitÃ©.",

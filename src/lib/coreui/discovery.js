@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db } from "../db";
+import { safeDataRead } from "../data-access";
 import { parseFavoriteItemId } from "../favorites";
 import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "./routes";
 
@@ -44,14 +45,6 @@ function buildFixtureInclude() {
     },
     resultSnapshot: true,
   };
-}
-
-async function safely(query, fallback) {
-  try {
-    return await query();
-  } catch (error) {
-    return fallback;
-  }
 }
 
 const getTopCompetitionsModuleCached = unstable_cache(
@@ -144,7 +137,9 @@ const getTopCompetitionsModuleCached = unstable_cache(
 );
 
 export async function getTopCompetitionsModule(limit = 6) {
-  return safely(() => getTopCompetitionsModuleCached(limit), []);
+  return safeDataRead(() => getTopCompetitionsModuleCached(limit), [], {
+    label: "Top competitions module",
+  });
 }
 
 export async function getRecentItemsModule(personalization, { locale = "en", limit = 6 } = {}) {
@@ -172,44 +167,49 @@ export async function getRecentItemsModule(personalization, { locale = "en", lim
     }
   );
 
-  const [fixtures, teams, competitions] = await Promise.all([
-    grouped.FIXTURE.length
-      ? db.fixture.findMany({
-          where: {
-            id: { in: grouped.FIXTURE },
-          },
-          include: buildFixtureInclude(),
-        })
-      : Promise.resolve([]),
-    grouped.TEAM.length
-      ? db.team.findMany({
-          where: {
-            id: { in: grouped.TEAM },
-          },
-          include: {
-            league: {
+  const [fixtures, teams, competitions] = await safeDataRead(
+    () =>
+      Promise.all([
+        grouped.FIXTURE.length
+          ? db.fixture.findMany({
+              where: {
+                id: { in: grouped.FIXTURE },
+              },
+              include: buildFixtureInclude(),
+            })
+          : Promise.resolve([]),
+        grouped.TEAM.length
+          ? db.team.findMany({
+              where: {
+                id: { in: grouped.TEAM },
+              },
+              include: {
+                league: {
+                  select: {
+                    code: true,
+                    name: true,
+                  },
+                },
+              },
+            })
+          : Promise.resolve([]),
+        grouped.COMPETITION.length
+          ? db.league.findMany({
+              where: {
+                code: { in: grouped.COMPETITION },
+              },
               select: {
+                id: true,
                 code: true,
                 name: true,
+                country: true,
               },
-            },
-          },
-        })
-      : Promise.resolve([]),
-    grouped.COMPETITION.length
-      ? db.league.findMany({
-          where: {
-            code: { in: grouped.COMPETITION },
-          },
-          select: {
-            id: true,
-            code: true,
-            name: true,
-            country: true,
-          },
-        })
-      : Promise.resolve([]),
-  ]);
+            })
+          : Promise.resolve([]),
+      ]),
+    [[], [], []],
+    { label: "Recent items module" }
+  );
 
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));
   const teamMap = new Map(teams.map((team) => [team.id, team]));
@@ -290,23 +290,28 @@ export async function getRelatedMatchesModule(
     return [];
   }
 
-  const fixtures = await db.fixture.findMany({
-    where: {
-      id: {
-        not: fixtureId,
-      },
-      OR: [
-        leagueId ? { leagueId } : null,
-        homeTeamId ? { homeTeamId } : null,
-        awayTeamId ? { awayTeamId } : null,
-        homeTeamId ? { awayTeamId: homeTeamId } : null,
-        awayTeamId ? { homeTeamId: awayTeamId } : null,
-      ].filter(Boolean),
-    },
-    orderBy: [{ startsAt: "asc" }],
-    take: limit * 3,
-    include: buildFixtureInclude(),
-  });
+  const fixtures = await safeDataRead(
+    () =>
+      db.fixture.findMany({
+        where: {
+          id: {
+            not: fixtureId,
+          },
+          OR: [
+            leagueId ? { leagueId } : null,
+            homeTeamId ? { homeTeamId } : null,
+            awayTeamId ? { awayTeamId } : null,
+            homeTeamId ? { awayTeamId: homeTeamId } : null,
+            awayTeamId ? { homeTeamId: awayTeamId } : null,
+          ].filter(Boolean),
+        },
+        orderBy: [{ startsAt: "asc" }],
+        take: limit * 3,
+        include: buildFixtureInclude(),
+      }),
+    [],
+    { label: "Related matches module" }
+  );
 
   return fixtures.sort(compareRelatedFixtures).slice(0, limit);
 }

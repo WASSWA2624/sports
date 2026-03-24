@@ -205,7 +205,7 @@ export default async function LocaleHomePage({ params }) {
         <div className={styles.filterStack}>
           <div className={styles.filterRow}>
             <Link href={`/${locale}`} className={styles.filterChipActive}>
-              All
+              {dictionary.browseAll}
               <span className={styles.filterCount}>{boardFixtures.length}</span>
             </Link>
             <Link href={`/${locale}/live`} className={styles.filterChip}>

@@ -21,6 +21,7 @@ import {
   normalizeSearchQuery,
   searchGlobal,
 } from "../../../lib/coreui/search";
+import { safeDataRead } from "../../../lib/data-access";
 import {
   getPersonalizationSnapshot,
 } from "../../../lib/personalization";
@@ -53,8 +54,10 @@ export default async function SearchPage({ params, searchParams }) {
   const personalization = await getPersonalizationSnapshot();
   const [results, topCompetitions, recentItems] = await Promise.all([
     query.length >= 2
-      ? searchGlobal(query, { locale, limitPerSection: 8 }).catch(() =>
-          buildDegradedSearchResult(query)
+      ? safeDataRead(
+          () => searchGlobal(query, { locale, limitPerSection: 8 }),
+          buildDegradedSearchResult(query),
+          { label: "Search page results" }
         )
       : Promise.resolve(null),
     getTopCompetitionsModule(),
@@ -119,7 +122,7 @@ export default async function SearchPage({ params, searchParams }) {
 
       {results?.degraded ? (
         <div className={styles.emptyState}>
-          Search is temporarily running in degraded mode while the platform recovers.
+          {dictionary.searchDegradedMessage}
         </div>
       ) : null}
 

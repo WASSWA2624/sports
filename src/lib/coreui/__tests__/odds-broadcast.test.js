@@ -3,6 +3,7 @@ import {
   buildCompetitionOddsModule,
   buildFixtureBroadcastModule,
   buildFixtureOddsModule,
+  resolveViewerTerritory,
 } from "../odds-broadcast";
 
 function buildFixture(overrides = {}) {
@@ -166,5 +167,28 @@ describe("odds and broadcast read models", () => {
     expect(broadcast.state).toBe("region_restricted");
     expect(broadcast.channels).toHaveLength(0);
     expect(broadcast.restrictedTerritories).toContain("GB");
+  });
+
+  it("returns an unavailable odds surface when the module is disabled", () => {
+    const odds = buildFixtureOddsModule(buildFixture(), {
+      locale: "en",
+      viewerTerritory: "US",
+      enabled: false,
+    });
+
+    expect(odds.enabled).toBe(false);
+    expect(odds.state).toBe("unavailable");
+    expect(odds.summary.marketCount).toBe(0);
+  });
+
+  it("prefers explicit viewer territory over geo headers", () => {
+    const viewerTerritory = resolveViewerTerritory({
+      territory: "ca",
+      headers: new Headers({
+        "x-vercel-ip-country": "US",
+      }),
+    });
+
+    expect(viewerTerritory).toBe("CA");
   });
 });

@@ -4,6 +4,7 @@ import {
   normalizeSearchQuery,
   searchGlobal,
 } from "../../../lib/coreui/search";
+import { withDataAccessTimeout } from "../../../lib/data-access";
 import { observeOperation, recordOperationalEvent } from "../../../lib/operations";
 
 export async function GET(request) {
@@ -37,10 +38,14 @@ export async function GET(request) {
         },
       },
       () =>
-        searchGlobal(query, {
-          locale,
-          limitPerSection,
-        })
+        withDataAccessTimeout(
+          () =>
+            searchGlobal(query, {
+              locale,
+              limitPerSection,
+            }),
+          { label: "Global search" }
+        )
     );
 
     return NextResponse.json(results);

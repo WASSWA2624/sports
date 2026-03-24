@@ -272,7 +272,7 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
                 <div className={searchStyles.overlaySections}>
                   {searchResults?.degraded ? (
                     <div className={searchStyles.emptyState}>
-                      Search is temporarily running in degraded mode.
+                      {dictionary.searchDegradedMessage}
                     </div>
                   ) : null}
 

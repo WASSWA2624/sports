@@ -1,4 +1,5 @@
 import { db } from "../db";
+import { safeDataRead } from "../data-access";
 import { observeOperation } from "../operations";
 import { getPublicSurfaceFlags } from "./feature-flags";
 import {
@@ -39,14 +40,6 @@ function endOfDay(value) {
   const date = new Date(value);
   date.setHours(23, 59, 59, 999);
   return date;
-}
-
-async function safely(query, fallback) {
-  try {
-    return await query();
-  } catch (error) {
-    return fallback;
-  }
 }
 
 function normalizeSearchValue(value) {
@@ -290,7 +283,7 @@ export async function getResultsFeed({ locale = "en", status, leagueCode } = {})
       },
     },
     async () => {
-      const fixtures = await safely(
+      const fixtures = await safeDataRead(
         () =>
           db.fixture.findMany({
             where: {
@@ -356,7 +349,7 @@ export async function getLiveMatchDetail(reference, locale = "en", viewerTerrito
       },
     },
     () =>
-      safely(async () => {
+      safeDataRead(async () => {
         const fixture = await db.fixture.findFirst({
           where: {
             OR: [{ id: reference }, { externalRef: reference }],

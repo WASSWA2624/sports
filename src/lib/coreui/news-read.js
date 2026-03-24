@@ -1,17 +1,10 @@
 import { unstable_cache } from "next/cache";
+import { safeDataRead } from "../data-access";
 import { db } from "../db";
 import {
   decorateNewsArticle,
   groupNewsHubArticles,
 } from "./news";
-
-async function safely(query, fallback) {
-  try {
-    return await query();
-  } catch (error) {
-    return fallback;
-  }
-}
 
 function articleInclude() {
   return {
@@ -189,7 +182,7 @@ async function fetchArticles({
 
 export const getNewsHubSnapshot = unstable_cache(
   async () =>
-    safely(async () => {
+    safeDataRead(async () => {
       const articles = await fetchArticles({ take: 24 });
       return groupNewsHubArticles(articles);
     }, groupNewsHubArticles([])),
@@ -199,7 +192,7 @@ export const getNewsHubSnapshot = unstable_cache(
 
 export const getHomepageNewsModule = unstable_cache(
   async () =>
-    safely(async () => {
+    safeDataRead(async () => {
       const hub = await getNewsHubSnapshot();
       const articles = (hub.homepage.length ? hub.homepage : hub.items).slice(0, 4);
       return {
@@ -213,7 +206,7 @@ export const getHomepageNewsModule = unstable_cache(
 
 export const getLatestNewsModule = unstable_cache(
   async () =>
-    safely(async () => {
+    safeDataRead(async () => {
       const hub = await getNewsHubSnapshot();
       const articles = (hub.latest.length ? hub.latest : hub.items).slice(0, 4);
       return {
@@ -230,7 +223,7 @@ export async function getSportNewsModule(sportId, take = 6) {
     return { articles: [], total: 0 };
   }
 
-  const articles = await safely(
+  const articles = await safeDataRead(
     () =>
       fetchArticles({
         where: {
@@ -257,7 +250,7 @@ export async function getCompetitionNewsModule(competitionId, take = 4) {
     return { articles: [], total: 0 };
   }
 
-  const articles = await safely(
+  const articles = await safeDataRead(
     () =>
       fetchArticles({
         where: {
@@ -284,7 +277,7 @@ export async function getCountryNewsModule(countryId, take = 4) {
     return { articles: [], total: 0 };
   }
 
-  const articles = await safely(
+  const articles = await safeDataRead(
     () =>
       fetchArticles({
         where: {
@@ -311,7 +304,7 @@ export async function getTeamNewsModule(teamId, take = 4) {
     return { articles: [], total: 0 };
   }
 
-  const articles = await safely(
+  const articles = await safeDataRead(
     () =>
       fetchArticles({
         where: {
@@ -374,7 +367,7 @@ export async function getFixtureNewsModule(
     return { articles: [], total: 0 };
   }
 
-  const articles = await safely(
+  const articles = await safeDataRead(
     () =>
       fetchArticles({
         where: {
@@ -392,7 +385,7 @@ export async function getFixtureNewsModule(
 }
 
 export async function getNewsArticleDetail(slug, { includeUnpublished = false } = {}) {
-  const article = await safely(
+  const article = await safeDataRead(
     () =>
       db.newsArticle.findFirst({
         where: buildArticleWhere({ slug }, !includeUnpublished),
@@ -424,7 +417,7 @@ export async function getNewsArticleDetail(slug, { includeUnpublished = false } 
   }
 
   const relatedArticles = relatedPredicates.length
-    ? await safely(
+    ? await safeDataRead(
         () =>
           fetchArticles({
             where: {
@@ -444,7 +437,7 @@ export async function getNewsArticleDetail(slug, { includeUnpublished = false } 
 }
 
 export async function getEditorialNewsWorkspace() {
-  return safely(async () => {
+  return safeDataRead(async () => {
     const [rawArticles, categories, sports, countries, competitions, teams, fixtures] = await Promise.all([
       db.newsArticle.findMany({
         orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
@@ -580,5 +573,5 @@ export async function getEditorialNewsWorkspace() {
 }
 
 export async function getPublishedNewsFeed(limit = 12) {
-  return safely(() => fetchArticles({ take: limit }), []);
+  return safeDataRead(() => fetchArticles({ take: limit }), []);
 }

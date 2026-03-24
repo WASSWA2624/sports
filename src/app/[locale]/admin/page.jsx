@@ -1,6 +1,7 @@
 import { getCurrentUserFromServer } from "../../../lib/auth";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
+import { safeDataRead } from "../../../lib/data-access";
 import { getControlPlaneWorkspace } from "../../../lib/control-plane";
 import sharedStyles from "../../../components/coreui/styles.module.css";
 import AdminConsoleClient from "./admin-console-client";
@@ -18,7 +19,9 @@ export async function generateMetadata({ params }) {
 export default async function AdminPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const userContext = await getCurrentUserFromServer();
+  const userContext = await safeDataRead(() => getCurrentUserFromServer(), null, {
+    label: "Admin session lookup",
+  });
   const canAdmin = userContext?.roles?.includes("ADMIN");
 
   if (!canAdmin) {

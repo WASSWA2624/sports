@@ -7,6 +7,7 @@ import {
 } from "./cache";
 import { getAssetDeliverySnapshot } from "./assets-server";
 import { db } from "./db";
+import { safeDataRead } from "./data-access";
 import { logAuditEvent } from "./audit";
 import { getOperationalDashboardSnapshot } from "./operations";
 import { getSportsSyncConfig } from "./sports/config";
@@ -47,6 +48,108 @@ export const PUBLIC_MODULE_DEFAULTS = {
   shell_right_rail_ad_slot: true,
   shell_right_rail_consent: true,
   shell_right_rail_support: true,
+};
+
+export const EMPTY_CONTROL_PLANE_WORKSPACE = {
+  roles: [],
+  users: [],
+  providers: [],
+  providerRegistry: [],
+  providerChain: [],
+  featureFlags: [],
+  shellModules: [],
+  adSlots: [],
+  consentTexts: [],
+  sync: {
+    recentJobs: [],
+    checkpoints: [],
+    summary: {
+      failedJobsLast24Hours: 0,
+      checkpointStates: {},
+    },
+  },
+  issues: {
+    items: [],
+    summary: {
+      total: 0,
+      byStatus: {},
+      openByType: {},
+    },
+  },
+  ops: {
+    staleData: {
+      liveFixtures: 0,
+      oddsMarkets: 0,
+      broadcastChannels: 0,
+    },
+    cacheHealth: [],
+    routeErrors: {
+      events: [],
+      summary: {
+        lastHourCount: 0,
+        last24HoursCount: 0,
+        topRoutes: [],
+      },
+    },
+    observability: {
+      latency: {
+        topRoutes: [],
+      },
+      cache: {
+        byTag: [],
+        hitRate: null,
+      },
+      search: {},
+      pressure: {
+        latest: null,
+      },
+      drills: {
+        recent: [],
+        statusCounts: {},
+      },
+      providers: [],
+      liveData: {},
+      slos: [],
+      summary: {
+        routeErrorsLastHour: 0,
+        knownCacheTags: KNOWN_CACHE_TAGS.length,
+        cacheTagsObserved: 0,
+        activeProviders: 0,
+        drillRunsLast24Hours: 0,
+      },
+      inMemoryCache: [],
+    },
+  },
+  assets: {
+    strategy: [],
+    coverage: {
+      competitions: {
+        covered: 0,
+        missing: 0,
+        coverageRate: null,
+      },
+      teams: {
+        covered: 0,
+        missing: 0,
+        coverageRate: null,
+      },
+      articles: {
+        covered: 0,
+        missing: 0,
+        coverageRate: null,
+      },
+    },
+  },
+  auditTrail: [],
+  summary: {
+    adminUsers: 0,
+    activeProviders: 0,
+    openIssues: 0,
+    cacheAttentionCount: 0,
+    drillRunsLast24Hours: 0,
+    routeErrorsLastHour: 0,
+  },
+  degraded: true,
 };
 
 const jsonSchema = z.record(z.string(), z.any()).nullable().optional();
@@ -452,36 +555,37 @@ export async function getPublicControlState() {
 }
 
 export async function getControlPlaneWorkspace() {
-  const oneDayAgo = new Date(Date.now() - 1000 * 60 * 60 * 24);
-  const syncConfig = getSportsSyncConfig();
-  const providerRegistry = getRegisteredSportsProviders();
-  const providerChain = getProviderChain(syncConfig.provider, syncConfig.fallbackProviders);
+  return safeDataRead(async () => {
+    const oneDayAgo = new Date(Date.now() - 1000 * 60 * 60 * 24);
+    const syncConfig = getSportsSyncConfig();
+    const providerRegistry = getRegisteredSportsProviders();
+    const providerChain = getProviderChain(syncConfig.provider, syncConfig.fallbackProviders);
 
-  const [
-    roles,
-    users,
-    providers,
-    featureFlags,
-    shellModules,
-    adSlots,
-    consentTexts,
-    recentSyncJobs,
-    recentCheckpoints,
-    issues,
-    recentAudits,
-    cacheAuditEvents,
-    recentRouteErrors,
-    liveFixtureStaleCount,
-    staleOddsCount,
-    staleBroadcastCount,
-    failedJobCount,
-    latestSuccessfulSync,
-    latestNewsUpdate,
-    latestFeatureUpdate,
-    latestShellUpdate,
-    observability,
-    assetDelivery,
-  ] = await Promise.all([
+    const [
+      roles,
+      users,
+      providers,
+      featureFlags,
+      shellModules,
+      adSlots,
+      consentTexts,
+      recentSyncJobs,
+      recentCheckpoints,
+      issues,
+      recentAudits,
+      cacheAuditEvents,
+      recentRouteErrors,
+      liveFixtureStaleCount,
+      staleOddsCount,
+      staleBroadcastCount,
+      failedJobCount,
+      latestSuccessfulSync,
+      latestNewsUpdate,
+      latestFeatureUpdate,
+      latestShellUpdate,
+      observability,
+      assetDelivery,
+    ] = await Promise.all([
     db.role.findMany({
       orderBy: { name: "asc" },
       select: { name: true },
@@ -675,82 +779,85 @@ export async function getControlPlaneWorkspace() {
     getAssetDeliverySnapshot(),
   ]);
 
-  const checkpointHealth = recentCheckpoints.map((checkpoint) => ({
-    ...checkpoint,
-    lagMinutes: ageInMinutes(checkpoint.lastSuccessAt || checkpoint.updatedAt),
-    state: checkpointState(checkpoint),
-  }));
+    const checkpointHealth = recentCheckpoints.map((checkpoint) => ({
+      ...checkpoint,
+      lagMinutes: ageInMinutes(checkpoint.lastSuccessAt || checkpoint.updatedAt),
+      state: checkpointState(checkpoint),
+    }));
 
-  const dependencyTimestamps = {
-    sync: latestSuccessfulSync?.finishedAt || null,
-    news: latestNewsUpdate?.updatedAt || null,
-    flags: latestFeatureUpdate?.updatedAt || null,
-    shell: latestShellUpdate?.updatedAt || null,
-  };
-  const cacheHealth = buildCacheHealth(cacheAuditEvents, dependencyTimestamps);
-  const openIssues = issues.filter(
-    (issue) => !["RESOLVED", "DISMISSED"].includes(issue.status)
-  );
+    const dependencyTimestamps = {
+      sync: latestSuccessfulSync?.finishedAt || null,
+      news: latestNewsUpdate?.updatedAt || null,
+      flags: latestFeatureUpdate?.updatedAt || null,
+      shell: latestShellUpdate?.updatedAt || null,
+    };
+    const cacheHealth = buildCacheHealth(cacheAuditEvents, dependencyTimestamps);
+    const openIssues = issues.filter(
+      (issue) => !["RESOLVED", "DISMISSED"].includes(issue.status)
+    );
 
-  return {
-    roles: roles.map((entry) => entry.name),
-    users: users.map(serializeUser),
-    providers: providers.map((provider) => {
-      const descriptor = providerRegistry.find((entry) => entry.code === provider.code);
+    return {
+      roles: roles.map((entry) => entry.name),
+      users: users.map(serializeUser),
+      providers: providers.map((provider) => {
+        const descriptor = providerRegistry.find((entry) => entry.code === provider.code);
 
-      return {
-        ...provider,
-        registry: descriptor || null,
-      };
-    }),
-    providerRegistry,
-    providerChain,
-    featureFlags,
-    shellModules: shellModules.map(serializeShellModule),
-    adSlots,
-    consentTexts,
-    sync: {
-      recentJobs: recentSyncJobs,
-      checkpoints: checkpointHealth,
+        return {
+          ...provider,
+          registry: descriptor || null,
+        };
+      }),
+      providerRegistry,
+      providerChain,
+      featureFlags,
+      shellModules: shellModules.map(serializeShellModule),
+      adSlots,
+      consentTexts,
+      sync: {
+        recentJobs: recentSyncJobs,
+        checkpoints: checkpointHealth,
+        summary: {
+          failedJobsLast24Hours: failedJobCount,
+          checkpointStates: summarizeCounts(checkpointHealth, (checkpoint) => checkpoint.state),
+        },
+      },
+      issues: {
+        items: issues.map(serializeIssue),
+        summary: {
+          total: issues.length,
+          byStatus: summarizeCounts(issues, (issue) => issue.status),
+          openByType: summarizeCounts(openIssues, (issue) => issue.issueType),
+        },
+      },
+      ops: {
+        staleData: {
+          liveFixtures: liveFixtureStaleCount,
+          oddsMarkets: staleOddsCount,
+          broadcastChannels: staleBroadcastCount,
+        },
+        cacheHealth,
+        routeErrors: {
+          events: recentRouteErrors,
+          summary: buildRouteErrorSummary(recentRouteErrors),
+        },
+        observability,
+      },
+      assets: assetDelivery,
+      auditTrail: recentAudits.map(serializeAuditLog),
       summary: {
-        failedJobsLast24Hours: failedJobCount,
-        checkpointStates: summarizeCounts(checkpointHealth, (checkpoint) => checkpoint.state),
+        adminUsers: users.filter((user) =>
+          user.roles.some((entry) => entry.role.name === "ADMIN")
+        ).length,
+        activeProviders: providers.filter((provider) => provider.isActive).length,
+        openIssues: openIssues.length,
+        cacheAttentionCount: cacheHealth.filter((entry) => entry.state === "attention").length,
+        drillRunsLast24Hours: observability.summary.drillRunsLast24Hours,
+        routeErrorsLastHour: observability.summary.routeErrorsLastHour,
       },
-    },
-    issues: {
-      items: issues.map(serializeIssue),
-      summary: {
-        total: issues.length,
-        byStatus: summarizeCounts(issues, (issue) => issue.status),
-        openByType: summarizeCounts(openIssues, (issue) => issue.issueType),
-      },
-    },
-    ops: {
-      staleData: {
-        liveFixtures: liveFixtureStaleCount,
-        oddsMarkets: staleOddsCount,
-        broadcastChannels: staleBroadcastCount,
-      },
-      cacheHealth,
-      routeErrors: {
-        events: recentRouteErrors,
-        summary: buildRouteErrorSummary(recentRouteErrors),
-      },
-      observability,
-    },
-    assets: assetDelivery,
-    auditTrail: recentAudits.map(serializeAuditLog),
-    summary: {
-      adminUsers: users.filter((user) =>
-        user.roles.some((entry) => entry.role.name === "ADMIN")
-      ).length,
-      activeProviders: providers.filter((provider) => provider.isActive).length,
-      openIssues: openIssues.length,
-      cacheAttentionCount: cacheHealth.filter((entry) => entry.state === "attention").length,
-      drillRunsLast24Hours: observability.summary.drillRunsLast24Hours,
-      routeErrorsLastHour: observability.summary.routeErrorsLastHour,
-    },
-  };
+    };
+  }, EMPTY_CONTROL_PLANE_WORKSPACE, {
+    label: "Control plane workspace",
+  });
 }
 
 async function ensureRoleRecords(tx, roleNames) {

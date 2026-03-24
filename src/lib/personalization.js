@@ -1,5 +1,6 @@
 import { getCurrentUserFromServer } from "./auth";
 import { buildAlertSettingsMap, mergeAlertSettings } from "./alerts";
+import { safeDataRead } from "./data-access";
 import { db } from "./db";
 import { formatFavoriteItemId, parseFavoriteItemId } from "./favorites";
 import { getPreferenceSnapshot } from "./coreui/preferences-server";
@@ -124,7 +125,9 @@ function getFavoriteSportWeight(favoriteSportSet, entity) {
 export async function getPersonalizationSnapshot() {
   const [preferences, userContext] = await Promise.all([
     getPreferenceSnapshot(),
-    getCurrentUserFromServer(),
+    safeDataRead(() => getCurrentUserFromServer(), null, {
+      label: "Session lookup",
+    }),
   ]);
 
   const localFavorites = preferences.watchlist || [];
@@ -149,35 +152,40 @@ export async function getPersonalizationSnapshot() {
     };
   }
 
-  const [favorites, subscriptions, recentViews, favoriteSportsPreference] = await Promise.all([
-    db.favoriteEntity.findMany({
-      where: { userId: userContext.user.id },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.notificationSubscription.findMany({
-      where: {
-        userId: userContext.user.id,
-        isEnabled: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.recentView.findMany({
-      where: { userId: userContext.user.id },
-      orderBy: { viewedAt: "desc" },
-      take: 20,
-    }),
-    db.userPreference.findUnique({
-      where: {
-        userId_key: {
-          userId: userContext.user.id,
-          key: "favoriteSports",
-        },
-      },
-      select: {
-        value: true,
-      },
-    }),
-  ]);
+  const [favorites, subscriptions, recentViews, favoriteSportsPreference] = await safeDataRead(
+    () =>
+      Promise.all([
+        db.favoriteEntity.findMany({
+          where: { userId: userContext.user.id },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.notificationSubscription.findMany({
+          where: {
+            userId: userContext.user.id,
+            isEnabled: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.recentView.findMany({
+          where: { userId: userContext.user.id },
+          orderBy: { viewedAt: "desc" },
+          take: 20,
+        }),
+        db.userPreference.findUnique({
+          where: {
+            userId_key: {
+              userId: userContext.user.id,
+              key: "favoriteSports",
+            },
+          },
+          select: {
+            value: true,
+          },
+        }),
+      ]),
+    [[], [], [], null],
+    { label: "Personalization snapshot" }
+  );
 
   const remoteFavorites = favorites.map((item) => formatFavoriteItemId(item)).filter(Boolean);
   const remoteAlerts = buildAlertSettingsMap(subscriptions);
@@ -372,77 +380,82 @@ export async function getFavoritesPageData(personalization) {
     { fixtures: [], teams: [], competitions: [] }
   );
 
-  const [fixtures, teams, competitions] = await Promise.all([
-    groupedFavorites.fixtures.length
-      ? db.fixture.findMany({
-          where: {
-            id: {
-              in: groupedFavorites.fixtures,
-            },
-          },
-          include: buildFixtureInclude(),
-        })
-      : Promise.resolve([]),
-    groupedFavorites.teams.length
-      ? db.team.findMany({
-          where: {
-            id: {
-              in: groupedFavorites.teams,
-            },
-          },
-          include: {
-            league: {
-              select: {
-                code: true,
-                name: true,
-                country: true,
+  const [fixtures, teams, competitions] = await safeDataRead(
+    () =>
+      Promise.all([
+        groupedFavorites.fixtures.length
+          ? db.fixture.findMany({
+              where: {
+                id: {
+                  in: groupedFavorites.fixtures,
+                },
               },
-            },
-            homeFor: {
-              orderBy: { startsAt: "asc" },
-              take: 3,
               include: buildFixtureInclude(),
-            },
-            awayFor: {
-              orderBy: { startsAt: "asc" },
-              take: 3,
-              include: buildFixtureInclude(),
-            },
-          },
-        })
-      : Promise.resolve([]),
-    groupedFavorites.competitions.length
-      ? db.league.findMany({
-          where: {
-            code: {
-              in: groupedFavorites.competitions,
-            },
-          },
-          include: {
-            teams: {
-              take: 4,
-              orderBy: { name: "asc" },
-              select: {
-                id: true,
-                name: true,
+            })
+          : Promise.resolve([]),
+        groupedFavorites.teams.length
+          ? db.team.findMany({
+              where: {
+                id: {
+                  in: groupedFavorites.teams,
+                },
               },
-            },
-            seasons: {
-              where: { isCurrent: true },
-              take: 1,
-              select: {
-                name: true,
+              include: {
+                league: {
+                  select: {
+                    code: true,
+                    name: true,
+                    country: true,
+                  },
+                },
+                homeFor: {
+                  orderBy: { startsAt: "asc" },
+                  take: 3,
+                  include: buildFixtureInclude(),
+                },
+                awayFor: {
+                  orderBy: { startsAt: "asc" },
+                  take: 3,
+                  include: buildFixtureInclude(),
+                },
               },
-            },
-            fixtures: {
-              orderBy: { startsAt: "asc" },
-              take: 3,
-              include: buildFixtureInclude(),
-            },
-          },
-        })
-      : Promise.resolve([]),
-  ]);
+            })
+          : Promise.resolve([]),
+        groupedFavorites.competitions.length
+          ? db.league.findMany({
+              where: {
+                code: {
+                  in: groupedFavorites.competitions,
+                },
+              },
+              include: {
+                teams: {
+                  take: 4,
+                  orderBy: { name: "asc" },
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                seasons: {
+                  where: { isCurrent: true },
+                  take: 1,
+                  select: {
+                    name: true,
+                  },
+                },
+                fixtures: {
+                  orderBy: { startsAt: "asc" },
+                  take: 3,
+                  include: buildFixtureInclude(),
+                },
+              },
+            })
+          : Promise.resolve([]),
+      ]),
+    [[], [], []],
+    { label: "Favorites page data" }
+  );
 
   const teamsWithFixtures = teams.map((team) => {
     const fixtures = [...team.homeFor, ...team.awayFor].sort(

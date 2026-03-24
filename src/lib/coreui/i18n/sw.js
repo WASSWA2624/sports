@@ -24,6 +24,8 @@ const sw = {
   scoreViews: "Mwonekano wa matokeo",
   searchPlaceholder: "Tafuta timu, mashindano na mechi",
   searchHelp: "Uorodheshaji wa utafutaji utaongezwa baadaye. Tumia njia hizi za haraka kwa sasa.",
+  searchDegradedMessage:
+    "Utafutaji unaendesha kwa muda katika hali iliyopunguzwa wakati jukwaa linarejea katika hali ya kawaida.",
   supportRail: "Msaada",
   supportRailBody:
     "Moduli za safu ya kulia hubaki za hiari ili ubao mkuu wa matokeo ubaki kusomeka hata bila matangazo.",

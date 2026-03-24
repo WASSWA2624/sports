@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db } from "../db";
+import { safeDataRead } from "../data-access";
 import { getShellChromeContent } from "../control-plane";
 import { markCacheFill, observeCachedOperation, observeOperation } from "../operations";
 import { buildStandingTable } from "./competition-standings";
@@ -15,14 +16,6 @@ import {
   buildSportHref,
   buildTeamHref,
 } from "./routes";
-
-async function safely(query, fallback) {
-  try {
-    return await query();
-  } catch (error) {
-    return fallback;
-  }
-}
 
 function fixtureInclude({ includeOdds = true, oddsTake = 2, includeBroadcast = false } = {}) {
   const include = {
@@ -203,7 +196,7 @@ function buildLinkedCompetitions(team) {
 
 const getHomeSnapshotCached = unstable_cache(
   async () =>
-    safely(async () => {
+    safeDataRead(async () => {
       const now = new Date();
       const [liveFixtures, upcomingFixtures, recentResults, leagues] = await Promise.all([
         db.fixture.findMany({
@@ -264,7 +257,7 @@ export async function getHomeSnapshot() {
 
 const getLiveFixturesCached = unstable_cache(
   async () =>
-    safely(
+    safeDataRead(
       async () => {
         const fixtures = await db.fixture.findMany({
           where: { status: "LIVE" },
@@ -291,7 +284,7 @@ export async function getLiveFixtures() {
 
 const getUpcomingFixturesCached = unstable_cache(
   async () =>
-    safely(
+    safeDataRead(
       async () => {
         const fixtures = await db.fixture.findMany({
           where: { status: "SCHEDULED", startsAt: { gte: new Date() } },
@@ -318,7 +311,7 @@ export async function getUpcomingFixtures() {
 
 const getRecentResultsCached = unstable_cache(
   async () =>
-    safely(
+    safeDataRead(
       async () => {
         const fixtures = await db.fixture.findMany({
           where: { status: { in: ["FINISHED", "POSTPONED", "CANCELLED"] } },
@@ -345,7 +338,7 @@ export async function getRecentResults() {
 
 const getTablesOverviewCached = unstable_cache(
   async () =>
-    safely(
+    safeDataRead(
       async () => {
         const tables = await db.league.findMany({
           where: { isActive: true },
@@ -385,7 +378,7 @@ export async function getTablesOverview() {
 
 const getLeagueDirectoryCached = unstable_cache(
   async () =>
-    safely(
+    safeDataRead(
       async () => {
         const leagues = await db.league.findMany({
           where: { isActive: true },
@@ -420,7 +413,7 @@ export async function getLeagueDirectory() {
 
 const getShellSnapshotCached = unstable_cache(
   async (locale = "en") =>
-    safely(async () => {
+    safeDataRead(async () => {
       const now = new Date();
       const fixtureWindowStart = new Date(now);
       fixtureWindowStart.setUTCDate(fixtureWindowStart.getUTCDate() - 2);
@@ -653,7 +646,7 @@ export async function getSportHub(reference) {
       },
     },
     () =>
-      safely(async () => {
+      safeDataRead(async () => {
         const sport = await db.sport.findFirst({
           where: {
             isEnabled: true,
@@ -794,7 +787,7 @@ export async function getCountryDetail(countryReference, { sportReference = "foo
       },
     },
     () =>
-      safely(async () => {
+      safeDataRead(async () => {
         const sport = await db.sport.findFirst({
           where: {
             isEnabled: true,
@@ -946,7 +939,7 @@ export async function getLeagueDetail(
       },
     },
     async () => {
-      const league = await safely(
+      const league = await safeDataRead(
         async () => {
           const recentWindow = new Date();
           recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
@@ -1106,7 +1099,7 @@ export async function getLeagueDetail(
 
 const getTeamDirectoryCached = unstable_cache(
   async () =>
-    safely(
+    safeDataRead(
       async () => {
         const teams = await db.team.findMany({
           orderBy: [{ name: "asc" }],
@@ -1157,7 +1150,7 @@ export async function getTeamDetail(reference) {
       },
     },
     () =>
-      safely(
+      safeDataRead(
         async () => {
           const team = await db.team.findFirst({
             where: {
@@ -1293,7 +1286,7 @@ export async function getFixtureDetail(
       },
     },
     async () => {
-      const fixture = await safely(
+      const fixture = await safeDataRead(
         () => {
           return db.fixture.findFirst({
             where: {

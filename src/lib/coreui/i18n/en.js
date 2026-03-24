@@ -43,6 +43,8 @@ const en = {
   searchResultsTitle: "Search results for {query}",
   searchResultsLead: "{total} results found across the core sports entities.",
   searchPageLead: "Search the full sports directory across scores, competitions, teams, players, and news.",
+  searchDegradedMessage:
+    "Search is temporarily running in degraded mode while the platform recovers.",
   supportRail: "Support",
   supportRailBody:
     "Right-rail modules stay optional so the main scores board remains readable when ads are unavailable.",

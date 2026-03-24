@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAssetDeliverySnapshot } from "../../../lib/assets-server";
+import { withDataAccessTimeout } from "../../../lib/data-access";
 import { getOperationalDashboardSnapshot } from "../../../lib/operations";
 import { getSportsSyncConfig } from "../../../lib/sports/config";
 import { getProviderChain } from "../../../lib/sports/provider";
@@ -7,10 +8,14 @@ import { getProviderChain } from "../../../lib/sports/provider";
 export async function GET() {
   try {
     const syncConfig = getSportsSyncConfig();
-    const [operations, assets] = await Promise.all([
-      getOperationalDashboardSnapshot(),
-      getAssetDeliverySnapshot(),
-    ]);
+    const [operations, assets] = await withDataAccessTimeout(
+      () =>
+        Promise.all([
+          getOperationalDashboardSnapshot(),
+          getAssetDeliverySnapshot(),
+        ]),
+      { label: "Health snapshot" }
+    );
 
     return NextResponse.json({
       status: "ok",
