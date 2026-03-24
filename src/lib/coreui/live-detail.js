@@ -790,10 +790,9 @@ export function buildFixtureDetailModules(fixture, locale = "en") {
   };
 }
 
-export function buildFixtureIncidentIndicators(fixture, locale = "en") {
-  const dictionary = getDictionary(locale);
+export function buildFixtureIncidentCounts(fixture, locale = "en") {
   const timeline = buildTimelineItems(fixture, getFixturePayload(fixture), locale);
-  const counts = timeline.reduce(
+  return timeline.reduce(
     (summary, entry) => {
       if (entry.typeKey.includes("GOAL")) {
         summary.goals += 1;
@@ -811,6 +810,11 @@ export function buildFixtureIncidentIndicators(fixture, locale = "en") {
     },
     { goals: 0, yellowCards: 0, redCards: 0, varChecks: 0 }
   );
+}
+
+export function buildFixtureIncidentIndicators(fixture, locale = "en") {
+  const dictionary = getDictionary(locale);
+  const counts = buildFixtureIncidentCounts(fixture, locale);
 
   return [
     counts.goals ? formatDictionaryText(dictionary.incidentGoals, { count: counts.goals }) : null,

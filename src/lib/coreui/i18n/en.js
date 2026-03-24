@@ -229,8 +229,46 @@ const en = {
   liveMatches: "Live matches",
   kickoffWindow: "Kickoff window",
   resultSnapshots: "Result snapshots",
+  liveRowStale: "Provider update delayed",
+  liveResultsFrozen: "Finished rows are frozen.",
+  liveResultsSettling: "Finished rows are settling.",
   liveFilterEmpty:
     "No fixtures match this board filter right now. Try another date, status, or competition.",
+  liveBoardWidgetsEyebrow: "Board conversions",
+  liveBoardWidgetsLead:
+    "Top matchday picks, best prices, and high-intent board actions stay close to the score rows.",
+  liveBoardTopPicks: "Top picks",
+  liveBoardBestOdds: "Best odds",
+  liveBoardBestOddsLead:
+    "Fast price highlights across the current board so value opportunities stay one tap away.",
+  liveBoardValueBets: "Value bets",
+  liveBoardValueBetsLead:
+    "Confidence and edge-focused picks stay visible without overpowering the live board.",
+  liveBoardPredictionEmpty:
+    "Prediction recommendations have not been published for this board window yet.",
+  liveBoardOddsEmpty: "No bookmaker prices are stored for the selected board window yet.",
+  liveBoardAffiliateTitle: "Affiliate route",
+  liveBoardAffiliateLead:
+    "Keep a lightweight bookmaker handoff available from the board when users want to act quickly.",
+  liveBoardAffiliateAction: "Bet now",
+  liveBoardAffiliateFallbackAction: "Open affiliate hub",
+  liveBoardFunnelTitle: "Channel boost",
+  liveBoardFunnelLead:
+    "Telegram and WhatsApp prompts stay close to the board so repeat visits can grow without blocking score browsing.",
+  liveBoardFunnelOptIn: "Enable channel prompts",
+  liveBoardPinnedFirst: "Pinned first",
+  liveBoardExpandAll: "Expand all",
+  liveBoardCollapseAll: "Collapse all",
+  liveBoardOpenGroup: "Open section",
+  liveBoardCloseGroup: "Hide section",
+  liveBoardPin: "Pin",
+  liveBoardPinned: "Pinned",
+  liveBoardOpenCenter: "Match centre",
+  liveBoardOpenLeague: "League",
+  liveBoardLiveTable: "Live table",
+  liveBoardInlineAdLabel: "Board ad",
+  liveBoardInlineAdCopy:
+    "Inline board inventory stays measurable and compact between competition sections.",
   resultsEyebrow: "Frozen scorelines",
   resultsLead:
     "Result cards hold the stored post-match snapshot so finished scorelines stay stable after capture.",

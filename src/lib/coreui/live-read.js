@@ -1,28 +1,23 @@
-import { db } from "../db";
+import { getShellChromeContent } from "../control-plane";
 import { safeDataRead } from "../data-access";
+import { db } from "../db";
 import { observeOperation } from "../operations";
+import { getPlatformPublicSnapshotData } from "../platform/env";
+import { buildGroupStandingsPreview, buildBestOddsCards, buildBoardGroupSummary, buildCompletedFixtureSummary, buildPredictionCards } from "./live-board";
 import { getPublicSurfaceFlags } from "./feature-flags";
-import {
-  buildFixtureBroadcastModule,
-  buildFixtureOddsModule,
-} from "./odds-broadcast";
+import { buildFixtureBroadcastModule, buildFixtureOddsModule } from "./odds-broadcast";
 import {
   buildFeedRefreshProfile,
   buildFixtureDetailModules,
   buildFixtureWindowSummary,
   sortFixturesForLiveFeed,
 } from "./live-detail";
+import { DEFAULT_MARKET_GEO, getGeoLabel, isGeoAllowed, normalizeGeo } from "./route-context";
 
 const LIVE_STATUS_FILTERS = ["ALL", "LIVE", "FINISHED", "SCHEDULED"];
 const RESULT_STATUS_FILTERS = ["ALL", "FINISHED", "POSTPONED", "CANCELLED"];
 const TERMINAL_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED"];
 const RESULTS_WINDOW_DAYS = 5;
-
-function addHours(date, amount) {
-  const next = new Date(date);
-  next.setHours(next.getHours() + amount);
-  return next;
-}
 
 function addDays(date, amount) {
   const next = new Date(date);
@@ -55,8 +50,8 @@ function normalizeFilter(value, allowedValues, fallback) {
   return allowedValues.includes(normalized) ? normalized : fallback;
 }
 
-function buildFixtureInclude() {
-  return {
+function buildFixtureInclude({ includeOdds = false } = {}) {
+  const include = {
     sport: true,
     league: true,
     season: true,
@@ -64,6 +59,16 @@ function buildFixtureInclude() {
     awayTeam: true,
     resultSnapshot: true,
   };
+
+  if (includeOdds) {
+    include.oddsMarkets = {
+      include: { selections: true },
+      orderBy: [{ bookmaker: "asc" }, { marketType: "asc" }],
+      take: 8,
+    };
+  }
+
+  return include;
 }
 
 function buildFixtureDetailInclude() {
@@ -155,7 +160,29 @@ function normalizeBoardDate(dateValue) {
   return Number.isNaN(parsed.getTime()) ? startOfDay(new Date()) : startOfDay(parsed);
 }
 
-function buildBoardGroups(fixtures) {
+function buildGroupTeamPool(fixtures, standings) {
+  const teams = new Map();
+
+  for (const standing of standings || []) {
+    if (standing?.team?.id) {
+      teams.set(standing.team.id, standing.team);
+    }
+  }
+
+  for (const fixture of fixtures || []) {
+    if (fixture?.homeTeam?.id) {
+      teams.set(fixture.homeTeam.id, fixture.homeTeam);
+    }
+
+    if (fixture?.awayTeam?.id) {
+      teams.set(fixture.awayTeam.id, fixture.awayTeam);
+    }
+  }
+
+  return [...teams.values()];
+}
+
+function buildBoardGroups(fixtures, standingsBySeasonId, locale) {
   const groups = fixtures.reduce((accumulator, fixture) => {
     const country = fixture.league?.country || null;
     const leagueCode = fixture.league?.code || fixture.league?.id || "unknown-league";
@@ -165,8 +192,11 @@ function buildBoardGroups(fixtures) {
       accumulator.set(key, {
         key,
         country,
+        leagueId: fixture.leagueId || null,
         leagueCode,
         leagueName: fixture.league?.name || null,
+        seasonId: fixture.seasonId || null,
+        competitionId: fixture.competitionId || null,
         fixtures: [],
       });
     }
@@ -175,14 +205,30 @@ function buildBoardGroups(fixtures) {
     return accumulator;
   }, new Map());
 
-  return [...groups.values()].sort((left, right) => {
-    const countryDifference = (left.country || "").localeCompare(right.country || "");
-    if (countryDifference !== 0) {
-      return countryDifference;
-    }
+  return [...groups.values()]
+    .map((group) => {
+      const groupStandings = standingsBySeasonId.get(group.seasonId) || [];
+      const teams = buildGroupTeamPool(group.fixtures, groupStandings);
 
-    return (left.leagueName || "").localeCompare(right.leagueName || "");
-  });
+      return {
+        ...group,
+        summary: buildBoardGroupSummary(group.fixtures),
+        completedSummary: buildCompletedFixtureSummary(group.fixtures, locale),
+        standingsPreview: buildGroupStandingsPreview({
+          fixtures: group.fixtures,
+          standings: groupStandings,
+          teams,
+        }),
+      };
+    })
+    .sort((left, right) => {
+      const countryDifference = (left.country || "").localeCompare(right.country || "");
+      if (countryDifference !== 0) {
+        return countryDifference;
+      }
+
+      return (left.leagueName || "").localeCompare(right.leagueName || "");
+    });
 }
 
 function buildSurfaceState(fixtures, degraded) {
@@ -202,7 +248,216 @@ function buildSurfaceState(fixtures, degraded) {
   };
 }
 
-export async function getLiveMatchdayFeed({ locale = "en", status, leagueCode, date } = {}) {
+function buildStandingsBySeasonId(standings = []) {
+  return standings.reduce((accumulator, standing) => {
+    if (!standing?.seasonId) {
+      return accumulator;
+    }
+
+    if (!accumulator.has(standing.seasonId)) {
+      accumulator.set(standing.seasonId, []);
+    }
+
+    accumulator.get(standing.seasonId).push(standing);
+    return accumulator;
+  }, new Map());
+}
+
+function rankAffiliateLink(link, targetGeo) {
+  let score = 0;
+  const linkGeo = normalizeGeo(link?.territory, DEFAULT_MARKET_GEO);
+
+  if (linkGeo === targetGeo) {
+    score += 100;
+  } else if (linkGeo === DEFAULT_MARKET_GEO) {
+    score += 20;
+  }
+
+  if (link?.isDefault) {
+    score += 10;
+  }
+
+  score += Math.max(0, 200 - Number(link?.priority || 100));
+  return score;
+}
+
+function resolveAffiliateLink(links = [], targetGeo, { bookmakerId, bookmakerName } = {}) {
+  const candidates = links
+    .filter((link) => {
+      if (bookmakerId && link.bookmakerId === bookmakerId) {
+        return true;
+      }
+
+      if (
+        bookmakerName &&
+        [link.bookmaker?.name, link.bookmaker?.shortName, link.bookmaker?.code]
+          .filter(Boolean)
+          .some((value) => value === bookmakerName)
+      ) {
+        return true;
+      }
+
+      return !bookmakerId && !bookmakerName;
+    })
+    .sort((left, right) => rankAffiliateLink(right, targetGeo) - rankAffiliateLink(left, targetGeo));
+
+  return candidates[0] || null;
+}
+
+function buildAffiliateCallToAction(primaryLink, platform, locale, boardGeo) {
+  if (primaryLink) {
+    return {
+      href: primaryLink.destinationUrl || primaryLink.fallbackUrl || null,
+      external: true,
+      bookmaker: primaryLink.bookmaker?.shortName || primaryLink.bookmaker?.name || null,
+      partner:
+        primaryLink.bookmaker?.code ||
+        primaryLink.bookmaker?.shortName ||
+        primaryLink.bookmaker?.name ||
+        null,
+    };
+  }
+
+  if (platform?.affiliate?.partnerCodes?.length || platform?.affiliate?.primaryPartner) {
+    return {
+      href: `/${locale}/affiliates`,
+      external: false,
+      bookmaker: null,
+      partner: platform.affiliate.primaryPartner || platform.affiliate.partnerCodes[0] || null,
+      geo: boardGeo,
+    };
+  }
+
+  return null;
+}
+
+async function getLiveBoardMonetization({ locale, viewerTerritory, selectedDate, fixtures }) {
+  const boardGeo = normalizeGeo(viewerTerritory, DEFAULT_MARKET_GEO);
+  const competitionIds = [...new Set(fixtures.map((fixture) => fixture.competitionId).filter(Boolean))];
+  const predictionWindow = {
+    gte: startOfDay(selectedDate),
+    lte: endOfDay(selectedDate),
+  };
+  const [platform, shellChrome, predictions, affiliateLinks] = await Promise.all([
+    getPlatformPublicSnapshotData(),
+    safeDataRead(() => getShellChromeContent(locale), {
+      adSlot: null,
+      consentText: null,
+      shellModuleMap: {},
+    }),
+    safeDataRead(
+      () =>
+        db.predictionRecommendation.findMany({
+          where: {
+            isPublished: true,
+            OR: [
+              {
+                fixture: {
+                  is: {
+                    startsAt: predictionWindow,
+                  },
+                },
+              },
+              competitionIds.length ? { competitionId: { in: competitionIds } } : undefined,
+            ].filter(Boolean),
+            OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
+          },
+          take: 18,
+          orderBy: [{ confidence: "desc" }, { edgeScore: "desc" }, { publishedAt: "desc" }],
+          include: {
+            fixture: {
+              include: {
+                homeTeam: true,
+                awayTeam: true,
+                league: true,
+              },
+            },
+            competition: true,
+            bookmaker: true,
+          },
+        }),
+      []
+    ),
+    safeDataRead(
+      () =>
+        db.affiliateLink.findMany({
+          where: {
+            isActive: true,
+            OR: [{ territory: null }, { territory: boardGeo }, { territory: DEFAULT_MARKET_GEO }],
+          },
+          orderBy: [{ isDefault: "desc" }, { priority: "asc" }, { createdAt: "asc" }],
+          include: {
+            bookmaker: true,
+          },
+          take: 64,
+        }),
+      []
+    ),
+  ]);
+
+  const predictionCards = buildPredictionCards(predictions, { locale });
+  const attachCta = (entry) => {
+    const affiliateLink = resolveAffiliateLink(affiliateLinks, boardGeo, {
+      bookmakerId: entry.bookmakerId,
+      bookmakerName: entry.bookmaker,
+    });
+
+    return {
+      ...entry,
+      ctaHref: affiliateLink?.destinationUrl || affiliateLink?.fallbackUrl || null,
+      ctaExternal: Boolean(affiliateLink),
+    };
+  };
+  const topPicks = predictionCards
+    .sort((left, right) => (right.confidence || 0) - (left.confidence || 0))
+    .slice(0, 3)
+    .map(attachCta);
+  const valueBets = [...predictionCards]
+    .sort((left, right) => (right.edgeScore || 0) - (left.edgeScore || 0))
+    .filter((entry) => entry.edgeScore != null)
+    .slice(0, 3)
+    .map(attachCta);
+  const bestOdds = buildBestOddsCards(fixtures, { locale })
+    .slice(0, 3)
+    .map(attachCta);
+  const primaryAffiliateLink = resolveAffiliateLink(affiliateLinks, boardGeo);
+  const adSource = shellChrome?.adSlot?.isEnabled === false ? null : shellChrome?.adSlot;
+  const funnelActions = (platform?.funnel?.actions || []).filter(
+    (action) => action.url && isGeoAllowed(boardGeo, action.enabledGeos)
+  );
+
+  return {
+    geo: boardGeo,
+    geoLabel: getGeoLabel(boardGeo),
+    topPicks,
+    valueBets,
+    bestOdds,
+    affiliate: buildAffiliateCallToAction(primaryAffiliateLink, platform, locale, boardGeo),
+    bookmakers:
+      platform?.affiliate?.bookmakerByGeo?.[boardGeo] ||
+      platform?.affiliate?.bookmakerByGeo?.[DEFAULT_MARKET_GEO] ||
+      [],
+    funnelActions,
+    adInsert:
+      adSource || platform?.ads?.inlineBoardSlot
+        ? {
+            placement: platform?.ads?.inlineBoardSlot || adSource?.placement || null,
+            copy: adSource?.copy || null,
+            size: adSource?.size || null,
+            ctaHref: adSource?.ctaUrl || null,
+            ctaLabel: adSource?.ctaLabel || null,
+          }
+        : null,
+  };
+}
+
+export async function getLiveMatchdayFeed({
+  locale = "en",
+  status,
+  leagueCode,
+  date,
+  viewerTerritory,
+} = {}) {
   return observeOperation(
     {
       metric: "live_surface",
@@ -240,7 +495,7 @@ export async function getLiveMatchdayFeed({ locale = "en", status, leagueCode, d
           },
           orderBy: [{ startsAt: "asc" }],
           take: 120,
-          include: buildFixtureInclude(),
+          include: buildFixtureInclude({ includeOdds: true }),
         });
       } catch (error) {
         degraded = true;
@@ -259,10 +514,37 @@ export async function getLiveMatchdayFeed({ locale = "en", status, leagueCode, d
           ? statusFiltered
           : statusFiltered.filter((fixture) => fixture.league?.code === selectedLeague);
       const sortedFixtures = sortFixturesForLiveFeed(leagueFiltered);
+      const seasonIds = [...new Set(sortedFixtures.map((fixture) => fixture.seasonId).filter(Boolean))];
+      const standings = seasonIds.length
+        ? await safeDataRead(
+            () =>
+              db.standing.findMany({
+                where: {
+                  seasonId: { in: seasonIds },
+                  scope: "OVERALL",
+                },
+                orderBy: [{ position: "asc" }],
+                include: {
+                  team: true,
+                },
+              }),
+            []
+          )
+        : [];
+      const standingsBySeasonId = buildStandingsBySeasonId(standings);
+      const [monetization, flags] = await Promise.all([
+        getLiveBoardMonetization({
+          locale,
+          viewerTerritory,
+          selectedDate,
+          fixtures: sortedFixtures,
+        }),
+        getPublicSurfaceFlags(),
+      ]);
 
       return {
         fixtures: sortedFixtures,
-        groups: buildBoardGroups(sortedFixtures),
+        groups: buildBoardGroups(sortedFixtures, standingsBySeasonId, locale),
         selectedStatus,
         selectedLeague,
         selectedDate: selectedDate.toISOString().slice(0, 10),
@@ -276,6 +558,8 @@ export async function getLiveMatchdayFeed({ locale = "en", status, leagueCode, d
         leaguePivots,
         summary: buildFixtureWindowSummary(fixtures),
         refresh: buildFeedRefreshProfile(sortedFixtures, locale),
+        monetization,
+        flags,
         surfaceState: buildSurfaceState(fixtures, degraded),
       };
     }

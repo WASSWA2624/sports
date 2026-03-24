@@ -1,0 +1,524 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.toolbarMeta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.widgetGrid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.widgetCard,
+.bannerCard,
+.inlinePromoCard,
+.adInsertCard,
+.groupCard,
+.fixtureRow {
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.widgetCard {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%),
+    var(--surface);
+}
+
+.widgetCard::after,
+.bannerCard::after,
+.adInsertCard::after {
+  content: "";
+  position: absolute;
+  inset: auto -12% -24% auto;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 999px;
+  background: rgba(33, 109, 255, 0.08);
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.widgetCardAccent::after {
+  background: rgba(255, 31, 89, 0.12);
+}
+
+.widgetCardWarm::after {
+  background: rgba(201, 138, 22, 0.16);
+}
+
+.widgetHead,
+.bannerHead,
+.groupHeader,
+.standingsHead,
+.rowQuickLinks,
+.rowScoreMeta,
+.rowState,
+.rowTeams,
+.rowSignals,
+.rowActions,
+.groupMeta,
+.groupMetaMain {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.widgetHead,
+.bannerHead,
+.groupHeader,
+.rowQuickLinks,
+.rowState,
+.rowActions,
+.groupMeta {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.widgetHead,
+.bannerHead,
+.groupHeader {
+  margin-bottom: 0.9rem;
+}
+
+.widgetCopy,
+.bannerCopy,
+.groupCopy,
+.rowBody,
+.standingsPreview {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.widgetEyebrow {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.widgetTitle {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.05;
+}
+
+.widgetLead,
+.widgetEmpty,
+.bannerLead,
+.adCopy,
+.rowMetaLine,
+.standingsMeta {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.widgetItems,
+.groupList,
+.standingsRows {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.widgetItem {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-strong);
+}
+
+.widgetItemTitle {
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.widgetMeta,
+.widgetFoot,
+.bannerActions,
+.rowMeta,
+.signalList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.widgetPrice {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+.widgetConfidence {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(24, 166, 107, 0.14);
+  color: var(--success);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.widgetMetric {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.bannerCard,
+.adInsertCard,
+.inlinePromoCard {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.bannerCard {
+  background:
+    var(--promo-gradient),
+    var(--surface);
+}
+
+.bannerTitle {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.08rem;
+}
+
+.bannerPartner {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.groupList {
+  gap: 0.9rem;
+}
+
+.groupCard {
+  padding: 1rem;
+}
+
+.groupHeader {
+  align-items: flex-start;
+}
+
+.groupCopy {
+  gap: 0.35rem;
+}
+
+.groupMetrics {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.groupControls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.groupToggle,
+.groupToggleActive,
+.pinButton,
+.pinButtonActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.groupToggle:hover,
+.groupToggleActive:hover,
+.pinButton:hover,
+.pinButtonActive:hover {
+  transform: translateY(-1px);
+}
+
+.groupToggleActive,
+.pinButtonActive {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.fixtureRows {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fixtureRow {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: var(--surface-raised);
+}
+
+.rowState {
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.rowBody {
+  align-content: start;
+}
+
+.rowMainLink {
+  display: grid;
+  gap: 0.55rem;
+  color: inherit;
+}
+
+.rowMainLink:hover .rowTeamName {
+  color: var(--accent);
+}
+
+.rowTeams {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+}
+
+.rowTeam {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.rowTeamName {
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.rowCardSignal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  min-height: 1.6rem;
+  padding: 0 0.42rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.rowCardSignalYellow {
+  background: rgba(201, 138, 22, 0.16);
+  color: var(--warning);
+}
+
+.rowCardSignalRed {
+  background: rgba(212, 77, 77, 0.16);
+  color: var(--danger);
+}
+
+.rowScore {
+  min-width: 1.35rem;
+  text-align: right;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+.rowMeta {
+  gap: 0.38rem;
+}
+
+.signalList {
+  gap: 0.35rem;
+}
+
+.signalChip,
+.signalChipWarning,
+.signalChipSuccess {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.signalChipWarning {
+  background: rgba(201, 138, 22, 0.14);
+  color: var(--warning);
+}
+
+.signalChipSuccess {
+  background: rgba(24, 166, 107, 0.14);
+  color: var(--success);
+}
+
+.rowActions {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.standingsPreview {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.standingsHead {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.standingsRows {
+  gap: 0.45rem;
+}
+
+.standingsRow {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.95rem;
+  background: var(--surface-strong);
+}
+
+.standingsRowHighlight {
+  border: 1px solid rgba(255, 31, 89, 0.16);
+}
+
+.standingsTeam {
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.standingsPoints {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 0.92rem;
+}
+
+.movementUp,
+.movementDown,
+.movementFlat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 1.65rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.movementUp {
+  background: rgba(24, 166, 107, 0.14);
+  color: var(--success);
+}
+
+.movementDown {
+  background: rgba(212, 77, 77, 0.16);
+  color: var(--danger);
+}
+
+.movementFlat {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+@media (max-width: 1180px) {
+  .widgetGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .fixtureRow {
+    grid-template-columns: 1fr;
+  }
+
+  .rowActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .groupHeader,
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .groupControls {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .widgetGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fixtureRow,
+  .groupCard,
+  .widgetCard,
+  .bannerCard,
+  .adInsertCard,
+  .inlinePromoCard {
+    padding: 0.85rem;
+  }
+
+  .toolbarMeta {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: 0.15rem;
+  }
+}

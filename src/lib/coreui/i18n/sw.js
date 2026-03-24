@@ -199,8 +199,47 @@ const sw = {
   liveMatches: "Mechi za moja kwa moja",
   kickoffWindow: "Dirisha la kuanza",
   resultSnapshots: "Picha za matokeo",
+  liveRowStale: "Sasisho la mtoa huduma limechelewa",
+  liveResultsFrozen: "Mistari ya mwisho imegandishwa.",
+  liveResultsSettling: "Mistari ya mwisho bado inatulia.",
   liveFilterEmpty:
     "Hakuna mechi zinazolingana na kichujio hiki kwa sasa. Jaribu tarehe, hali au mashindano mengine.",
+  liveBoardWidgetsEyebrow: "Conversions za board",
+  liveBoardWidgetsLead:
+    "Picks za siku ya mechi, bei bora na hatua za haraka hubaki karibu na mistari ya matokeo.",
+  liveBoardTopPicks: "Top picks",
+  liveBoardBestOdds: "Odds bora",
+  liveBoardBestOddsLead:
+    "Muhtasari wa bei bora kwenye board ili nafasi za value zibaki karibu kwa tap moja.",
+  liveBoardValueBets: "Value bets",
+  liveBoardValueBetsLead:
+    "Picks zenye confidence na edge zinaonekana bila kuzidisha msongamano wa board.",
+  liveBoardPredictionEmpty:
+    "Bado hakuna mapendekezo ya prediction yaliyochapishwa kwa dirisha hili la board.",
+  liveBoardOddsEmpty:
+    "Bado hakuna bei za bookmaker zilizohifadhiwa kwa dirisha hili la board.",
+  liveBoardAffiliateTitle: "Njia ya affiliate",
+  liveBoardAffiliateLead:
+    "Weka handoff nyepesi ya bookmaker karibu na board pale mtumiaji anapotaka kuchukua hatua haraka.",
+  liveBoardAffiliateAction: "Bet sasa",
+  liveBoardAffiliateFallbackAction: "Fungua affiliate hub",
+  liveBoardFunnelTitle: "Boost ya channel",
+  liveBoardFunnelLead:
+    "Prompts za Telegram na WhatsApp hubaki karibu na board ili ziara za kurudi zikue bila kuzuia kusoma matokeo.",
+  liveBoardFunnelOptIn: "Washa prompts za channel",
+  liveBoardPinnedFirst: "Vilivyobandikwa kwanza",
+  liveBoardExpandAll: "Fungua vyote",
+  liveBoardCollapseAll: "Funga vyote",
+  liveBoardOpenGroup: "Fungua sehemu",
+  liveBoardCloseGroup: "Ficha sehemu",
+  liveBoardPin: "Bandika",
+  liveBoardPinned: "Kimebandikwa",
+  liveBoardOpenCenter: "Kituo cha mechi",
+  liveBoardOpenLeague: "Ligi",
+  liveBoardLiveTable: "Jedwali la live",
+  liveBoardInlineAdLabel: "Tangazo la board",
+  liveBoardInlineAdCopy:
+    "Nafasi za tangazo za ndani ya board zinabaki fupi na zinazopimika kati ya sehemu za mashindano.",
   resultsEyebrow: "Mistari ya matokeo yaliyogandishwa",
   resultsLead:
     "Kadi za matokeo huhifadhi picha ya baada ya mechi ili matokeo yaliyomalizika yabaki thabiti baada ya kunaswa.",

@@ -1,25 +1,23 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../../lib/coreui/dictionaries";
-import { getPublicSurfaceFlags } from "../../../lib/coreui/feature-flags";
 import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getLatestNewsModule } from "../../../lib/coreui/news-read";
 import { getLiveMatchdayFeed } from "../../../lib/coreui/live-read";
-import { buildCompetitionHref } from "../../../lib/coreui/routes";
-import { FixtureFeedCard } from "../../../components/coreui/fixture-feed-card";
+import { resolveViewerTerritory } from "../../../lib/coreui/odds-broadcast";
+import { LiveBoardGroupList } from "../../../components/coreui/live-board-group-list";
+import { LiveBoardMonetization } from "../../../components/coreui/live-board-monetization";
 import { LiveRefresh } from "../../../components/coreui/live-refresh";
-import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { NewsModule } from "../../../components/coreui/news-module";
 import { PersonalizationUsageTracker } from "../../../components/coreui/personalization-usage-tracker";
 import styles from "../../../components/coreui/styles.module.css";
 import {
   getPersonalizationSnapshot,
   getPersonalizationUsage,
-  sortCompetitionsByPersonalization,
-  sortFixturesByPersonalization,
 } from "../../../lib/personalization";
 
-function buildLiveHref(locale, status, league, date) {
+function buildLiveHref(locale, status, league, date, geo) {
   const params = new URLSearchParams();
   if (status && status !== "ALL") {
     params.set("status", status.toLowerCase());
@@ -31,6 +29,10 @@ function buildLiveHref(locale, status, league, date) {
 
   if (date) {
     params.set("date", date);
+  }
+
+  if (geo) {
+    params.set("geo", geo);
   }
 
   const query = params.toString();
@@ -57,30 +59,22 @@ export default async function LivePage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
-  const [feed, latestNews, flags, personalization] = await Promise.all([
+  const viewerTerritory = resolveViewerTerritory({
+    territory: filters?.geo,
+    headers: await headers(),
+  });
+  const [feed, latestNews, personalization] = await Promise.all([
     getLiveMatchdayFeed({
       locale,
       status: filters?.status,
       leagueCode: filters?.league,
       date: filters?.date,
+      viewerTerritory,
     }),
     getLatestNewsModule(),
-    getPublicSurfaceFlags(),
     getPersonalizationSnapshot(),
   ]);
   const usage = getPersonalizationUsage(personalization);
-  const prioritizedGroups = sortCompetitionsByPersonalization(
-    feed.groups.map((group) => ({
-      ...group,
-      fixtures: sortFixturesByPersonalization(
-        group.fixtures,
-        personalization,
-        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
-      ),
-    })),
-    personalization,
-    (left, right) => (left.leagueName || "").localeCompare(right.leagueName || "")
-  );
   const selectedDateLabel = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
   }).format(new Date(feed.selectedDate));
@@ -120,14 +114,26 @@ export default async function LivePage({ params, searchParams }) {
 
       <div className={styles.filterRow}>
         <Link
-          href={buildLiveHref(locale, feed.selectedStatus, feed.selectedLeague, shiftDate(feed.selectedDate, -1))}
+          href={buildLiveHref(
+            locale,
+            feed.selectedStatus,
+            feed.selectedLeague,
+            shiftDate(feed.selectedDate, -1),
+            filters?.geo
+          )}
           className={styles.filterChip}
         >
           {dictionary.previousDay}
         </Link>
         <span className={styles.filterChipActive}>{selectedDateLabel}</span>
         <Link
-          href={buildLiveHref(locale, feed.selectedStatus, feed.selectedLeague, shiftDate(feed.selectedDate, 1))}
+          href={buildLiveHref(
+            locale,
+            feed.selectedStatus,
+            feed.selectedLeague,
+            shiftDate(feed.selectedDate, 1),
+            filters?.geo
+          )}
           className={styles.filterChip}
         >
           {dictionary.nextDay}
@@ -164,7 +170,13 @@ export default async function LivePage({ params, searchParams }) {
       <div className={styles.filterStack}>
         <div className={styles.filterRow}>
           {feed.statusOptions.map((option) => {
-            const href = buildLiveHref(locale, option.value, feed.selectedLeague, feed.selectedDate);
+            const href = buildLiveHref(
+              locale,
+              option.value,
+              feed.selectedLeague,
+              feed.selectedDate,
+              filters?.geo
+            );
             const label =
               option.value === "ALL"
                 ? dictionary.browseAll
@@ -187,7 +199,7 @@ export default async function LivePage({ params, searchParams }) {
 
         <div className={styles.filterRow}>
           <Link
-            href={buildLiveHref(locale, feed.selectedStatus, "all", feed.selectedDate)}
+            href={buildLiveHref(locale, feed.selectedStatus, "all", feed.selectedDate, filters?.geo)}
             className={feed.selectedLeague === "all" ? styles.filterChipActive : styles.filterChip}
           >
             {dictionary.allLeagues}
@@ -201,7 +213,13 @@ export default async function LivePage({ params, searchParams }) {
           {feed.leaguePivots.map((pivot) => (
             <Link
               key={pivot.code}
-              href={buildLiveHref(locale, feed.selectedStatus, pivot.code, feed.selectedDate)}
+              href={buildLiveHref(
+                locale,
+                feed.selectedStatus,
+                pivot.code,
+                feed.selectedDate,
+                filters?.geo
+              )}
               className={
                 pivot.code === feed.selectedLeague ? styles.filterChipActive : styles.filterChip
               }
@@ -213,58 +231,23 @@ export default async function LivePage({ params, searchParams }) {
         </div>
       </div>
 
-      {prioritizedGroups.length ? (
-        <div className={styles.section}>
-          {prioritizedGroups.map((group) => (
-            <details key={group.key} open className={styles.boardGroup}>
-              <summary className={styles.boardGroupSummary}>
-                <div>
-                  <p className={styles.eyebrow}>{group.country || dictionary.international}</p>
-                  <h2 className={styles.sectionTitle}>
-                    {group.leagueCode ? (
-                      <Link href={buildCompetitionHref(locale, { code: group.leagueCode })}>
-                        {group.leagueName || dictionary.competition}
-                      </Link>
-                    ) : (
-                      group.leagueName || dictionary.competition
-                    )}
-                  </h2>
-                </div>
-                <div className={styles.inlineBadgeRow}>
-                  <span className={styles.badge}>{group.fixtures.length}</span>
-                  {group.leagueCode ? (
-                    <FavoriteToggle
-                      itemId={`competition:${group.leagueCode}`}
-                      locale={locale}
-                      label={group.leagueName || dictionary.competition}
-                      metadata={{
-                        country: group.country || null,
-                      }}
-                      surface="live-board"
-                    />
-                  ) : null}
-                </div>
-              </summary>
+      <LiveBoardMonetization
+        locale={locale}
+        dictionary={dictionary}
+        monetization={feed.monetization}
+        surface="live-board"
+      />
 
-              <div className={styles.fixtureGrid}>
-                {group.fixtures.map((fixture) => (
-                  <FixtureFeedCard
-                    key={fixture.id}
-                    fixture={fixture}
-                    locale={locale}
-                    mode="live"
-                    showLeague={false}
-                  />
-                ))}
-              </div>
-            </details>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyState}>{dictionary.liveFilterEmpty}</div>
-      )}
+      <LiveBoardGroupList
+        locale={locale}
+        dictionary={dictionary}
+        groups={feed.groups}
+        monetization={feed.monetization}
+        surface="live-board"
+        emptyLabel={dictionary.liveFilterEmpty}
+      />
 
-      {flags.liveNews ? (
+      {feed.flags?.liveNews ? (
         <NewsModule
           locale={locale}
           eyebrow={dictionary.news}

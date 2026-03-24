@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { buildPageMetadata } from "../../lib/coreui/metadata";
 import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
 import { getPublicSurfaceFlags } from "../../lib/coreui/feature-flags";
 import { getHomepageNewsModule } from "../../lib/coreui/news-read";
 import { getHomeSnapshot } from "../../lib/coreui/read";
+import { getLiveMatchdayFeed } from "../../lib/coreui/live-read";
+import { resolveViewerTerritory } from "../../lib/coreui/odds-broadcast";
 import { buildCompetitionHref } from "../../lib/coreui/routes";
-import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
+import { LiveBoardGroupList } from "../../components/coreui/live-board-group-list";
+import { LiveBoardMonetization } from "../../components/coreui/live-board-monetization";
+import { LiveRefresh } from "../../components/coreui/live-refresh";
 import { NewsModule } from "../../components/coreui/news-module";
 import { OnboardingPanel } from "../../components/coreui/onboarding-panel";
 import { PersonalizationUsageTracker } from "../../components/coreui/personalization-usage-tracker";
@@ -26,48 +31,6 @@ import {
 import { buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
 import { getRecentItemsModule, getTopCompetitionsModule } from "../../lib/coreui/discovery";
 
-const STATUS_ORDER = {
-  LIVE: 0,
-  SCHEDULED: 1,
-  FINISHED: 2,
-  POSTPONED: 3,
-  CANCELLED: 4,
-};
-
-function dedupeFixtures(fixtures) {
-  return [...new Map(fixtures.map((fixture) => [fixture.id, fixture])).values()];
-}
-
-function compareFixtures(left, right) {
-  const leftRank = STATUS_ORDER[left.status] ?? 99;
-  const rightRank = STATUS_ORDER[right.status] ?? 99;
-
-  if (leftRank !== rightRank) {
-    return leftRank - rightRank;
-  }
-
-  return new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
-}
-
-function groupFixtures(fixtures) {
-  return [...fixtures.reduce((accumulator, fixture) => {
-    const key = fixture.league?.code || fixture.league?.id || fixture.id;
-
-    if (!accumulator.has(key)) {
-      accumulator.set(key, {
-        key,
-        code: fixture.league?.code || null,
-        name: fixture.league?.name || null,
-        country: fixture.league?.country || null,
-        fixtures: [],
-      });
-    }
-
-    accumulator.get(key).fixtures.push(fixture);
-    return accumulator;
-  }, new Map()).values()];
-}
-
 export async function generateMetadata({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
@@ -78,8 +41,15 @@ export async function generateMetadata({ params }) {
 export default async function LocaleHomePage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
-  const [snapshot, homeNews, flags, personalization] = await Promise.all([
+  const viewerTerritory = resolveViewerTerritory({
+    headers: await headers(),
+  });
+  const [snapshot, homeBoardFeed, homeNews, flags, personalization] = await Promise.all([
     getHomeSnapshot(),
+    getLiveMatchdayFeed({
+      locale,
+      viewerTerritory,
+    }),
     getHomepageNewsModule(),
     getPublicSurfaceFlags(),
     getPersonalizationSnapshot(),
@@ -90,20 +60,6 @@ export default async function LocaleHomePage({ params }) {
     getRecentItemsModule(personalization, { locale }),
     usage.hasFavorites ? getFavoritesPageData(personalization) : Promise.resolve(null),
   ]);
-  const boardFixtures = sortFixturesByPersonalization(
-    dedupeFixtures([
-      ...snapshot.liveFixtures,
-      ...snapshot.upcomingFixtures,
-      ...snapshot.recentResults,
-    ]),
-    personalization,
-    compareFixtures
-  );
-  const boardGroups = sortCompetitionsByPersonalization(
-    groupFixtures(boardFixtures),
-    personalization,
-    (left, right) => (left.name || "").localeCompare(right.name || "")
-  );
   const prioritizedLeagues = sortCompetitionsByPersonalization(
     snapshot.leagues,
     personalization,
@@ -118,7 +74,7 @@ export default async function LocaleHomePage({ params }) {
     day: "2-digit",
     month: "2-digit",
     weekday: "short",
-  }).format(new Date());
+  }).format(new Date(homeBoardFeed.selectedDate));
   const reminderItems = favoritePageData
     ? [
         ...(favoritePageData.fixtures || []).map((fixture) => ({
@@ -158,6 +114,12 @@ export default async function LocaleHomePage({ params }) {
         metadata={usage}
       />
 
+      <LiveRefresh
+        enabled={homeBoardFeed.refresh.enabled}
+        intervalMs={homeBoardFeed.refresh.intervalMs}
+        until={homeBoardFeed.refresh.until}
+      />
+
       <OnboardingPanel
         locale={locale}
         dictionary={dictionary}
@@ -176,7 +138,7 @@ export default async function LocaleHomePage({ params }) {
         <span className={styles.noticeLabel}>{dictionary.football}</span>
         <p>
           {formatDictionaryText(dictionary.homeNotice, {
-            count: boardFixtures.length,
+            count: homeBoardFeed.fixtures.length,
           })}
         </p>
       </section>
@@ -188,9 +150,9 @@ export default async function LocaleHomePage({ params }) {
             <h1 className={styles.pageTitle}>{dictionary.homeScoresTitle}</h1>
             <p className={styles.pageLead}>
               {formatDictionaryText(dictionary.homeScoresLead, {
-                live: snapshot.liveFixtures.length,
-                scheduled: snapshot.upcomingFixtures.length,
-                finished: snapshot.recentResults.length,
+                live: homeBoardFeed.summary.LIVE,
+                scheduled: homeBoardFeed.summary.SCHEDULED,
+                finished: homeBoardFeed.summary.FINISHED,
               })}
             </p>
           </div>
@@ -206,19 +168,19 @@ export default async function LocaleHomePage({ params }) {
           <div className={styles.filterRow}>
             <Link href={`/${locale}`} className={styles.filterChipActive}>
               {dictionary.browseAll}
-              <span className={styles.filterCount}>{boardFixtures.length}</span>
+              <span className={styles.filterCount}>{homeBoardFeed.fixtures.length}</span>
             </Link>
             <Link href={`/${locale}/live`} className={styles.filterChip}>
               {dictionary.liveNow}
-              <span className={styles.filterCount}>{snapshot.liveFixtures.length}</span>
+              <span className={styles.filterCount}>{homeBoardFeed.summary.LIVE}</span>
             </Link>
             <Link href={`/${locale}/fixtures`} className={styles.filterChip}>
               {dictionary.upcoming}
-              <span className={styles.filterCount}>{snapshot.upcomingFixtures.length}</span>
+              <span className={styles.filterCount}>{homeBoardFeed.summary.SCHEDULED}</span>
             </Link>
             <Link href={`/${locale}/results`} className={styles.filterChip}>
               {dictionary.recent}
-              <span className={styles.filterCount}>{snapshot.recentResults.length}</span>
+              <span className={styles.filterCount}>{homeBoardFeed.summary.FINISHED}</span>
             </Link>
             <Link href={`/${locale}/tables`} className={styles.filterChip}>
               {dictionary.standings}
@@ -227,57 +189,21 @@ export default async function LocaleHomePage({ params }) {
           </div>
         </div>
 
-        {boardGroups.length ? (
-          <div className={styles.section}>
-            {boardGroups.map((group) => (
-              <section key={group.key} className={styles.boardGroup}>
-                <div className={styles.boardGroupSummary}>
-                  <div>
-                    <p className={styles.eyebrow}>{group.country || dictionary.international}</p>
-                    <h2 className={styles.sectionTitle}>
-                      {group.code ? (
-                        <Link href={buildCompetitionHref(locale, { code: group.code })}>
-                          {group.name || dictionary.competition}
-                        </Link>
-                      ) : (
-                        group.name || dictionary.competition
-                      )}
-                    </h2>
-                  </div>
-                  <div className={styles.inlineBadgeRow}>
-                    <span className={styles.badge}>{group.fixtures.length}</span>
-                    {group.code ? (
-                      <FavoriteToggle
-                        itemId={`competition:${group.code}`}
-                        locale={locale}
-                        compact
-                        label={group.name || dictionary.competition}
-                        metadata={{
-                          country: group.country || null,
-                        }}
-                        surface="home-board"
-                      />
-                    ) : null}
-                  </div>
-                </div>
+        <LiveBoardMonetization
+          locale={locale}
+          dictionary={dictionary}
+          monetization={homeBoardFeed.monetization}
+          surface="home-board"
+        />
 
-                <div className={styles.fixtureGrid}>
-                  {group.fixtures.map((fixture) => (
-                    <FixtureFeedCard
-                      key={fixture.id}
-                      fixture={fixture}
-                      locale={locale}
-                      mode="live"
-                      showLeague={false}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>{dictionary.noData}</div>
-        )}
+        <LiveBoardGroupList
+          locale={locale}
+          dictionary={dictionary}
+          groups={homeBoardFeed.groups}
+          monetization={homeBoardFeed.monetization}
+          surface="home-board"
+          emptyLabel={dictionary.noData}
+        />
       </section>
 
       <div className={styles.homeSplit}>

@@ -198,8 +198,47 @@ const fr = {
   liveMatches: "Matchs en direct",
   kickoffWindow: "FenÃªtre de coup d'envoi",
   resultSnapshots: "Captures de rÃ©sultats",
+  liveRowStale: "Mise a jour fournisseur retardee",
+  liveResultsFrozen: "Les lignes finales sont figees.",
+  liveResultsSettling: "Les lignes finales se stabilisent.",
   liveFilterEmpty:
     "Aucun match ne correspond Ã  ce filtre. Essayez une autre date, un autre statut ou une autre compÃ©tition.",
+  liveBoardWidgetsEyebrow: "Conversions board",
+  liveBoardWidgetsLead:
+    "Les picks matchday, meilleurs prix et actions a forte intention restent proches des lignes de score.",
+  liveBoardTopPicks: "Top picks",
+  liveBoardBestOdds: "Meilleures cotes",
+  liveBoardBestOddsLead:
+    "Les meilleurs prix du board restent visibles pour garder les opportunites a un seul tap.",
+  liveBoardValueBets: "Value bets",
+  liveBoardValueBetsLead:
+    "Les picks guides par confiance et edge restent visibles sans alourdir le board.",
+  liveBoardPredictionEmpty:
+    "Aucune recommandation de prediction n'a encore ete publiee pour cette fenetre.",
+  liveBoardOddsEmpty:
+    "Aucun prix bookmaker n'est encore stocke pour la fenetre de board selectionnee.",
+  liveBoardAffiliateTitle: "Route affiliate",
+  liveBoardAffiliateLead:
+    "Gardez un handoff bookmaker leger depuis le board quand l'utilisateur veut agir vite.",
+  liveBoardAffiliateAction: "Parier",
+  liveBoardAffiliateFallbackAction: "Ouvrir le hub affiliate",
+  liveBoardFunnelTitle: "Boost canal",
+  liveBoardFunnelLead:
+    "Les invites Telegram et WhatsApp restent proches du board pour soutenir les retours sans bloquer la lecture des scores.",
+  liveBoardFunnelOptIn: "Activer les prompts canal",
+  liveBoardPinnedFirst: "Epingles d'abord",
+  liveBoardExpandAll: "Tout ouvrir",
+  liveBoardCollapseAll: "Tout fermer",
+  liveBoardOpenGroup: "Ouvrir section",
+  liveBoardCloseGroup: "Masquer section",
+  liveBoardPin: "Epingler",
+  liveBoardPinned: "Epingle",
+  liveBoardOpenCenter: "Centre match",
+  liveBoardOpenLeague: "Ligue",
+  liveBoardLiveTable: "Table live",
+  liveBoardInlineAdLabel: "Pub board",
+  liveBoardInlineAdCopy:
+    "Les insertions publicitaires du board restent compactes et mesurables entre les competitions.",
   resultsEyebrow: "Scores figÃ©s",
   resultsLead:
     "Les cartes de rÃ©sultats conservent l'instantanÃ© d'aprÃ¨s-match afin que les scores terminÃ©s restent stables aprÃ¨s capture.",
