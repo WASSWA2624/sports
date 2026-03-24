@@ -1,504 +1,526 @@
+
 # Sports App Product and Technical Specification
 
 **Reference product: Flashscore web experience**
 
+---
+
 ## 1. Reference Target
 
-- Public reference: `https://www.flashscore.com/`
-- Parity target date: March 23, 2026
-- Working interpretation of "copy paste": the app should mirror the public Flashscore web product's information architecture, page density, interaction model, and core feature set while using our own branding, legal copy, ad wiring, and licensed data feeds
+* Public reference: `https://www.flashscore.com/`
+* Parity target date: March 23, 2026
+* Working interpretation of "copy paste": the app should mirror the public Flashscore web product's information architecture, page density, interaction model, and core feature set while using our own branding, legal copy, ad wiring, affiliate integrations, and licensed data feeds
+
+---
 
 ## 2. Executive Summary
 
-This application is no longer a sports marketplace or creator platform. It is a Flashscore-style live scores and sports news product.
+This application is a **Flashscore-style live scores and sports intelligence platform with integrated monetization**.
 
-The goal is to deliver a dense, fast, real-time sports web app with:
+The goal is to deliver a dense, fast, real-time sports web app that:
 
-- a global scores hub
-- a top-level news hub
-- sport navigation across many sports
-- left-rail country and competition browsing
-- pinned leagues and favorite teams
-- competition pages with summary, odds, news, results, fixtures, standings, and archive
-- match centers with timeline, stats, lineups, H2H, standings, TV info, and related media
-- team pages
-- search
-- account-backed favorites and alerts
-- SEO-heavy public pages
+* provides global live scores and sports data
+* aggregates sports news
+* supports deep navigation across sports ecosystems
+* delivers high-intent betting-related insights (non-operational)
+* maximizes monetization through affiliate conversion and ad placements
 
-The current technical direction remains a full-stack Next.js application with Prisma, MySQL, Styled Components, Redux Toolkit, and i18n support, but the product scope shifts to multi-sport live coverage instead of community monetization.
+This is not just a data product. It is a **conversion-optimized sports platform**.
+
+---
 
 ## 3. Product Vision
 
-Build a web app that feels immediately familiar to a Flashscore user:
+Build a web app that feels immediately familiar to a Flashscore user, but optimized for **engagement and monetization**:
 
-- open the site and see live and scheduled matches without friction
-- move between sports, countries, competitions, teams, and matches in one or two clicks
-- follow live scores without manual refresh
-- save favorite teams, matches, and competitions
-- read linked sports news from the same shell
-- inspect match detail pages that are deep, data-dense, and fast
+* open the site and instantly see live matches
+* navigate across sports, countries, competitions, teams, and matches seamlessly
+* follow live scores in real time
+* access high-value insights (predictions, odds, trends)
+* take action (click affiliate links, join channels)
+* consume sports news within the same experience
+
+---
 
 ## 4. Core Product Principles
 
 ### 4.1 Parity Before Originality
 
-Product decisions should prefer one-to-one parity with the reference experience before custom invention.
+Match Flashscore UX and structure before introducing enhancements.
 
 ### 4.2 Dense Information Layout
 
-The UI should be compact and information-rich, especially on desktop:
+Compact, data-rich UI with:
 
-- persistent left rail
-- central live board
-- optional right-rail ad or supporting widgets
-- compact rows, tabs, pills, and grouped tables
+* left rail navigation
+* central live board
+* optional monetization rail
+* minimal whitespace, high signal density
 
 ### 4.3 Live-First Performance
 
-Scores, statuses, and match incidents must update quickly and predictably without the user refreshing the page.
+Real-time updates without refresh.
 
 ### 4.4 Navigation Depth
 
-Users must be able to drill from sport to country to competition to match or team with minimal friction.
+Sport → Country → Competition → Match in minimal steps.
 
 ### 4.5 SEO at Scale
 
-Public pages must be crawlable, structured, and template-driven across sports, countries, competitions, teams, matches, standings, results, fixtures, and news.
+Template-driven, crawlable pages across all entities.
+
+### 4.6 Conversion-Driven Design (NEW)
+
+Every high-traffic surface must:
+
+* guide user toward action
+* include monetization triggers
+* maintain UX balance
+
+---
 
 ## 5. Primary Navigation Model
 
 ### 5.1 Header
 
-The global header should include:
+* logo
+* Scores / News switch
+* search
+* register/login/profile
+* utility actions
 
-- brand logo
-- top-level switch between `Scores` and `News`
-- search trigger
-- login/profile entry
-- menu or utility actions
+---
 
 ### 5.2 Sports Strip
 
-The horizontal sport selector should follow the Flashscore pattern:
+* Favorites
+* Major sports
+* More (full list)
 
-- `Favorites`
-- major sports directly visible
-- `More` entry for the full sports catalog
-
-Initial visible sports should match the reference pattern as closely as our feed coverage allows, starting with sports such as:
-
-- Football
-- Tennis
-- Basketball
-- Hockey
-- Golf
-- Baseball
-- Snooker
-- Volleyball
+---
 
 ### 5.3 Left Rail
 
-The left rail should support:
+* pinned leagues
+* my teams
+* country list
+* competitions
 
-- pinned leagues
-- my teams
-- country list
-- competition lists within a selected country
-- quick links to major competitions
+---
 
 ### 5.4 Center Content
 
-The center pane changes by route but is primarily:
+Dynamic:
 
-- daily scores board
-- competition hub
-- match center
-- team page
-- news listing
-- article page
+* scores board
+* competition pages
+* match center
+* team pages
+* news
+* predictions modules
+
+---
 
 ### 5.5 Right Rail
 
-The right rail can contain:
+* ads
+* affiliate widgets
+* Telegram/WhatsApp CTAs
+* promo blocks
 
-- ad slots
-- supporting promo blocks
-- secondary widgets
-
-The layout must still work without ads.
+---
 
 ## 6. Core Experiences
 
 ### 6.1 Scores Home
 
-The homepage should function as the central scores board for the selected sport.
+Features:
 
-Required behavior:
+* date navigation
+* filters: All, LIVE, Finished, Scheduled
+* grouped competitions
+* expandable sections
+* favorites & pinning
+* compact match rows
 
-- date navigation with previous and next controls
-- filter tabs for `All`, `LIVE`, `Finished`, and `Scheduled`
-- grouped competitions by country and tournament
-- expandable and collapsible competition sections
-- favorite and pin actions on competitions and matches
-- compact match rows with status, score, cards, incidents, and secondary indicators
-- inline ad cards where configured
-- no hard page reload for live data changes
+#### Monetization Additions
+
+* prediction modules (top of board)
+* inline affiliate CTAs
+* Telegram/WhatsApp banners
+* ad inserts between competitions
+
+---
 
 ### 6.2 Sport Landing Pages
 
-Each sport should have its own landing page with the same layout model as football:
+Same as scores home, scoped per sport.
 
-- daily board
-- pinned competitions
-- country navigation
-- results and fixtures access
+Includes:
+
+* prediction widgets
+* monetization blocks
+
+---
 
 ### 6.3 Country Pages
 
-Country pages should list competitions for the selected sport and allow the user to drill into league and cup pages.
+* competition listing
+* drill-down navigation
+
+---
 
 ### 6.4 Competition Pages
 
-Competition pages should mirror the Flashscore tab model:
+Tabs:
 
-- Summary
-- Odds
-- News
-- Results
-- Fixtures
-- Standings
-- Archive
+* Summary
+* Odds
+* News
+* Results
+* Fixtures
+* Standings
+* Archive
 
-Required competition content:
+#### Monetization Additions
 
-- season selector
-- competition identity block
-- scheduled matches
-- latest scores
-- standings access
-- linked news
-- archive of previous seasons
+* odds comparison with affiliate CTAs
+* prediction modules per round
+* sponsored placements (future)
+
+---
 
 ### 6.5 Match Center
 
-The match page is a core parity target.
+Tabs:
 
-Primary tabs:
+* Match
+* H2H
+* Standings
+* Video
 
-- Match
-- H2H
-- Standings
-- Video when available
+Includes:
 
-Inside the Match tab, support sub-tabs such as:
+* score, timeline, stats, lineups
+* venue, referee, TV info
 
-- Summary
-- Stats
-- Lineups
+#### Monetization Additions (CRITICAL)
 
-Required match content:
+* odds block (top placement)
+* “Best Bet” highlight
+* affiliate CTAs (Bet Now)
+* Telegram CTA
 
-- kickoff date and time
-- team identities with logos
-- live or final score state
-- match status
-- timeline of incidents
-- goals, cards, substitutions, VAR, injuries, and period markers
-- stats such as xG, possession, shots, corners, fouls, and other sport-specific metrics when available
-- lineups and benches
-- H2H table
-- competition standings context
-- TV or streaming channel list when feed data exists
-- venue, referee, and capacity when available
-- related highlights or video links when available
+---
 
 ### 6.6 Team Pages
 
-Team pages should provide:
+* fixtures
+* results
+* squad
+* linked competitions
 
-- identity header
-- fixtures
-- results
-- form view
-- squad or roster when feed support exists
-- linked competition pages
-- linked news and media where available
+---
 
 ### 6.7 News Hub
 
-The app must have a top-level `News` mode rather than treating news as a secondary blog.
+* global news
+* sport-specific news
+* competition and team linked
 
-Required news surfaces:
+#### Monetization Additions
 
-- global news landing
-- sport-specific news pages
-- competition-linked news modules
-- team-linked news modules
-- article pages with related entities
+* inline betting CTAs
+* related odds widgets
+* funnel CTAs
+
+---
 
 ### 6.8 Favorites and My Teams
 
-Favorites are a first-class feature, not an afterthought.
+* favorite matches, teams, competitions
+* drive personalization and alerts
 
-Users should be able to favorite:
-
-- matches
-- teams
-- competitions
-
-Favorites should drive:
-
-- left-rail `My Teams`
-- favorites page
-- notification preferences
-- homepage prioritization
+---
 
 ### 6.9 Search
 
-Search should return matches for:
+* teams
+* competitions
+* matches
+* articles
 
-- teams
-- competitions
-- players where coverage exists
-- matches
-- articles
+---
 
 ### 6.10 Odds and Betting-Adjacent Surfaces
 
-The Flashscore reference includes odds surfaces and betting-adjacent modules. Our app should support:
+Supports:
 
-- competition odds tab
-- match odds blocks
-- bookmaker labels
-- stale and unavailable states
-- region and age gating where legally required
+* odds display
+* bookmaker labels
+* region-based filtering
 
-This remains an informational product, not a betting operator.
+**Note:** Informational only, not a betting operator.
 
-### 6.11 Ads, Consent, and Legal Surfaces
+---
 
-The reference product includes visible ad placements and consent flows. The app should therefore plan for:
+### 6.11 Ads, Consent, and Legal
 
-- top banner ads
-- inline board ads
-- right-rail ads
-- cookie consent
-- privacy, terms, and contact pages
-- legal gating for regulated content
+* banner ads
+* inline ads
+* right rail ads
+* cookie consent
+* legal pages
 
-## 7. User Types
+---
 
-### 7.1 Guest
+## 7. Monetization Strategy (CORE SECTION)
 
-- browse all public sports pages
-- search
-- view scores, news, standings, fixtures, results, and match pages
-- store some favorites locally
+### 7.1 Revenue Streams
 
-### 7.2 Registered User
+1. Betting Affiliate Revenue (Primary)
+2. Display Ads (Secondary)
+3. Conversion Funnels (Telegram / WhatsApp)
+4. Sponsored Placements (Scaling phase)
 
-- sync favorites across devices
-- manage alerts
-- customize sport and competition preferences
-- maintain recent teams and competitions
+---
 
-### 7.3 Editor
+### 7.2 Betting Affiliate System
 
-- manage news content
-- curate homepage modules
-- review article associations
+#### Requirements
 
-### 7.4 Admin
+* bookmaker entities
+* affiliate links
+* geo-targeting
+* CTA buttons
 
-- manage data providers, sync jobs, feature flags, ad slots, and operational controls
+#### Placement
 
-## 8. Data Domains
+* match pages
+* competition pages
+* homepage
+* prediction modules
 
-The data model must support a broad live-scores product rather than a football-only content marketplace.
+---
 
-### 8.1 Taxonomy
+### 7.3 Prediction Layer (Conversion Engine)
 
-- Sport
-- Country
-- Competition
-- Season
-- Stage
-- Round
+Add modules:
 
-### 8.2 Participants
+* Top Picks Today
+* Best Odds
+* High Odds Matches
+* Value Bets
 
-- Team
-- Player
-- Official
-- Venue
+Displayed:
 
-### 8.3 Match Data
+* homepage
+* match pages
+* competition pages
 
-- Fixture
-- FixtureParticipant
-- ScoreSnapshot
-- Incident
-- Lineup
-- Statistic
-- Standing
-- H2HSnapshot
-- BroadcastChannel
-- OddsMarket
-- OddsSelection
+Each includes:
 
-### 8.4 Content
+* odds
+* reasoning (optional)
+* affiliate CTA
 
-- NewsArticle
-- NewsCategory
-- ArticleEntityLink
+---
 
-### 8.5 Personalization
+### 7.4 Funnel System (MANDATORY)
 
-- UserPreference
-- FavoriteEntity
-- NotificationSubscription
-- RecentView
+Channels:
 
-### 8.6 Operations
+* Telegram
+* WhatsApp
 
-- SourceProvider
-- SyncJob
-- SyncCheckpoint
-- FeatureFlag
-- AuditLog
+#### Entry Points
 
-## 9. Technical Architecture
+* banners
+* inline CTAs
+* match pages
+* predictions
 
-### 9.1 Stack
+#### Flow
 
-- Next.js App Router
-- JavaScript
-- Prisma ORM
-- MySQL
-- Styled Components
-- Redux Toolkit
-- i18n routing and translation dictionaries
+User → joins channel → receives tips → clicks affiliate → revenue
 
-### 9.2 Frontend Shape
+---
 
-Suggested feature modules:
+### 7.5 Advertising
+
+Start with:
+
+* Google AdSense
+
+Expand to:
+
+* Ezoic
+
+#### Placements
+
+* header
+* inline
+* right rail
+
+---
+
+### 7.6 Sponsored Content
+
+Future support:
+
+* bookmaker promotions
+* featured competitions
+
+---
+
+### 7.7 Geo Strategy
+
+Focus:
+
+* Uganda
+* Kenya
+* Nigeria
+
+Use:
+
+* localized bookmakers
+* regional messaging
+
+---
+
+### 7.8 Analytics
+
+Track:
+
+* clicks
+* conversions
+* funnel flow
+* page performance
+
+---
+
+## 8. User Types
+
+### Guest
+
+* full browsing
+* limited local favorites
+
+### Registered
+
+* synced favorites
+* alerts
+
+### Editor
+
+* manage news
+
+### Admin
+
+* manage system, ads, affiliates
+
+---
+
+## 9. Data Domains
+
+### 9.1 Taxonomy
+
+* Sport, Country, Competition, Season
+
+### 9.2 Participants
+
+* Team, Player, Official, Venue
+
+### 9.3 Match Data
+
+* Fixture, Score, Incident, Stats
+
+### 9.4 Content
+
+* NewsArticle, Category
+
+### 9.5 Personalization
+
+* Favorites, Preferences
+
+### 9.6 Monetization (NEW)
+
+* Bookmaker
+* AffiliateLink
+* ClickEvent
+* ConversionEvent
+* FunnelEntry
+
+---
+
+## 10. Technical Architecture
+
+### Stack
+
+* Next.js
+* Prisma
+* MySQL
+* Redux Toolkit
+* Styled Components
+* i18n
+
+---
+
+### Frontend Structure
 
 ```txt
 src/
   app/
   components/
   features/
-    shell/
     scores/
-    competitions/
     matches/
-    teams/
+    competitions/
     news/
-    favorites/
-    search/
     odds/
-    settings/
-    admin/
-  lib/
-  services/
-  store/
-  styles/
-  i18n/
-  types/
+    affiliates/
+    funnel/
+    ads/
 ```
 
-### 9.3 Backend Shape
+---
 
-Use a modular monolith with clear service boundaries:
+### Backend Services
 
-- auth
-- sports taxonomy
-- fixtures and live states
-- standings
-- odds
-- news
-- favorites and alerts
-- search
-- admin and sync ops
+* auth
+* sports data
+* odds
+* affiliates
+* analytics
+* news
+* sync
 
-### 9.4 Rendering Strategy
+---
 
-Server-render:
+## 11. Data Provider Strategy
 
-- sport pages
-- competition pages
-- team pages
-- match pages
-- standings
-- results
-- fixtures
-- news articles
+* multi-provider architecture
+* sports + odds feeds
+* real-time sync
 
-Client-enhance:
+---
 
-- live score updates
-- favorite toggles
-- date board filters
-- pinned leagues
-- search overlays
-- alert controls
+## 12. API Design
 
-## 10. Data Provider Strategy
+Includes:
 
-Flashscore-level breadth cannot depend on a single football feed. The app must support a provider abstraction with sport-specific adapters.
+* scores
+* matches
+* teams
+* news
+* search
+* favorites
+* affiliates
+* analytics
 
-### 10.1 Provider Requirements
+---
 
-- sports taxonomy
-- fixtures and live states
-- standings
-- lineups
-- match stats
-- odds where licensed
-- news or editorial ingest hooks
-
-### 10.2 Initial Direction
-
-SportsMonks can remain the first football adapter, but the architecture must assume more providers are needed for wider Flashscore-style parity across sports.
-
-### 10.3 Sync Buckets
-
-- low-frequency: sports, countries, competitions, seasons, teams, venues
-- daily: fixtures, standings, competition metadata
-- high-frequency: live scores, incidents, match stats, odds
-- editorial cadence: news ingestion and homepage curation
-
-### 10.4 Read Strategy
-
-- normalized source tables for ingestion
-- denormalized read models for hot pages
-- cache-first public page delivery
-- short TTL or streaming updates for live states
-
-## 11. API Design
-
-Representative route groups:
-
-- `GET /api/scores`
-- `GET /api/sports/:sportSlug`
-- `GET /api/competitions/:competitionSlug`
-- `GET /api/competitions/:competitionSlug/standings`
-- `GET /api/matches/:matchRef`
-- `GET /api/matches/:matchRef/stats`
-- `GET /api/matches/:matchRef/lineups`
-- `GET /api/teams/:teamSlug`
-- `GET /api/news`
-- `GET /api/news/:articleSlug`
-- `GET /api/search`
-- `POST /api/favorites`
-- `DELETE /api/favorites/:id`
-- `POST /api/alerts`
-- `GET /api/admin/sync-jobs`
-
-## 12. Route Map
-
-Suggested public route model:
+## 13. Route Map
 
 ```txt
 /{locale}
@@ -506,71 +528,61 @@ Suggested public route model:
 /{locale}/{sport}
 /{locale}/{sport}/{country}
 /{locale}/{sport}/{country}/{competition}
-/{locale}/{sport}/{country}/{competition}/odds
-/{locale}/{sport}/{country}/{competition}/news
-/{locale}/{sport}/{country}/{competition}/results
-/{locale}/{sport}/{country}/{competition}/fixtures
-/{locale}/{sport}/{country}/{competition}/standings
-/{locale}/{sport}/{country}/{competition}/archive
 /{locale}/match/{matchRef}
 /{locale}/team/{teamRef}
-/{locale}/favorites
-/{locale}/search
-/{locale}/settings
-/{locale}/admin
 ```
 
-## 13. Non-Functional Requirements
+---
 
-- real-time updates on live boards and match pages
-- excellent perceived performance on low bandwidth
-- mobile support without losing the dense data feel
-- consistent timezone and locale formatting
-- accessible navigation and color contrast
-- high SEO coverage for public routes
-- graceful degraded states when providers fail
-- clear stale-data markers
-- observability for sync lag, cache health, and route performance
+## 14. Non-Functional Requirements
 
-## 14. Explicit Non-Goals
+* real-time updates
+* high performance
+* SEO coverage
+* mobile optimization
+* fault tolerance
 
-The app is no longer scoped around:
+---
 
-- user-generated sports posts
-- creator profiles
-- betting slip builders
-- paid marketplace content
-- subscriptions for premium picks
-- community discussion features
+## 15. Explicit Non-Goals
 
-Those features should be removed from planning unless separately re-approved.
+Removed:
 
-## 15. Delivery Direction
+* marketplace
+* creator economy
+* paid subscriptions
+* community features
+
+---
+
+## 16. Delivery Phases
 
 ### Phase 1
 
-Replicate the public Flashscore football experience end to end:
-
-- shell
-- scores board
-- competition pages
-- match center
-- team pages
-- news
-- favorites
+* Flashscore parity (football)
 
 ### Phase 2
 
-Expand parity across additional sports and deepen live match detail.
+* multi-sport expansion
 
 ### Phase 3
 
-Harden scale, search, alerts, ads, SEO coverage, and operational tooling.
+* monetization scaling
+* funnel optimization
+* sponsored deals
 
-## 16. Final Recommendation
+---
 
-The correct target for this app is a Flashscore-style live scores product with public web parity as of March 23, 2026, not a sports marketplace.
+## 17. Final Recommendation
 
-Every roadmap decision should now be judged against one question:
+This product must be treated as:
 
-`Does this move the app closer to Flashscore-style page, data, and interaction parity?`
+> a **conversion-optimized sports data platform**
+
+Success is defined by:
+
+* traffic quality
+* conversion rate
+* affiliate revenue
+
+---

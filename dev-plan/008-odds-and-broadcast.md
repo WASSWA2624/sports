@@ -1,17 +1,18 @@
 # 008-odds-and-broadcast
 
 ## Goal
-Release odds and broadcast surfaces on competition and match pages.
+Release odds, prediction, affiliate, and broadcast surfaces on competition and match pages.
 
 ## Build
-1. Expose public odds APIs and normalized client read models.
-2. Render competition-level odds tabs and match-level odds modules with bookmaker source labels.
-3. Add stale, unavailable, and region-restricted states that are explicit in the UI.
-4. Add TV or streaming channel blocks where coverage exists for a fixture.
-5. Add age gating and legal copy hooks for betting-adjacent content.
-6. Track odds and broadcast module engagement for analytics.
+1. Expose public odds APIs, bookmaker entities, affiliate-link resolution, and geo-targeted CTA configuration.
+2. Render competition-level odds tabs and match-level odds modules with bookmaker source labels, comparison states, and regulated copy hooks.
+3. Add prediction surfaces required by `app-write-up.md`: top picks, best odds, high-odds matches, value bets, and match-level `Best Bet` highlights with optional reasoning.
+4. Add stale, unavailable, region-restricted, and age-gated states that remain explicit in the UI.
+5. Add TV or streaming channel blocks where coverage exists for a fixture.
+6. Track impressions, clicks, and downstream conversion events for odds, predictions, bookmaker CTAs, and related broadcast modules.
 
 ## Done When
 - Odds appear on supported competition and match pages.
+- Prediction and affiliate CTA modules can be rendered safely on the major monetization surfaces.
 - TV or streaming info can be shown when provided by the feed.
 - Regulated or missing data is handled cleanly.
