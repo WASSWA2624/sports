@@ -14,6 +14,7 @@ import {
 } from "../../../../lib/coreui/metadata";
 import { getSportNewsModule } from "../../../../lib/coreui/news-read";
 import { getSportHub } from "../../../../lib/coreui/read";
+import { SPORTS_STRIP } from "../../../../lib/coreui/config";
 import {
   getPersonalizationSnapshot,
   sortCompetitionsByPersonalization,
@@ -24,9 +25,40 @@ import {
   buildCountryHref,
 } from "../../../../lib/coreui/routes";
 
+function buildCatalogSportHub(reference) {
+  const normalized = String(reference || "").trim().toLowerCase();
+  const sport = SPORTS_STRIP.find(
+    (entry) => !["favorites", "more"].includes(entry.key) && entry.key === normalized
+  );
+
+  if (!sport) {
+    return null;
+  }
+
+  return {
+    sport: {
+      id: null,
+      code: sport.key,
+      slug: sport.key,
+      name: sport.label,
+    },
+    countries: [],
+    competitions: [],
+    fixtures: [],
+    fixtureSummary: {
+      total: 0,
+      LIVE: 0,
+      SCHEDULED: 0,
+      FINISHED: 0,
+      POSTPONED: 0,
+      CANCELLED: 0,
+    },
+  };
+}
+
 export async function generateMetadata({ params }) {
   const { locale, sportSlug } = await params;
-  const sportHub = await getSportHub(sportSlug);
+  const sportHub = (await getSportHub(sportSlug)) || buildCatalogSportHub(sportSlug);
   const dictionary = getDictionary(locale);
 
   return buildPageMetadata(
@@ -47,17 +79,18 @@ export async function generateMetadata({ params }) {
 export default async function SportHubPage({ params }) {
   const { locale, sportSlug } = await params;
   const dictionary = getDictionary(locale);
-  const [sportHub, flags, personalization] = await Promise.all([
+  const [sportHubRaw, flags, personalization] = await Promise.all([
     getSportHub(sportSlug),
     getPublicSurfaceFlags(),
     getPersonalizationSnapshot(),
   ]);
+  const sportHub = sportHubRaw || buildCatalogSportHub(sportSlug);
 
   if (!sportHub) {
     notFound();
   }
 
-  const sportNews = flags.news
+  const sportNews = flags.news && sportHub.sport.id
     ? await getSportNewsModule(sportHub.sport.id, 4)
     : { articles: [], total: 0 };
   const prioritizedCompetitions = sortCompetitionsByPersonalization(
@@ -140,28 +173,32 @@ export default async function SportHubPage({ params }) {
           <span className={styles.badge}>{sportHub.countries.length}</span>
         </div>
 
-        <div className={styles.leagueGrid}>
-          {sportHub.countries.map((country) => (
-            <article key={country.slug || country.code || country.name} className={styles.leagueCard}>
-              <div className={styles.cardHeader}>
-                <div>
-                  <h3 className={styles.cardTitle}>
-                    <Link href={buildCountryHref(locale, country, sportHub.sport)}>{country.name}</Link>
-                  </h3>
-                  <p className={styles.muted}>
-                    {country.competitionCount} {dictionary.leagues.toLowerCase()}
-                  </p>
+        {sportHub.countries.length ? (
+          <div className={styles.leagueGrid}>
+            {sportHub.countries.map((country) => (
+              <article key={country.slug || country.code || country.name} className={styles.leagueCard}>
+                <div className={styles.cardHeader}>
+                  <div>
+                    <h3 className={styles.cardTitle}>
+                      <Link href={buildCountryHref(locale, country, sportHub.sport)}>{country.name}</Link>
+                    </h3>
+                    <p className={styles.muted}>
+                      {country.competitionCount} {dictionary.leagues.toLowerCase()}
+                    </p>
+                  </div>
+                  <span className={styles.badge}>{country.teamCount}</span>
                 </div>
-                <span className={styles.badge}>{country.teamCount}</span>
-              </div>
 
-              <div className={styles.inlineBadgeRow}>
-                <span className={styles.badge}>{dictionary.live}: {country.liveCount}</span>
-                <span className={styles.badge}>{dictionary.fixtures}: {country.scheduledCount}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+                <div className={styles.inlineBadgeRow}>
+                  <span className={styles.badge}>{dictionary.live}: {country.liveCount}</span>
+                  <span className={styles.badge}>{dictionary.fixtures}: {country.scheduledCount}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>{dictionary.noData}</div>
+        )}
       </section>
 
       <section className={styles.section}>
@@ -173,41 +210,45 @@ export default async function SportHubPage({ params }) {
           <span className={styles.badge}>{prioritizedCompetitions.length}</span>
         </div>
 
-        <div className={styles.leagueGrid}>
-          {prioritizedCompetitions.map((competition) => (
-            <article key={competition.code} className={styles.leagueCard}>
-              <div className={styles.cardHeader}>
-                <div>
-                  <p className={styles.eyebrow}>{competition.country || dictionary.international}</p>
-                  <h3 className={styles.cardTitle}>
-                    <Link href={buildCompetitionHref(locale, competition)}>{competition.name}</Link>
-                  </h3>
+        {prioritizedCompetitions.length ? (
+          <div className={styles.leagueGrid}>
+            {prioritizedCompetitions.map((competition) => (
+              <article key={competition.code} className={styles.leagueCard}>
+                <div className={styles.cardHeader}>
+                  <div>
+                    <p className={styles.eyebrow}>{competition.country || dictionary.international}</p>
+                    <h3 className={styles.cardTitle}>
+                      <Link href={buildCompetitionHref(locale, competition)}>{competition.name}</Link>
+                    </h3>
+                  </div>
+                  <div className={styles.inlineBadgeRow}>
+                    <span className={styles.badge}>{competition.teamCount}</span>
+                    <FavoriteToggle
+                      itemId={`competition:${competition.code}`}
+                      locale={locale}
+                      compact
+                      label={competition.name}
+                      metadata={{
+                        country: competition.country || null,
+                      }}
+                      surface="sport-hub"
+                    />
+                  </div>
                 </div>
-                <div className={styles.inlineBadgeRow}>
-                  <span className={styles.badge}>{competition.teamCount}</span>
-                  <FavoriteToggle
-                    itemId={`competition:${competition.code}`}
-                    locale={locale}
-                    compact
-                    label={competition.name}
-                    metadata={{
-                      country: competition.country || null,
-                    }}
-                    surface="sport-hub"
-                  />
-                </div>
-              </div>
 
-              <div className={styles.inlineBadgeRow}>
-                {competition.currentSeason ? (
-                  <span className={styles.badge}>{competition.currentSeason}</span>
-                ) : null}
-                <span className={styles.badge}>{competition.fixtureSummary.LIVE}</span>
-                <span className={styles.badge}>{competition.fixtureSummary.SCHEDULED}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+                <div className={styles.inlineBadgeRow}>
+                  {competition.currentSeason ? (
+                    <span className={styles.badge}>{competition.currentSeason}</span>
+                  ) : null}
+                  <span className={styles.badge}>{competition.fixtureSummary.LIVE}</span>
+                  <span className={styles.badge}>{competition.fixtureSummary.SCHEDULED}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>{dictionary.noData}</div>
+        )}
       </section>
 
       <section className={styles.section}>

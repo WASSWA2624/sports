@@ -17,6 +17,7 @@ import {
   buildSportHref,
   buildTeamHref,
 } from "./routes";
+import { SPORTS_STRIP } from "./config";
 
 function fixtureInclude({ includeOdds = true, oddsTake = 2, includeBroadcast = false } = {}) {
   const include = {
@@ -65,6 +66,47 @@ function summarizeFixtureStates(fixtures = []) {
     },
     { total: 0, LIVE: 0, SCHEDULED: 0, FINISHED: 0, POSTPONED: 0, CANCELLED: 0 }
   );
+}
+
+function resolveCatalogSport(reference) {
+  const normalized = normalizeReference(reference);
+  if (!normalized) {
+    return null;
+  }
+
+  const target = String(normalized).trim().toLowerCase();
+  return (
+    SPORTS_STRIP.find((sport) => {
+      if (["favorites", "more"].includes(sport.key)) {
+        return false;
+      }
+
+      const hrefSlug = sport.href ? String(sport.href).split("/").filter(Boolean).at(-1) : null;
+      return [sport.key, sport.label, hrefSlug]
+        .filter(Boolean)
+        .some((value) => String(value).trim().toLowerCase() === target);
+    }) || null
+  );
+}
+
+function buildFallbackSportHub(reference) {
+  const sport = resolveCatalogSport(reference);
+  if (!sport) {
+    return null;
+  }
+
+  return {
+    sport: {
+      id: null,
+      code: sport.key,
+      slug: sport.key,
+      name: sport.label,
+    },
+    countries: [],
+    competitions: [],
+    fixtures: [],
+    fixtureSummary: summarizeFixtureStates([]),
+  };
 }
 
 function pickSelectedSeason(seasons = [], seasonRef) {
@@ -667,7 +709,7 @@ export async function getSportHub(reference) {
         });
 
         if (!sport) {
-          return null;
+          return buildFallbackSportHub(sportReference);
         }
 
         const recentWindow = new Date();

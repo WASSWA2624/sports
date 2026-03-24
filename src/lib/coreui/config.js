@@ -16,13 +16,13 @@ export const SCORES_NAV = [
 export const SPORTS_STRIP = [
   { key: "favorites", label: "Favorites", href: "/favorites", enabled: true },
   { key: "football", label: "Football", href: "/sports/football", enabled: true },
-  { key: "tennis", label: "Tennis", href: null, enabled: false },
-  { key: "basketball", label: "Basketball", href: null, enabled: false },
-  { key: "hockey", label: "Hockey", href: null, enabled: false },
-  { key: "golf", label: "Golf", href: null, enabled: false },
-  { key: "baseball", label: "Baseball", href: null, enabled: false },
-  { key: "snooker", label: "Snooker", href: null, enabled: false },
-  { key: "volleyball", label: "Volleyball", href: null, enabled: false },
+  { key: "tennis", label: "Tennis", href: "/sports/tennis", enabled: true },
+  { key: "basketball", label: "Basketball", href: "/sports/basketball", enabled: true },
+  { key: "hockey", label: "Hockey", href: "/sports/hockey", enabled: true },
+  { key: "golf", label: "Golf", href: "/sports/golf", enabled: true },
+  { key: "baseball", label: "Baseball", href: "/sports/baseball", enabled: true },
+  { key: "snooker", label: "Snooker", href: "/sports/snooker", enabled: true },
+  { key: "volleyball", label: "Volleyball", href: "/sports/volleyball", enabled: true },
   { key: "more", label: "More", href: null, enabled: false },
 ];
 
