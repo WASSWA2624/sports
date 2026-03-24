@@ -247,6 +247,17 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
     dispatch(closeSearch());
   }
 
+  function trackDiscoveryClick({ entityType, entityId, action, metadata = null }) {
+    trackProductAnalyticsEvent({
+      event: "search_discovery_click",
+      surface: "shell-search",
+      entityType,
+      entityId,
+      action,
+      metadata,
+    });
+  }
+
   return (
     <>
       <button
@@ -350,6 +361,32 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
                       onResultClick={handleClose}
                     />
                   ) : null}
+
+                  {searchResults?.sections?.players?.length ? (
+                    <SearchResultsSection
+                      title={dictionary.searchPlayers}
+                      locale={locale}
+                      dictionary={dictionary}
+                      results={searchResults.sections.players}
+                      surface="shell-search"
+                      query={searchResults.query}
+                      compact
+                      onResultClick={handleClose}
+                    />
+                  ) : null}
+
+                  {searchResults?.sections?.articles?.length ? (
+                    <SearchResultsSection
+                      title={dictionary.searchArticles}
+                      locale={locale}
+                      dictionary={dictionary}
+                      results={searchResults.sections.articles}
+                      surface="shell-search"
+                      query={searchResults.query}
+                      compact
+                      onResultClick={handleClose}
+                    />
+                  ) : null}
                 </div>
               ) : (
                 <div className={searchStyles.discoveryGrid}>
@@ -368,7 +405,14 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
                             key={item.key}
                             href={item.href}
                             className={searchStyles.discoveryLink}
-                            onClick={handleClose}
+                            onClick={() => {
+                              trackDiscoveryClick({
+                                entityType: "recent_item",
+                                entityId: item.key,
+                                action: item.href,
+                              });
+                              handleClose();
+                            }}
                           >
                             <span className={searchStyles.discoveryLabel}>
                               <strong>{item.title}</strong>
@@ -396,7 +440,17 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
                           key={competition.code}
                           href={`/${locale}/leagues/${competition.code}`}
                           className={searchStyles.discoveryLink}
-                          onClick={handleClose}
+                          onClick={() => {
+                            trackDiscoveryClick({
+                              entityType: "competition",
+                              entityId: competition.code,
+                              action: `/${locale}/leagues/${competition.code}`,
+                              metadata: {
+                                source: "top_competitions",
+                              },
+                            });
+                            handleClose();
+                          }}
                         >
                           <span className={searchStyles.discoveryLabel}>
                             <strong>{competition.name}</strong>
@@ -421,7 +475,17 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
                           key={`${shortcut.type}:${shortcut.href}`}
                           href={`/${locale}${shortcut.href}`}
                           className={searchStyles.discoveryLink}
-                          onClick={handleClose}
+                          onClick={() => {
+                            trackDiscoveryClick({
+                              entityType: shortcut.type,
+                              entityId: shortcut.label,
+                              action: `/${locale}${shortcut.href}`,
+                              metadata: {
+                                source: "shortcut",
+                              },
+                            });
+                            handleClose();
+                          }}
                         >
                           <span className={searchStyles.discoveryLabel}>
                             <strong>{shortcut.label}</strong>

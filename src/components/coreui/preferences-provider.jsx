@@ -696,8 +696,26 @@ export function PreferencesProvider({
   );
 
   const setPromptPreferences = useCallback(
-    async (nextPromptPreferences, options = {}) =>
-      updateProfilePreferences(
+    async (nextPromptPreferences, options = {}) => {
+      const changedKeys = Object.keys(nextPromptPreferences || {}).filter(
+        (key) => profilePreferences.promptPreferences?.[key] !== nextPromptPreferences?.[key]
+      );
+
+      if (changedKeys.length) {
+        trackProductAnalyticsEvent({
+          event: "prompt_opt_in_changed",
+          surface: options.surface || "preferences",
+          metadata: {
+            changedKeys,
+            values: Object.fromEntries(
+              changedKeys.map((key) => [key, Boolean(nextPromptPreferences?.[key])])
+            ),
+            authenticated: Boolean(sessionUser),
+          },
+        });
+      }
+
+      return updateProfilePreferences(
         (current) => ({
           ...current,
           promptPreferences: {
@@ -706,8 +724,9 @@ export function PreferencesProvider({
           },
         }),
         options
-      ),
-    [updateProfilePreferences]
+      );
+    },
+    [profilePreferences.promptPreferences, sessionUser, updateProfilePreferences]
   );
 
   const setPromptPreference = useCallback(

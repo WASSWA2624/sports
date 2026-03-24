@@ -23,7 +23,9 @@ import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience"
 import {
   buildBreadcrumbStructuredData,
   buildPageMetadata,
+  buildStandingsStructuredData,
   buildSportsTeamStructuredData,
+  buildWebPageStructuredData,
 } from "../../../../lib/coreui/metadata";
 import { getTeamNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
@@ -91,24 +93,84 @@ function surfaceTone(state) {
   return styles.surfaceStateUnavailable;
 }
 
-export async function generateMetadata({ params }) {
+function buildTeamMetadataCopy(dictionary, team, activeTab) {
+  const teamName = team?.name || dictionary.metaTeamFallbackTitle;
+  const baseDescription = team
+    ? formatDictionaryText(dictionary.metaTeamDescription, { name: teamName })
+    : dictionary.metaTeamFallbackDescription;
+
+  if (activeTab === "standings") {
+    return {
+      title: `${teamName} ${dictionary.standings}`,
+      description: `${baseDescription} ${dictionary.standings}.`,
+    };
+  }
+
+  if (activeTab === "fixtures") {
+    return {
+      title: `${teamName} ${dictionary.fixtures}`,
+      description: `${baseDescription} ${dictionary.fixtures}.`,
+    };
+  }
+
+  if (activeTab === "results") {
+    return {
+      title: `${teamName} ${dictionary.results}`,
+      description: `${baseDescription} ${dictionary.results}.`,
+    };
+  }
+
+  if (activeTab === "news") {
+    return {
+      title: `${teamName} ${dictionary.news}`,
+      description: `${baseDescription} ${dictionary.news}.`,
+    };
+  }
+
+  if (activeTab === "competitions") {
+    return {
+      title: `${teamName} ${dictionary.linkedCompetitions}`,
+      description: `${baseDescription} ${dictionary.linkedCompetitions}.`,
+    };
+  }
+
+  if (activeTab === "archive") {
+    return {
+      title: `${teamName} ${dictionary.archive}`,
+      description: `${baseDescription} ${dictionary.archive}.`,
+    };
+  }
+
+  return {
+    title: teamName,
+    description: baseDescription,
+  };
+}
+
+export async function generateMetadata({ params, searchParams }) {
   const { locale, teamId } = await params;
+  const filters = await searchParams;
+  const activeTab = normalizeTab(filters?.tab);
   const team = await getTeamDetail(teamId);
   const dictionary = getDictionary(locale);
+  const metadataCopy = buildTeamMetadataCopy(dictionary, team, activeTab);
 
   return buildPageMetadata(
     locale,
-    team?.name || dictionary.metaTeamFallbackTitle,
-    team
-      ? formatDictionaryText(dictionary.metaTeamDescription, { name: team.name })
-      : dictionary.metaTeamFallbackDescription,
+    metadataCopy.title,
+    metadataCopy.description,
     `/teams/${teamId}`,
     {
       keywords: [
         team?.name,
         team?.selectedCompetition?.name || team?.league?.name,
         team?.sport?.name,
+        activeTab === "standings" ? dictionary.standings : null,
+        activeTab === "news" ? dictionary.news : null,
       ].filter(Boolean),
+      other: {
+        "sports-surface": activeTab,
+      },
     }
   );
 }
@@ -186,6 +248,60 @@ export default async function TeamDetailPage({ params, searchParams }) {
       league: team.selectedCompetition?.name || team.league?.name,
       description: formatDictionaryText(dictionary.metaTeamDescription, { name: team.name }),
     }),
+    buildWebPageStructuredData({
+      path: buildTeamPageHref(locale, team.id, {
+        tab: activeTab,
+        competition: selectedCompetitionRef,
+        season: selectedSeasonRef,
+        standing: team.standingsTable.selectedView,
+        territory: filters?.territory,
+      }),
+      name: buildTeamMetadataCopy(dictionary, team, activeTab).title,
+      description: buildTeamMetadataCopy(dictionary, team, activeTab).description,
+      inLanguage: locale,
+      about: [
+        team.sport ? { type: "Thing", name: team.sport.name, path: sportHref } : null,
+        team.selectedCompetition
+          ? {
+              type: "SportsOrganization",
+              name: team.selectedCompetition.name,
+              path: buildCompetitionHref(locale, team.selectedCompetition),
+            }
+          : null,
+        { type: "SportsTeam", name: team.name, path: `/${locale}/teams/${team.id}` },
+      ].filter(Boolean),
+      monetization:
+        activeTab === "competitions" || hasCompetitionInsights
+          ? {
+              name: dictionary.competitionInsights,
+              description: dictionary.competitionInsightsLead,
+              isAccessibleForFree: true,
+              accessibilitySummary: dictionary.oddsLegalAge,
+              conditionsOfAccess: dictionary.oddsLegalJurisdiction,
+              genre: "Sports betting insights",
+            }
+          : null,
+    }),
+    activeTab === "standings"
+      ? buildStandingsStructuredData({
+          path: buildTeamPageHref(locale, team.id, {
+            tab: "standings",
+            competition: selectedCompetitionRef,
+            season: selectedSeasonRef,
+            standing: team.standingsTable.selectedView,
+            territory: filters?.territory,
+          }),
+          name: `${team.name} ${dictionary.standings}`,
+          description: dictionary.standings,
+          rows: team.standingsTable.rows.map((row) => ({
+            ...row,
+            team: {
+              ...row.team,
+              path: `/${locale}/teams/${row.team.id}`,
+            },
+          })),
+        })
+      : null,
   ];
   const teamOddsSurface = team.competitionOdds;
   const shouldGateOdds = teamOddsSurface?.enabled && teamOddsSurface?.tabs?.length > 0;

@@ -24,6 +24,16 @@ function cleanKeywords(keywords = []) {
   return [...new Set((keywords || []).map((entry) => String(entry || "").trim()).filter(Boolean))];
 }
 
+function buildSchemaAboutList(items = []) {
+  return (items || [])
+    .filter((item) => item?.name)
+    .map((item) => ({
+      "@type": item.type || "Thing",
+      name: item.name,
+      url: item.path ? buildAbsoluteUrl(item.path) : undefined,
+    }));
+}
+
 export function buildPageMetadata(locale, title, description, path = "", options = {}) {
   const dictionary = getDictionary(locale);
   const normalizedPath = normalizePath(path);
@@ -80,6 +90,7 @@ export function buildPageMetadata(locale, title, description, path = "", options
       description,
       images: [absoluteImage],
     },
+    other: options.other || undefined,
   };
 }
 
@@ -131,6 +142,108 @@ export function buildCollectionPageStructuredData({
           itemListElement: itemListElements,
         }
       : undefined,
+  };
+}
+
+export function buildWebsiteSearchStructuredData({
+  locale = "en",
+  name,
+  description,
+} = {}) {
+  const dictionary = getDictionary(locale);
+  const siteName = name || dictionary.brand;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    description: description || dictionary.searchPageLead,
+    url: buildAbsoluteUrl(`/${locale}`),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: buildAbsoluteUrl(`/${locale}/search?q={search_term_string}`),
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+export function buildWebPageStructuredData({
+  path,
+  name,
+  description,
+  image = null,
+  about = [],
+  inLanguage = null,
+  isAccessibleForFree = true,
+  monetization = null,
+  dateModified = null,
+} = {}) {
+  const normalizedImage = image
+    ? buildAssetUrl(image, { type: "article-image", width: 1200 })
+    : null;
+  const aboutList = buildSchemaAboutList(about);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name,
+    description: description || undefined,
+    url: buildAbsoluteUrl(path),
+    inLanguage: inLanguage || undefined,
+    isAccessibleForFree,
+    image: normalizedImage
+      ? [normalizedImage.startsWith("http") ? normalizedImage : buildAbsoluteUrl(normalizedImage)]
+      : undefined,
+    dateModified: dateModified || undefined,
+    about: aboutList.length ? aboutList : undefined,
+    hasPart: monetization
+      ? [
+          {
+            "@type": "WebPageElement",
+            name: monetization.name,
+            description: monetization.description,
+            isAccessibleForFree: monetization.isAccessibleForFree ?? true,
+            accessibilitySummary: monetization.accessibilitySummary || undefined,
+            conditionsOfAccess: monetization.conditionsOfAccess || undefined,
+            genre: monetization.genre || undefined,
+          },
+        ]
+      : undefined,
+  };
+}
+
+export function buildStandingsStructuredData({
+  path,
+  name,
+  description,
+  rows = [],
+} = {}) {
+  const validRows = (rows || []).filter((row) => row?.team?.name);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    description: description || undefined,
+    url: buildAbsoluteUrl(path),
+    itemListElement: validRows.map((row, index) => ({
+      "@type": "ListItem",
+      position: row.position || index + 1,
+      name: row.team.name,
+      item: buildAbsoluteUrl(row.team.path || path),
+      additionalProperty: [
+        {
+          "@type": "PropertyValue",
+          name: "points",
+          value: row.points,
+        },
+        {
+          "@type": "PropertyValue",
+          name: "played",
+          value: row.played,
+        },
+      ],
+    })),
   };
 }
 
@@ -232,10 +345,14 @@ export function buildNewsArticleStructuredData({
   updatedAt,
   image,
   section,
+  sponsored = false,
+  sponsor = null,
+  about = [],
 }) {
   const normalizedImage = image
     ? buildAssetUrl(image, { type: "article-image", width: 1200 })
     : null;
+  const aboutList = buildSchemaAboutList(about);
 
   return {
     "@context": "https://schema.org",
@@ -249,5 +366,14 @@ export function buildNewsArticleStructuredData({
       ? [normalizedImage.startsWith("http") ? normalizedImage : buildAbsoluteUrl(normalizedImage)]
       : undefined,
     url: buildAbsoluteUrl(path),
+    isAccessibleForFree: true,
+    sponsor:
+      sponsored && sponsor
+        ? {
+            "@type": "Organization",
+            name: sponsor,
+          }
+        : undefined,
+    about: aboutList.length ? aboutList : undefined,
   };
 }

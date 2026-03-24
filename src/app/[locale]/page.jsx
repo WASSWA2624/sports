@@ -22,6 +22,7 @@ import {
   RecentItemsPanel,
   TopCompetitionsPanel,
 } from "../../components/coreui/discovery-panels";
+import { StructuredData } from "../../components/coreui/structured-data";
 import styles from "../../components/coreui/styles.module.css";
 import {
   buildFavoriteChannelPanelModel,
@@ -34,10 +35,18 @@ import {
   sortCompetitionsByPersonalization,
   sortFixturesByPersonalization,
 } from "../../lib/personalization";
-import { getRecentItemsModule, getTopCompetitionsModule } from "../../lib/coreui/discovery";
+import {
+  getOnboardingDiscoveryOptions,
+  getRecentItemsModule,
+  getTopCompetitionsModule,
+} from "../../lib/coreui/discovery";
 import { getPreferenceSnapshot } from "../../lib/coreui/preferences-server";
 import { getPlatformPublicSnapshotData } from "../../lib/platform/env";
 import { getProfileComplianceSnapshot } from "../../lib/profile-preferences";
+import {
+  buildWebsiteSearchStructuredData,
+  buildWebPageStructuredData,
+} from "../../lib/coreui/metadata";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
@@ -63,12 +72,20 @@ export default async function LocaleHomePage({ params }) {
     getPersonalizationSnapshot(),
   ]);
   const usage = getPersonalizationUsage(personalization);
-  const [topCompetitionsRaw, recentItems, favoritePageData, preferenceSnapshot, platform] = await Promise.all([
+  const [
+    topCompetitionsRaw,
+    recentItems,
+    favoritePageData,
+    preferenceSnapshot,
+    platform,
+    onboardingOptions,
+  ] = await Promise.all([
     getTopCompetitionsModule(),
     getRecentItemsModule(personalization, { locale }),
     usage.hasFavorites ? getFavoritesPageData(personalization) : Promise.resolve(null),
     getPreferenceSnapshot(),
     getPlatformPublicSnapshotData(),
+    getOnboardingDiscoveryOptions(),
   ]);
   const topCompetitions = sortCompetitionsByPersonalization(
     topCompetitionsRaw,
@@ -119,9 +136,28 @@ export default async function LocaleHomePage({ params }) {
         articles: homeNews.articles,
       })
     : { promo: null };
+  const structuredData = [
+    buildWebsiteSearchStructuredData({
+      locale,
+      description: dictionary.searchPageLead,
+    }),
+    buildWebPageStructuredData({
+      path: `/${locale}`,
+      name: dictionary.metaHomeTitle,
+      description: dictionary.metaHomeDescription,
+      inLanguage: locale,
+      about: topCompetitions.slice(0, 6).map((competition) => ({
+        type: "SportsOrganization",
+        name: competition.name,
+        path: `/${locale}/leagues/${competition.code}`,
+      })),
+    }),
+  ];
 
   return (
     <>
+      <StructuredData data={structuredData} />
+
       <PersonalizationUsageTracker
         active={usage.hasFavorites || usage.hasRecentViews}
         surface="home-board"
@@ -137,15 +173,10 @@ export default async function LocaleHomePage({ params }) {
       <OnboardingPanel
         locale={locale}
         dictionary={dictionary}
-        sportOptions={snapshot.leagues[0]?.sport ? [snapshot.leagues[0].sport] : []}
-        competitionOptions={topCompetitions}
-        teamOptions={snapshot.leagues.flatMap((league) =>
-          (league.teams || []).map((team) => ({
-            id: team.id,
-            name: team.name,
-            leagueName: league.name,
-          }))
-        )}
+        sportOptions={onboardingOptions.sports}
+        competitionOptions={onboardingOptions.competitions}
+        teamOptions={onboardingOptions.teams}
+        geoOptions={onboardingOptions.geoOptions}
       />
 
       <section className={styles.noticeBanner}>

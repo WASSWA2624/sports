@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { db } from "../db";
 import { safeDataRead } from "../data-access";
 import { parseFavoriteItemId } from "../favorites";
+import { GEO_LABELS, SUPPORTED_MARKET_GEOS } from "./route-context";
 import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "./routes";
 
 const TOP_COMPETITION_WINDOW_DAYS = 7;
@@ -314,4 +315,220 @@ export async function getRelatedMatchesModule(
   );
 
   return fixtures.sort(compareRelatedFixtures).slice(0, limit);
+}
+
+const getOnboardingDiscoveryOptionsCached = unstable_cache(
+  async (limit = 10) => {
+    const boundedLimit = Math.min(Math.max(Number(limit) || 10, 4), 16);
+    const now = new Date();
+    const windowEnd = addDays(now, TOP_COMPETITION_WINDOW_DAYS);
+    const [sports, competitions, teams] = await Promise.all([
+      db.sport.findMany({
+        where: { isEnabled: true },
+        orderBy: [{ name: "asc" }],
+        take: 12,
+        select: {
+          id: true,
+          code: true,
+          slug: true,
+          name: true,
+        },
+      }),
+      db.league.findMany({
+        where: {
+          isActive: true,
+          fixtures: {
+            some: {
+              OR: [
+                { status: "LIVE" },
+                {
+                  startsAt: {
+                    gte: now,
+                    lte: windowEnd,
+                  },
+                },
+              ],
+            },
+          },
+        },
+        orderBy: [{ name: "asc" }],
+        take: boundedLimit * 2,
+        include: {
+          sport: {
+            select: {
+              code: true,
+              slug: true,
+              name: true,
+            },
+          },
+          countryRecord: {
+            select: {
+              code: true,
+              name: true,
+              slug: true,
+            },
+          },
+          fixtures: {
+            where: {
+              OR: [
+                { status: "LIVE" },
+                {
+                  startsAt: {
+                    gte: now,
+                    lte: windowEnd,
+                  },
+                },
+              ],
+            },
+            orderBy: [{ startsAt: "asc" }],
+            take: 4,
+            select: {
+              id: true,
+              status: true,
+            },
+          },
+          _count: {
+            select: {
+              teams: true,
+            },
+          },
+        },
+      }),
+      db.team.findMany({
+        orderBy: [{ name: "asc" }],
+        take: boundedLimit * 4,
+        include: {
+          league: {
+            select: {
+              code: true,
+              name: true,
+              country: true,
+              sport: {
+                select: {
+                  code: true,
+                  slug: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          homeFor: {
+            where: {
+              OR: [
+                { status: "LIVE" },
+                {
+                  startsAt: {
+                    gte: now,
+                    lte: windowEnd,
+                  },
+                },
+              ],
+            },
+            orderBy: [{ startsAt: "asc" }],
+            take: 1,
+            select: {
+              id: true,
+            },
+          },
+          awayFor: {
+            where: {
+              OR: [
+                { status: "LIVE" },
+                {
+                  startsAt: {
+                    gte: now,
+                    lte: windowEnd,
+                  },
+                },
+              ],
+            },
+            orderBy: [{ startsAt: "asc" }],
+            take: 1,
+            select: {
+              id: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const competitionOptions = competitions
+      .map((competition) => {
+        const liveCount = competition.fixtures.filter((fixture) => fixture.status === "LIVE").length;
+        const scheduledCount = competition.fixtures.filter(
+          (fixture) => fixture.status === "SCHEDULED"
+        ).length;
+
+        return {
+          code: competition.code,
+          name: competition.name,
+          country: competition.countryRecord?.name || competition.country || null,
+          countryCode: competition.countryRecord?.code || null,
+          sportCode: competition.sport?.slug || competition.sport?.code || null,
+          sportName: competition.sport?.name || null,
+          liveCount,
+          scheduledCount,
+          teamCount: competition._count?.teams || 0,
+          score: liveCount * 80 + scheduledCount * 30 + (competition._count?.teams || 0),
+        };
+      })
+      .sort((left, right) => {
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+
+        return left.name.localeCompare(right.name);
+      })
+      .slice(0, boundedLimit);
+
+    const competitionCodeSet = new Set(competitionOptions.map((competition) => competition.code));
+    const teamOptions = teams
+      .filter((team) => competitionCodeSet.has(team.league?.code))
+      .map((team) => ({
+        id: team.id,
+        name: team.name,
+        shortName: team.shortName || null,
+        leagueCode: team.league?.code || null,
+        leagueName: team.league?.name || null,
+        country: team.league?.country || null,
+        sportCode: team.league?.sport?.slug || team.league?.sport?.code || null,
+        hasUpcomingFixture: Boolean(team.homeFor?.length || team.awayFor?.length),
+      }))
+      .sort((left, right) => {
+        const priorityDifference =
+          Number(Boolean(right.hasUpcomingFixture)) - Number(Boolean(left.hasUpcomingFixture));
+        if (priorityDifference !== 0) {
+          return priorityDifference;
+        }
+
+        return left.name.localeCompare(right.name);
+      })
+      .slice(0, Math.max(boundedLimit + 4, 10));
+
+    return {
+      sports,
+      competitions: competitionOptions,
+      teams: teamOptions,
+      geoOptions: SUPPORTED_MARKET_GEOS.map((geo) => ({
+        code: geo,
+        label: GEO_LABELS[geo] || geo,
+      })),
+    };
+  },
+  ["coreui:onboarding-discovery"],
+  { revalidate: 300, tags: ["coreui:home", "coreui:leagues", "coreui:teams"] }
+);
+
+export async function getOnboardingDiscoveryOptions(limit = 10) {
+  return safeDataRead(() => getOnboardingDiscoveryOptionsCached(limit), {
+    sports: [],
+    competitions: [],
+    teams: [],
+    geoOptions: SUPPORTED_MARKET_GEOS.map((geo) => ({
+      code: geo,
+      label: GEO_LABELS[geo] || geo,
+    })),
+  }, {
+    label: "Onboarding discovery options",
+  });
 }

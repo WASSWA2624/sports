@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import styles from "./onboarding-panel.module.css";
 import { usePreferences } from "./preferences-provider";
 import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
+import { LAUNCH_MARKET_GEOS } from "../../lib/coreui/route-context";
 
 function toggleSelection(items, value) {
   return items.includes(value) ? items.filter((entry) => entry !== value) : [...items, value];
@@ -15,10 +16,12 @@ export function OnboardingPanel({
   sportOptions = [],
   competitionOptions = [],
   teamOptions = [],
+  geoOptions = [],
 }) {
   const {
     compliance,
     favoriteSports,
+    marketPreferences,
     onboardingState,
     promptPreferences,
     sessionUser,
@@ -29,12 +32,41 @@ export function OnboardingPanel({
   } = usePreferences();
   const [saving, setSaving] = useState(false);
   const [selectedSports, setSelectedSports] = useState(favoriteSports || []);
+  const [selectedGeo, setSelectedGeo] = useState(
+    marketPreferences?.preferredGeo || "INTL"
+  );
   const [selectedCompetitions, setSelectedCompetitions] = useState([]);
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [optInReminders, setOptInReminders] = useState(
     Boolean(promptPreferences?.reminderPrompts)
   );
   const [optInFunnels, setOptInFunnels] = useState(Boolean(promptPreferences?.funnelPrompts));
+  const promptOptInAllowed =
+    compliance.promptOptInAllowed || LAUNCH_MARKET_GEOS.includes(selectedGeo);
+  const filteredCompetitions = useMemo(() => {
+    if (!selectedSports.length) {
+      return competitionOptions.slice(0, 8);
+    }
+
+    const selectedSportSet = new Set(selectedSports);
+    const prioritized = competitionOptions.filter((competition) =>
+      competition.sportCode ? selectedSportSet.has(competition.sportCode) : false
+    );
+
+    return (prioritized.length ? prioritized : competitionOptions).slice(0, 8);
+  }, [competitionOptions, selectedSports]);
+  const filteredTeams = useMemo(() => {
+    if (!selectedSports.length) {
+      return teamOptions.slice(0, 10);
+    }
+
+    const selectedSportSet = new Set(selectedSports);
+    const prioritized = teamOptions.filter((team) =>
+      team.sportCode ? selectedSportSet.has(team.sportCode) : false
+    );
+
+    return (prioritized.length ? prioritized : teamOptions).slice(0, 10);
+  }, [selectedSports, teamOptions]);
   const dismissed =
     onboardingState?.completed ||
     onboardingState?.dismissed ||
@@ -57,10 +89,16 @@ export function OnboardingPanel({
       ...current,
       timezone: current.timezone === "UTC" ? detectedTimezone : current.timezone,
       favoriteSports: selectedSports,
+      marketPreferences: {
+        ...current.marketPreferences,
+        preferredGeo: selectedGeo,
+        bookmakerGeo: selectedGeo,
+        ctaGeo: selectedGeo,
+      },
       promptPreferences: {
         ...current.promptPreferences,
-        reminderPrompts: compliance.promptOptInAllowed ? optInReminders : false,
-        funnelPrompts: compliance.promptOptInAllowed ? optInFunnels : false,
+        reminderPrompts: promptOptInAllowed ? optInReminders : false,
+        funnelPrompts: promptOptInAllowed ? optInFunnels : false,
       },
       onboardingState: {
         ...current.onboardingState,
@@ -79,8 +117,9 @@ export function OnboardingPanel({
         sportCount: selectedSports.length,
         competitionCount: selectedCompetitions.length,
         teamCount: selectedTeams.length,
-        reminderPrompts: compliance.promptOptInAllowed ? optInReminders : false,
-        funnelPrompts: compliance.promptOptInAllowed ? optInFunnels : false,
+        preferredGeo: selectedGeo,
+        reminderPrompts: promptOptInAllowed ? optInReminders : false,
+        funnelPrompts: promptOptInAllowed ? optInFunnels : false,
         authenticated: Boolean(sessionUser),
       },
     });
@@ -89,6 +128,14 @@ export function OnboardingPanel({
   }
 
   async function handleDismiss() {
+    trackProductAnalyticsEvent({
+      event: "onboarding_dismissed",
+      surface: "home-onboarding",
+      metadata: {
+        locale,
+        authenticated: Boolean(sessionUser),
+      },
+    });
     await dismissOnboarding();
   }
 
@@ -136,7 +183,7 @@ export function OnboardingPanel({
             <span>{selectedCompetitions.length}</span>
           </div>
           <div className={styles.choiceGrid}>
-            {competitionOptions.slice(0, 8).map((competition) => {
+            {filteredCompetitions.map((competition) => {
               const selected = selectedCompetitions.includes(competition.code);
 
               return (
@@ -149,7 +196,9 @@ export function OnboardingPanel({
                   }
                 >
                   <span>{competition.name}</span>
-                  {competition.country ? <small>{competition.country}</small> : null}
+                  <small>
+                    {[competition.country, competition.sportName].filter(Boolean).join(" | ")}
+                  </small>
                 </button>
               );
             })}
@@ -162,7 +211,7 @@ export function OnboardingPanel({
             <span>{selectedTeams.length}</span>
           </div>
           <div className={styles.choiceGrid}>
-            {teamOptions.slice(0, 10).map((team) => {
+            {filteredTeams.map((team) => {
               const selected = selectedTeams.includes(team.id);
 
               return (
@@ -173,7 +222,7 @@ export function OnboardingPanel({
                   onClick={() => setSelectedTeams((current) => toggleSelection(current, team.id))}
                 >
                   <span>{team.name}</span>
-                  {team.leagueName ? <small>{team.leagueName}</small> : null}
+                  <small>{[team.leagueName, team.country].filter(Boolean).join(" | ")}</small>
                 </button>
               );
             })}
@@ -183,9 +232,27 @@ export function OnboardingPanel({
         <article className={styles.column}>
           <div className={styles.columnHeader}>
             <h3>{dictionary.onboardingPrompts}</h3>
-            <span>{compliance.promptOptInAllowed ? 2 : 0}</span>
+            <span>{geoOptions.length + (promptOptInAllowed ? 2 : 0)}</span>
           </div>
-          {compliance.promptOptInAllowed ? (
+          <div className={styles.choiceGrid}>
+            {geoOptions.map((geo) => {
+              const selected = selectedGeo === geo.code;
+
+              return (
+                <button
+                  key={geo.code}
+                  type="button"
+                  className={selected ? styles.choiceButtonActive : styles.choiceButton}
+                  onClick={() => setSelectedGeo(geo.code)}
+                >
+                  <span>{geo.label}</span>
+                  <small>{dictionary.currentMarket}</small>
+                </button>
+              );
+            })}
+          </div>
+
+          {promptOptInAllowed ? (
             <div className={styles.choiceGrid}>
               <button
                 type="button"

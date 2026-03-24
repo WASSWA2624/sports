@@ -5,6 +5,32 @@ import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionari
 import { usePreferences } from "./preferences-provider";
 import styles from "./styles.module.css";
 
+function BellIcon({ active }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className={styles.controlIcon}
+      fill={active ? "currentColor" : "none"}
+    >
+      <path
+        d="M12 5.25a4 4 0 0 1 4 4v1.34c0 .93.31 1.84.89 2.58l1.11 1.41H6l1.11-1.41A4.12 4.12 0 0 0 8 10.59V9.25a4 4 0 0 1 4-4Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.25 17.25a1.75 1.75 0 0 0 3.5 0"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function getAlertLabel(type, dictionary) {
   if (type === "KICKOFF") {
     return dictionary.profileAlertKickoff;
@@ -48,7 +74,7 @@ export function AlertSubscriptionControl({
   return (
     <details className={styles.alertControl}>
       <summary className={buttonClass}>
-        <span aria-hidden="true">{activeCount ? "[!]" : "[ ]"}</span>
+        <BellIcon active={activeCount > 0} />
         {compact ? (
           <span className={styles.alertButtonCount}>{activeCount}</span>
         ) : activeCount ? (

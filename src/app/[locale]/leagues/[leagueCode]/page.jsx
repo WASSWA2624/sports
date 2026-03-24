@@ -24,7 +24,9 @@ import {
   buildBreadcrumbStructuredData,
   buildCollectionPageStructuredData,
   buildPageMetadata,
+  buildStandingsStructuredData,
   buildSportsOrganizationStructuredData,
+  buildWebPageStructuredData,
 } from "../../../../lib/coreui/metadata";
 import { getCompetitionNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
@@ -89,10 +91,67 @@ function surfaceTone(state) {
   return styles.surfaceStateUnavailable;
 }
 
-export async function generateMetadata({ params }) {
+function buildLeagueMetadataCopy(dictionary, league, activeTab) {
+  const competitionName = league?.name || dictionary.metaLeagueFallbackTitle;
+  const baseDescription = league
+    ? formatDictionaryText(dictionary.metaLeagueDescription, { name: competitionName })
+    : dictionary.metaLeagueFallbackDescription;
+
+  if (activeTab === "standings") {
+    return {
+      title: `${competitionName} ${dictionary.standings}`,
+      description: `${baseDescription} ${dictionary.standings}.`,
+    };
+  }
+
+  if (activeTab === "fixtures") {
+    return {
+      title: `${competitionName} ${dictionary.fixtures}`,
+      description: `${baseDescription} ${dictionary.fixtures}.`,
+    };
+  }
+
+  if (activeTab === "results") {
+    return {
+      title: `${competitionName} ${dictionary.results}`,
+      description: `${baseDescription} ${dictionary.results}.`,
+    };
+  }
+
+  if (activeTab === "news") {
+    return {
+      title: `${competitionName} ${dictionary.news}`,
+      description: `${baseDescription} ${dictionary.news}.`,
+    };
+  }
+
+  if (activeTab === "odds") {
+    return {
+      title: `${competitionName} ${dictionary.competitionOdds}`,
+      description: `${baseDescription} ${dictionary.competitionOddsLead}`,
+    };
+  }
+
+  if (activeTab === "archive") {
+    return {
+      title: `${competitionName} ${dictionary.archive}`,
+      description: `${baseDescription} ${dictionary.archive}.`,
+    };
+  }
+
+  return {
+    title: competitionName,
+    description: baseDescription,
+  };
+}
+
+export async function generateMetadata({ params, searchParams }) {
   const { locale, leagueCode } = await params;
+  const filters = await searchParams;
+  const activeTab = normalizeTab(filters?.tab);
   const league = await getLeagueDetail(leagueCode);
   const dictionary = getDictionary(locale);
+  const metadataCopy = buildLeagueMetadataCopy(dictionary, league, activeTab);
 
   if (!league) {
     return buildPageMetadata(
@@ -105,8 +164,8 @@ export async function generateMetadata({ params }) {
 
   return buildPageMetadata(
     locale,
-    league.name,
-    formatDictionaryText(dictionary.metaLeagueDescription, { name: league.name }),
+    metadataCopy.title,
+    metadataCopy.description,
     `/leagues/${leagueCode}`,
     {
       keywords: [
@@ -114,7 +173,12 @@ export async function generateMetadata({ params }) {
         league.country,
         league.sport?.name || league.competition?.sport?.name,
         dictionary.standings,
+        activeTab === "odds" ? dictionary.competitionOdds : null,
+        activeTab === "news" ? dictionary.news : null,
       ].filter(Boolean),
+      other: {
+        "sports-surface": activeTab,
+      },
     }
   );
 }
@@ -205,6 +269,52 @@ export default async function LeagueDetailPage({ params, searchParams }) {
         path: buildTeamHref(locale, team),
       })),
     }),
+    buildWebPageStructuredData({
+      path: buildLeagueHref(locale, league.code, {
+        tab: activeTab,
+        season: selectedSeasonRef,
+        standing: league.standingsTable.selectedView,
+        territory: filters?.territory,
+      }),
+      name: buildLeagueMetadataCopy(dictionary, league, activeTab).title,
+      description: buildLeagueMetadataCopy(dictionary, league, activeTab).description,
+      inLanguage: locale,
+      about: [
+        sport ? { type: "Thing", name: sport.name, path: sportHref } : null,
+        country ? { type: "Country", name: country.name, path: countryHref } : null,
+        { type: "SportsOrganization", name: league.name, path: `/${locale}/leagues/${league.code}` },
+      ].filter(Boolean),
+      monetization:
+        activeTab === "odds" || hasCompetitionInsights
+          ? {
+              name: dictionary.competitionOdds,
+              description: dictionary.competitionInsightsLead,
+              isAccessibleForFree: true,
+              accessibilitySummary: dictionary.oddsLegalAge,
+              conditionsOfAccess: dictionary.oddsLegalJurisdiction,
+              genre: "Sports betting insights",
+            }
+          : null,
+    }),
+    activeTab === "standings"
+      ? buildStandingsStructuredData({
+          path: buildLeagueHref(locale, league.code, {
+            tab: "standings",
+            season: selectedSeasonRef,
+            standing: league.standingsTable.selectedView,
+            territory: filters?.territory,
+          }),
+          name: `${league.name} ${dictionary.standings}`,
+          description: dictionary.standings,
+          rows: league.standingsTable.rows.map((row) => ({
+            ...row,
+            team: {
+              ...row.team,
+              path: buildTeamHref(locale, row.team),
+            },
+          })),
+        })
+      : null,
   ];
 
   const oddsContent = (

@@ -30,7 +30,9 @@ import { getLiveMatchDetail } from "../../../../lib/coreui/live-read";
 import {
   buildBreadcrumbStructuredData,
   buildPageMetadata,
+  buildStandingsStructuredData,
   buildSportsEventStructuredData,
+  buildWebPageStructuredData,
 } from "../../../../lib/coreui/metadata";
 import { getFixtureNewsModule } from "../../../../lib/coreui/news-read";
 import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
@@ -110,30 +112,71 @@ function buildMatchPageHref(locale, fixtureReference, { tab, standing, territory
   return `/${locale}/match/${fixtureReference}${query ? `?${query}` : ""}`;
 }
 
-export async function generateMetadata({ params }) {
+function buildMatchMetadataCopy(dictionary, fixture, activeTab) {
+  const fixtureLabel = fixture
+    ? `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`
+    : dictionary.metaMatchFallbackTitle;
+  const baseDescription = fixture
+    ? formatDictionaryText(dictionary.metaMatchDescription, {
+        home: fixture.homeTeam.name,
+        away: fixture.awayTeam.name,
+      })
+    : dictionary.metaMatchFallbackDescription;
+
+  if (activeTab === "standings") {
+    return {
+      title: `${fixtureLabel} ${dictionary.standings}`,
+      description: `${baseDescription} ${dictionary.standings}.`,
+    };
+  }
+
+  if (activeTab === "h2h") {
+    return {
+      title: `${fixtureLabel} ${dictionary.matchHeadToHead}`,
+      description: `${baseDescription} ${dictionary.matchHeadToHeadLead}`,
+    };
+  }
+
+  if (activeTab === "video") {
+    return {
+      title: `${fixtureLabel} ${dictionary.broadcastGuide}`,
+      description: `${baseDescription} ${dictionary.broadcastLead}`,
+    };
+  }
+
+  return {
+    title: fixtureLabel,
+    description: baseDescription,
+  };
+}
+
+export async function generateMetadata({ params, searchParams }) {
   const { locale, fixtureRef } = await params;
+  const filters = await searchParams;
+  const activeTab = normalizeTab(filters?.tab);
   const fixture = await getLiveMatchDetail(fixtureRef, locale, undefined, {
     includeMatchCentre: false,
     includeExperience: false,
   });
   const dictionary = getDictionary(locale);
+  const metadataCopy = buildMatchMetadataCopy(dictionary, fixture, activeTab);
 
   return buildPageMetadata(
     locale,
-    fixture ? `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}` : dictionary.metaMatchFallbackTitle,
-    fixture
-      ? formatDictionaryText(dictionary.metaMatchDescription, {
-          home: fixture.homeTeam.name,
-          away: fixture.awayTeam.name,
-        })
-      : dictionary.metaMatchFallbackDescription,
+    metadataCopy.title,
+    metadataCopy.description,
     `/match/${fixtureRef}`,
     {
       keywords: [
         fixture?.homeTeam?.name,
         fixture?.awayTeam?.name,
         fixture?.league?.name,
+        activeTab === "standings" ? dictionary.standings : null,
+        activeTab === "video" ? dictionary.broadcastGuide : null,
       ].filter(Boolean),
+      other: {
+        "sports-surface": activeTab,
+      },
     }
   );
 }
@@ -228,6 +271,12 @@ export default async function MatchDetailPage({ params, searchParams }) {
     relatedNews.total ? "NEWS" : null,
   ].filter(Boolean);
   const fixtureLabel = `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`;
+  const fixtureReference = fixture.externalRef || fixture.id;
+  const headToHead = matchCentre?.h2h || null;
+  const standingRows = matchCentre?.standingsTable?.rows || [];
+  const standingViews = matchCentre?.standingsTable?.availableViews || [];
+  const focusRows = matchCentre?.focusedRows || [];
+  const topOdds = odds.insights?.bestOdds?.slice(0, 3) || [];
   const structuredData = [
     buildBreadcrumbStructuredData([
       { name: dictionary.home, path: `/${locale}` },
@@ -248,6 +297,62 @@ export default async function MatchDetailPage({ params, searchParams }) {
       awayTeam: fixture.awayTeam,
       location: fixture.venue,
     }),
+    buildWebPageStructuredData({
+      path: buildMatchPageHref(locale, fixtureReference, {
+        tab: activeTab,
+        standing: matchCentre?.standingsTable?.selectedView,
+        territory: filters?.territory,
+      }),
+      name: buildMatchMetadataCopy(dictionary, fixture, activeTab).title,
+      description: buildMatchMetadataCopy(dictionary, fixture, activeTab).description,
+      inLanguage: locale,
+      about: [
+        {
+          type: "SportsOrganization",
+          name: fixture.league.name,
+          path: `/${locale}/leagues/${fixture.league.code}`,
+        },
+        {
+          type: "SportsTeam",
+          name: fixture.homeTeam.name,
+          path: `/${locale}/teams/${fixture.homeTeam.id}`,
+        },
+        {
+          type: "SportsTeam",
+          name: fixture.awayTeam.name,
+          path: `/${locale}/teams/${fixture.awayTeam.id}`,
+        },
+      ],
+      monetization:
+        activeTab === "match" || activeTab === "video"
+          ? {
+              name: dictionary.fixtureOdds,
+              description: dictionary.fixtureOddsLead,
+              isAccessibleForFree: true,
+              accessibilitySummary: dictionary.oddsLegalAge,
+              conditionsOfAccess: dictionary.oddsLegalJurisdiction,
+              genre: "Sports betting insights",
+            }
+          : null,
+    }),
+    activeTab === "standings"
+      ? buildStandingsStructuredData({
+          path: buildMatchPageHref(locale, fixtureReference, {
+            tab: "standings",
+            standing: matchCentre?.standingsTable?.selectedView,
+            territory: filters?.territory,
+          }),
+          name: `${fixture.league.name} ${dictionary.standings}`,
+          description: dictionary.standings,
+          rows: standingRows.map((row) => ({
+            ...row,
+            team: {
+              ...row.team,
+              path: `/${locale}/teams/${row.team.id}`,
+            },
+          })),
+        })
+      : null,
   ];
   const hasMatchInsights = Boolean(
     odds.insights?.bestBet ||
@@ -260,12 +365,6 @@ export default async function MatchDetailPage({ params, searchParams }) {
       broadcast.quickActions?.primary ||
       broadcast.quickActions?.message
   );
-  const fixtureReference = fixture.externalRef || fixture.id;
-  const topOdds = odds.insights?.bestOdds?.slice(0, 3) || [];
-  const headToHead = matchCentre?.h2h || null;
-  const standingRows = matchCentre?.standingsTable?.rows || [];
-  const standingViews = matchCentre?.standingsTable?.availableViews || [];
-  const focusRows = matchCentre?.focusedRows || [];
 
   const oddsContent = (
     <div className={styles.surfaceStack}>

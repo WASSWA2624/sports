@@ -35,7 +35,11 @@ vi.mock("../../lib/coreui/site", () => ({
   },
 }));
 
-const { buildPageMetadata } = await import("../../lib/coreui/metadata.js");
+const {
+  buildNewsArticleStructuredData,
+  buildPageMetadata,
+  buildWebsiteSearchStructuredData,
+} = await import("../../lib/coreui/metadata.js");
 const sitemapModule = await import("../sitemap.js");
 const robotsModule = await import("../robots.js");
 
@@ -78,6 +82,65 @@ describe("SEO surfaces", () => {
       ],
       sitemap: "https://sports.example/sitemap.xml",
       host: "https://sports.example",
+    });
+  });
+
+  it("builds website search structured data for localized search", () => {
+    const data = buildWebsiteSearchStructuredData({
+      locale: "en",
+      name: "Sports Portal",
+      description: "Search the sports directory",
+    });
+
+    expect(data).toEqual({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Sports Portal",
+      description: "Search the sports directory",
+      url: "https://sports.example/en",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: "https://sports.example/en/search?q={search_term_string}",
+        "query-input": "required name=search_term_string",
+      },
+    });
+  });
+
+  it("builds article structured data with sponsor and about entities", () => {
+    const data = buildNewsArticleStructuredData({
+      path: "/en/news/arsenal-title-race",
+      title: "Arsenal title race",
+      description: "An update from the title race.",
+      publishedAt: "2026-03-24T10:00:00.000Z",
+      updatedAt: "2026-03-24T11:00:00.000Z",
+      image: "/hero.png",
+      section: "Premier League",
+      sponsored: true,
+      sponsor: "PulseBook",
+      about: [
+        {
+          type: "SportsOrganization",
+          name: "Premier League",
+          path: "/en/leagues/EPL",
+        },
+      ],
+    });
+
+    expect(data).toMatchObject({
+      "@type": "NewsArticle",
+      headline: "Arsenal title race",
+      isAccessibleForFree: true,
+      sponsor: {
+        "@type": "Organization",
+        name: "PulseBook",
+      },
+      about: [
+        {
+          "@type": "SportsOrganization",
+          name: "Premier League",
+          url: "https://sports.example/en/leagues/EPL",
+        },
+      ],
     });
   });
 

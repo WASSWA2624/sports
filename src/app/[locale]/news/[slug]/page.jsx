@@ -12,6 +12,7 @@ import {
   buildBreadcrumbStructuredData,
   buildNewsArticleStructuredData,
   buildPageMetadata,
+  buildWebPageStructuredData,
 } from "../../../../lib/coreui/metadata";
 import { getDictionary } from "../../../../lib/coreui/dictionaries";
 import { getNewsArticleExperience } from "../../../../lib/coreui/news-experience";
@@ -54,6 +55,10 @@ export async function generateMetadata({ params }) {
       detail.article.primaryTeam?.name,
     ].filter(Boolean),
     openGraphType: "article",
+    other: {
+      "sports-sponsored-content": detail.article.sponsored ? "true" : "false",
+      "sports-cta-safety-checked": detail.article.ctaSafetyChecked ? "true" : "false",
+    },
   });
 
   return {
@@ -103,6 +108,62 @@ export default async function NewsArticlePage({ params }) {
       updatedAt: article.updatedAt,
       image: article.imageUrl,
       section: article.topicLabel,
+      sponsored: article.sponsored,
+      sponsor: article.sponsorName,
+      about: [
+        ...(article.entities.competitions || []).map((competition) => ({
+          type: "SportsOrganization",
+          name: competition.name,
+          path: `/${locale}/leagues/${competition.code}`,
+        })),
+        ...(article.entities.teams || []).map((team) => ({
+          type: "SportsTeam",
+          name: team.name,
+          path: `/${locale}/teams/${team.id}`,
+        })),
+      ],
+    }),
+    buildWebPageStructuredData({
+      path: `/${locale}/news/${article.slug}`,
+      name: article.seoTitle || article.title,
+      description: article.seoDescription || article.excerpt,
+      image: article.imageUrl,
+      inLanguage: locale,
+      dateModified: article.updatedAt || article.publishedAt,
+      about: [
+        ...(article.entities.sports || []).map((sport) => ({
+          type: "Thing",
+          name: sport.name,
+          path: `/${locale}/sports/${sport.slug}`,
+        })),
+        ...(article.entities.competitions || []).map((competition) => ({
+          type: "SportsOrganization",
+          name: competition.name,
+          path: `/${locale}/leagues/${competition.code}`,
+        })),
+        ...(article.entities.teams || []).map((team) => ({
+          type: "SportsTeam",
+          name: team.name,
+          path: `/${locale}/teams/${team.id}`,
+        })),
+      ],
+      monetization:
+        article.allowInlineCta || article.allowRelatedOdds
+          ? {
+              name: article.sponsored
+                ? article.sponsorLabel || dictionary.newsSponsoredTag
+                : dictionary.newsJourneyTitle,
+              description:
+                article.monetizationNotes ||
+                dictionary.newsJourneyLead,
+              isAccessibleForFree: true,
+              accessibilitySummary: article.ctaSafetyChecked
+                ? dictionary.newsJourneyLead
+                : dictionary.newsPromoModuleLead,
+              conditionsOfAccess: article.sponsorName || undefined,
+              genre: "Sports editorial insights",
+            }
+          : null,
     }),
   ];
 
