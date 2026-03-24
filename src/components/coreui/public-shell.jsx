@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -15,10 +15,6 @@ import { getGeoLabel, isGeoAllowed } from "../../lib/coreui/route-context";
 
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, viewerGeo }) {
   const pathname = usePathname();
-  const leftRailRef = useRef(null);
-  const centerRailRef = useRef(null);
-  const rightRailRef = useRef(null);
-  const footerContentRef = useRef(null);
   const {
     compliance,
     ctaGeo,
@@ -31,7 +27,6 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     watchlistCount,
   } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [footerVisible, setFooterVisible] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
   const isAuthPage = pathname === `/${locale}/auth` || pathname.startsWith(`/${locale}/auth/`);
@@ -166,66 +161,6 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
       label: item.key === "scores" ? dictionary.scores : dictionary.news,
     };
   });
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const desktopMedia = window.matchMedia("(min-width: 1121px)");
-    const railRefs = [leftRailRef, centerRailRef, rightRailRef];
-
-    function getFooterHoldDistance() {
-      const footerHeight = footerContentRef.current?.scrollHeight || 0;
-      return Math.max(120, footerHeight + 24);
-    }
-
-    function isFooterRevealPoint(node) {
-      if (!node) {
-        return false;
-      }
-
-      const scrollableDistance = node.scrollHeight - node.clientHeight;
-      if (scrollableDistance <= 48) {
-        return false;
-      }
-
-      const threshold = footerVisible ? getFooterHoldDistance() : 24;
-      return node.scrollTop + node.clientHeight >= node.scrollHeight - threshold;
-    }
-
-    function updateFooterVisibility() {
-      if (!desktopMedia.matches) {
-        setFooterVisible(false);
-        return;
-      }
-
-      setFooterVisible(railRefs.some((ref) => isFooterRevealPoint(ref.current)));
-    }
-
-    const observedRails = railRefs.map((ref) => ref.current).filter(Boolean);
-    const resizeObserver =
-      typeof ResizeObserver === "function" ? new ResizeObserver(updateFooterVisibility) : null;
-
-    observedRails.forEach((node) => {
-      node.addEventListener("scroll", updateFooterVisibility, { passive: true });
-      resizeObserver?.observe(node);
-    });
-
-    desktopMedia.addEventListener("change", updateFooterVisibility);
-    window.addEventListener("resize", updateFooterVisibility);
-    updateFooterVisibility();
-
-    return () => {
-      observedRails.forEach((node) => {
-        node.removeEventListener("scroll", updateFooterVisibility);
-        resizeObserver?.unobserve(node);
-      });
-      resizeObserver?.disconnect();
-      desktopMedia.removeEventListener("change", updateFooterVisibility);
-      window.removeEventListener("resize", updateFooterVisibility);
-    };
-  }, [pathname, footerVisible]);
 
   return (
     <div className={styles.shell}>
@@ -712,7 +647,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
       <main className={styles.main}>
         <div className={styles.shellColumns}>
-          <aside ref={leftRailRef} className={styles.leftRail}>
+          <aside className={styles.leftRail}>
             <section className={styles.railCard}>
               <div className={styles.railSection}>
                 <h2 className={styles.railSectionTitle}>{dictionary.scoreViews}</h2>
@@ -816,11 +751,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
             </section>
           </aside>
 
-          <div ref={centerRailRef} className={styles.centerRail}>
+          <div className={styles.centerRail}>
             {children}
           </div>
 
-          <aside ref={rightRailRef} className={styles.rightRail}>
+          <aside className={styles.rightRail}>
             {adSlotEnabled ? (
               <section className={styles.railCard}>
                 <div className={styles.railSection}>
@@ -909,9 +844,9 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
         </div>
       </main>
 
-      <footer className={`${styles.footer} ${footerVisible ? styles.footerVisible : ""}`}>
+      <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <div ref={footerContentRef} className={styles.footerContent}>
+          <div className={styles.footerContent}>
             <div className={styles.footerGrid}>
               <section className={styles.footerLead}>
                 <div className={styles.footerBrandRow}>

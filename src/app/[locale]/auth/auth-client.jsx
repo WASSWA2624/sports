@@ -31,6 +31,7 @@ export default function AuthClient({ dictionary, locale, socialProviders = [] })
   const { favoriteSports, sessionUser, watchlistCount } = usePreferences();
   const [mode, setMode] = useState("login");
   const [fields, setFields] = useState(buildDefaultFields());
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const nextPath = normalizeNextPath(searchParams.get("next"));
@@ -163,17 +164,30 @@ export default function AuthClient({ dictionary, locale, socialProviders = [] })
 
               <label className={styles.field}>
                 <span>{dictionary.authPassword}</span>
-                <input
-                  type="password"
-                  value={fields.password}
-                  onChange={(event) =>
-                    setFields((current) => ({
-                      ...current,
-                      password: event.target.value,
-                    }))
-                  }
-                  required
-                />
+                <div className={styles.passwordField}>
+                  <input
+                    type={passwordVisible ? "text" : "password"}
+                    value={fields.password}
+                    onChange={(event) =>
+                      setFields((current) => ({
+                        ...current,
+                        password: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    aria-label={
+                      passwordVisible ? dictionary.hidePassword : dictionary.showPassword
+                    }
+                    aria-pressed={passwordVisible}
+                    onClick={() => setPasswordVisible((current) => !current)}
+                  >
+                    {passwordVisible ? dictionary.hidePassword : dictionary.showPassword}
+                  </button>
+                </div>
               </label>
             </div>
 

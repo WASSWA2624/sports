@@ -24,6 +24,10 @@ export default function ProfileClient({ dictionary, locale }) {
   const [sessionUser, setSessionUser] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [message, setMessage] = useState("");
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    currentPassword: false,
+    nextPassword: false,
+  });
   const [securityDraft, setSecurityDraft] = useState({
     displayName: "",
     currentPassword: "",
@@ -215,32 +219,76 @@ export default function ProfileClient({ dictionary, locale }) {
 
               <label className={styles.field}>
                 <span>{dictionary.profileCurrentPassword}</span>
-                <input
-                  type="password"
-                  value={securityDraft.currentPassword}
-                  onChange={(event) =>
-                    setSecurityDraft((current) => ({
-                      ...current,
-                      currentPassword: event.target.value,
-                    }))
-                  }
-                />
+                <div className={styles.passwordField}>
+                  <input
+                    type={passwordVisibility.currentPassword ? "text" : "password"}
+                    value={securityDraft.currentPassword}
+                    onChange={(event) =>
+                      setSecurityDraft((current) => ({
+                        ...current,
+                        currentPassword: event.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    aria-label={
+                      passwordVisibility.currentPassword
+                        ? dictionary.hidePassword
+                        : dictionary.showPassword
+                    }
+                    aria-pressed={passwordVisibility.currentPassword}
+                    onClick={() =>
+                      setPasswordVisibility((current) => ({
+                        ...current,
+                        currentPassword: !current.currentPassword,
+                      }))
+                    }
+                  >
+                    {passwordVisibility.currentPassword
+                      ? dictionary.hidePassword
+                      : dictionary.showPassword}
+                  </button>
+                </div>
               </label>
             </div>
 
             <div className={styles.grid}>
               <label className={styles.field}>
                 <span>{dictionary.profileNewPassword}</span>
-                <input
-                  type="password"
-                  value={securityDraft.nextPassword}
-                  onChange={(event) =>
-                    setSecurityDraft((current) => ({
-                      ...current,
-                      nextPassword: event.target.value,
-                    }))
-                  }
-                />
+                <div className={styles.passwordField}>
+                  <input
+                    type={passwordVisibility.nextPassword ? "text" : "password"}
+                    value={securityDraft.nextPassword}
+                    onChange={(event) =>
+                      setSecurityDraft((current) => ({
+                        ...current,
+                        nextPassword: event.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    aria-label={
+                      passwordVisibility.nextPassword
+                        ? dictionary.hidePassword
+                        : dictionary.showPassword
+                    }
+                    aria-pressed={passwordVisibility.nextPassword}
+                    onClick={() =>
+                      setPasswordVisibility((current) => ({
+                        ...current,
+                        nextPassword: !current.nextPassword,
+                      }))
+                    }
+                  >
+                    {passwordVisibility.nextPassword
+                      ? dictionary.hidePassword
+                      : dictionary.showPassword}
+                  </button>
+                </div>
               </label>
             </div>
 

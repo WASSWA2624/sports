@@ -544,6 +544,8 @@ const fr = {
   authUsername: "Nom d'utilisateur",
   authUsernameOptional: "Nom d'utilisateur (optionnel)",
   authDisplayName: "Nom public",
+  showPassword: "Afficher",
+  hidePassword: "Masquer",
   authSubmitLogin: "Se connecter",
   authSubmitSignup: "Creer un compte",
   authSubmitFailed: "Echec d'authentification. Reessayez.",

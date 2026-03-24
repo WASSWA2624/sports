@@ -578,6 +578,8 @@ const en = {
   authUsername: "Username",
   authUsernameOptional: "Username (optional)",
   authDisplayName: "Display name",
+  showPassword: "Show",
+  hidePassword: "Hide",
   authSubmitLogin: "Sign in",
   authSubmitSignup: "Create account",
   authSubmitFailed: "Authentication failed. Try again.",

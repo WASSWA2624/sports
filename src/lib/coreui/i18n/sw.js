@@ -546,6 +546,8 @@ const sw = {
   authUsername: "Jina la mtumiaji",
   authUsernameOptional: "Jina la mtumiaji (hiari)",
   authDisplayName: "Jina la kuonekana",
+  showPassword: "Onyesha",
+  hidePassword: "Ficha",
   authSubmitLogin: "Ingia",
   authSubmitSignup: "Fungua akaunti",
   authSubmitFailed: "Auth imeshindikana. Jaribu tena.",
