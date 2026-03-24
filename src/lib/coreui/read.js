@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db } from "../db";
-import { safeDataRead } from "../data-access";
+import { safeDataRead, withDataAccessTimeout } from "../data-access";
 import { getShellChromeContent } from "../control-plane";
 import { getPlatformPublicSnapshot, getPlatformPublicSnapshotData } from "../platform/env";
 import {
@@ -14,7 +14,9 @@ import {
   buildCompetitionBettingExperience,
   buildFixtureBettingExperience,
 } from "./odds-experience";
+import { buildCompetitionOddsModule } from "./odds-broadcast";
 import { getPublicSurfaceFlags } from "./feature-flags";
+import { buildReferenceWhere } from "./references";
 import {
   buildCompetitionHref,
   buildCountryHref,
@@ -55,6 +57,47 @@ function normalizeReference(value) {
   }
 
   return value || null;
+}
+
+async function readWithFallback(task, fallback, options = {}, onError = null) {
+  const { label = "Data access", ...timeoutOptions } = options;
+
+  try {
+    return await withDataAccessTimeout(task, { label, ...timeoutOptions });
+  } catch (error) {
+    if (typeof onError === "function") {
+      onError(error);
+    }
+
+    return fallback;
+  }
+}
+
+function buildFallbackCompetitionBettingExperience(
+  league,
+  { locale = "en", viewerTerritory, flags } = {}
+) {
+  return {
+    ...buildCompetitionOddsModule(
+      { ...league, fixtures: league?.oddsFixtures || league?.fixtures || [] },
+      {
+        locale,
+        viewerTerritory,
+        enabled: Boolean(flags?.competitionOdds),
+      }
+    ),
+    bookmakers: [],
+    ctaConfig: null,
+    insights: {
+      predictionsEnabled: Boolean(flags?.predictions),
+      predictionMessage: null,
+      topPicks: [],
+      valueBets: [],
+      bestOdds: [],
+      highOddsMatches: [],
+      bestBet: null,
+    },
+  };
 }
 
 function dedupeFixtures(fixtures = []) {
@@ -1057,12 +1100,17 @@ export async function getLeagueDetail(
       subject: "league_detail",
       route: `/leagues/${reference || ""}`,
       statusFromResult(result) {
-        return result ? "ok" : "empty";
+        if (!result) {
+          return "empty";
+        }
+
+        return result.degraded ? "degraded" : "ok";
       },
       metadata(result) {
         return {
           league: result?.code || reference || null,
           season: result?.selectedSeason?.name || seasonRef || null,
+          degraded: Boolean(result?.degraded),
         };
       },
       eventOptions: {
@@ -1070,15 +1118,18 @@ export async function getLeagueDetail(
       },
     },
     async () => {
-      const league = await safeDataRead(
-        async () => {
-          const recentWindow = new Date();
-          recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+      const referenceWhere = buildReferenceWhere(reference, ["id", "code", "externalRef"]);
+      if (!referenceWhere) {
+        return null;
+      }
 
-          const baseLeague = await db.league.findFirst({
-            where: {
-              OR: [{ id: reference }, { code: reference }],
-            },
+      const recentWindow = new Date();
+      recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+
+      const baseLeague = await withDataAccessTimeout(
+        () =>
+          db.league.findFirst({
+            where: referenceWhere,
             include: {
               sport: true,
               countryRecord: true,
@@ -1111,16 +1162,28 @@ export async function getLeagueDetail(
                 },
               },
             },
-          });
+          }),
+        {
+          label: "League detail read",
+          timeoutMs: 12000,
+        }
+      );
 
-          if (!baseLeague) {
-            return null;
-          }
+      if (!baseLeague) {
+        return null;
+      }
 
-          const selectedSeasonSummary = pickSelectedSeason(baseLeague.seasons, seasonRef);
-          const [selectedSeasonRecord, seasonFixtures, oddsFixtures] = await Promise.all([
-            selectedSeasonSummary
-              ? db.season.findUnique({
+      let degraded = false;
+      const markDegraded = () => {
+        degraded = true;
+      };
+
+      const selectedSeasonSummary = pickSelectedSeason(baseLeague.seasons, seasonRef);
+      const [selectedSeasonRecord, seasonFixtures, oddsFixtures] = await Promise.all([
+        selectedSeasonSummary
+          ? readWithFallback(
+              () =>
+                db.season.findUnique({
                   where: {
                     id: selectedSeasonSummary.id,
                   },
@@ -1138,18 +1201,30 @@ export async function getLeagueDetail(
                       },
                     },
                   },
-                })
-              : Promise.resolve(null),
-            selectedSeasonSummary
-              ? db.fixture.findMany({
+                }),
+              null,
+              { label: "League standings read" },
+              markDegraded
+            )
+          : Promise.resolve(null),
+        selectedSeasonSummary
+          ? readWithFallback(
+              () =>
+                db.fixture.findMany({
                   where: {
                     seasonId: selectedSeasonSummary.id,
                   },
                   orderBy: [{ startsAt: "asc" }],
                   take: 160,
                   include: fixtureInclude({ includeOdds: false }),
-                })
-              : Promise.resolve([]),
+                }),
+              [],
+              { label: "League season fixtures read" },
+              markDegraded
+            )
+          : Promise.resolve([]),
+        readWithFallback(
+          () =>
             db.fixture.findMany({
               where: {
                 leagueId: baseLeague.id,
@@ -1163,24 +1238,20 @@ export async function getLeagueDetail(
                 includeBroadcast: true,
               }),
             }),
-          ]);
-
-          return {
-            ...baseLeague,
-            selectedSeasonRecord,
-            seasonFixtures,
-            oddsFixtures,
-          };
-        },
-        null
-      );
-
-      if (!league) {
-        return null;
-      }
+          [],
+          { label: "League odds fixtures read" },
+          markDegraded
+        ),
+      ]);
 
       const flags = await getPublicSurfaceFlags();
-      const seasonFixtures = sortFixturesAsc(league.seasonFixtures || []);
+      const league = {
+        ...baseLeague,
+        selectedSeasonRecord,
+        seasonFixtures,
+        oddsFixtures,
+      };
+      const seasonFixturesSorted = sortFixturesAsc(league.seasonFixtures || []);
       const seasonSummary = league.selectedSeasonRecord
         ? {
             ...toSeasonSummary(league.selectedSeasonRecord),
@@ -1190,19 +1261,19 @@ export async function getLeagueDetail(
       const standingsTable = buildStandingTable({
         teams: league.teams,
         standings: seasonSummary?.standings || [],
-        fixtures: seasonFixtures,
+        fixtures: seasonFixturesSorted,
         view: standingsView,
       });
-      const liveAndUpcomingFixtures = seasonFixtures.filter((fixture) =>
+      const liveAndUpcomingFixtures = seasonFixturesSorted.filter((fixture) =>
         ["LIVE", "SCHEDULED"].includes(fixture.status)
       );
       const recentResults = sortFixturesDesc(
-        seasonFixtures.filter((fixture) =>
+        seasonFixturesSorted.filter((fixture) =>
           ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status)
         )
       );
       const archiveSeasons = league.seasons.map(toSeasonSummary);
-      const competitionOdds = await buildCompetitionBettingExperience(
+      const competitionOddsFallback = buildFallbackCompetitionBettingExperience(
         { ...league, fixtures: league.oddsFixtures, oddsFixtures: league.oddsFixtures },
         {
           locale,
@@ -1210,23 +1281,74 @@ export async function getLeagueDetail(
           flags,
         }
       );
+      const competitionOdds = await readWithFallback(
+        () =>
+          buildCompetitionBettingExperience(
+            { ...league, fixtures: league.oddsFixtures, oddsFixtures: league.oddsFixtures },
+            {
+              locale,
+              viewerTerritory,
+              flags,
+            }
+          ),
+        competitionOddsFallback,
+        { label: "League odds experience read" },
+        markDegraded
+      );
 
       return {
         ...league,
+        degraded,
         country:
           league.countryRecord?.name || league.country || league.competition?.country?.name || null,
         seasons: archiveSeasons,
         selectedSeason: seasonSummary,
         archiveSeasons,
-        seasonFixtures,
+        seasonFixtures: seasonFixturesSorted,
         fixtures: liveAndUpcomingFixtures.slice(0, 12),
         upcomingFixtures: liveAndUpcomingFixtures.slice(0, 12),
         recentResults: recentResults.slice(0, 12),
-        fixtureSummary: summarizeFixtureStates(seasonFixtures),
+        fixtureSummary: summarizeFixtureStates(seasonFixturesSorted),
         standingsTable,
         competitionOdds,
       };
     }
+  );
+}
+
+export async function getLeagueMetadataSummary(reference) {
+  const referenceWhere = buildReferenceWhere(reference, ["id", "code", "externalRef"]);
+  if (!referenceWhere) {
+    return null;
+  }
+
+  return safeDataRead(
+    () =>
+      db.league.findFirst({
+        where: referenceWhere,
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          country: true,
+          sport: {
+            select: {
+              name: true,
+            },
+          },
+          competition: {
+            select: {
+              sport: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    null,
+    { label: "League metadata read" }
   );
 }
 

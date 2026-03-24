@@ -604,6 +604,9 @@ const en = {
   returnHome: "Return to home",
   globalErrorTitle: "Something went wrong",
   globalErrorBody: "We hit a rendering issue while building this page. Try the request again.",
+  leaguePageUnavailable: "League page unavailable",
+  leaguePageUnavailableBody:
+    "We couldn't assemble this league view right now. Try the request again.",
   livePageUnavailable: "Live page unavailable",
   livePageUnavailableBody: "We couldn't build the live feed right now. Try the request again.",
   resultsPageUnavailable: "Results page unavailable",
@@ -612,6 +615,8 @@ const en = {
   matchPageUnavailable: "Match centre unavailable",
   matchPageUnavailableBody:
     "We hit a rendering issue while assembling this fixture view. Try again.",
+  leagueDataDegraded:
+    "League data is temporarily degraded. Showing the latest stored competition snapshot.",
   refreshLiveMatch: "Refreshing every 20s while the match is live.",
   refreshKickoff: "Refreshing around kickoff.",
   refreshFinalSettle: "Refreshing while the final snapshot settles.",

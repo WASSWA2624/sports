@@ -30,7 +30,7 @@ import {
 } from "../../../../lib/coreui/metadata";
 import { getCompetitionNewsModule } from "../../../../lib/coreui/news-read";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
-import { getLeagueDetail } from "../../../../lib/coreui/read";
+import { getLeagueDetail, getLeagueMetadataSummary } from "../../../../lib/coreui/read";
 import {
   getPersonalizationSnapshot,
   sortFixturesByPersonalization,
@@ -149,7 +149,7 @@ export async function generateMetadata({ params, searchParams }) {
   const { locale, leagueCode } = await params;
   const filters = await searchParams;
   const activeTab = normalizeTab(filters?.tab);
-  const league = await getLeagueDetail(leagueCode);
+  const league = await getLeagueMetadataSummary(leagueCode);
   const dictionary = getDictionary(locale);
   const metadataCopy = buildLeagueMetadataCopy(dictionary, league, activeTab);
 
@@ -245,6 +245,14 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     league.recentResults,
     personalization,
     (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+  );
+  const hasCompetitionInsights = Boolean(
+    oddsSurface.insights?.topPicks?.length ||
+      oddsSurface.insights?.valueBets?.length ||
+      oddsSurface.insights?.bestOdds?.length ||
+      oddsSurface.insights?.highOddsMatches?.length ||
+      oddsSurface.ctaConfig?.primaryAffiliate?.href ||
+      oddsSurface.ctaConfig?.funnelActions?.length
   );
   const structuredData = [
     buildBreadcrumbStructuredData([
@@ -357,14 +365,6 @@ export default async function LeagueDetailPage({ params, searchParams }) {
         ))}
       </div>
     </div>
-  );
-  const hasCompetitionInsights = Boolean(
-    oddsSurface.insights?.topPicks?.length ||
-      oddsSurface.insights?.valueBets?.length ||
-      oddsSurface.insights?.bestOdds?.length ||
-      oddsSurface.insights?.highOddsMatches?.length ||
-      oddsSurface.ctaConfig?.primaryAffiliate?.href ||
-      oddsSurface.ctaConfig?.funnelActions?.length
   );
 
   return (
@@ -492,6 +492,8 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           </div>
         ) : null}
       </div>
+
+      {league.degraded ? <div className={styles.infoBanner}>{dictionary.leagueDataDegraded}</div> : null}
 
       {activeTab === "summary" ? (
         <>

@@ -541,6 +541,9 @@ const sw = {
   globalErrorTitle: "Kuna hitilafu",
   globalErrorBody:
     "Tumekutana na hitilafu ya ujenzi wa ukurasa huu. Tafadhali jaribu tena.",
+  leaguePageUnavailable: "Ukurasa wa ligi haupatikani",
+  leaguePageUnavailableBody:
+    "Hatukuweza kuandaa mwonekano huu wa ligi kwa sasa. Jaribu tena.",
   livePageUnavailable: "Ukurasa wa moja kwa moja haupatikani",
   livePageUnavailableBody:
     "Hatukuweza kujenga mtiririko wa mechi za moja kwa moja sasa hivi. Jaribu tena.",
@@ -550,6 +553,8 @@ const sw = {
   matchPageUnavailable: "Kituo cha mechi hakipatikani",
   matchPageUnavailableBody:
     "Tumepata hitilafu ya uwasilishaji wakati wa kuandaa mwonekano huu wa mechi. Jaribu tena.",
+  leagueDataDegraded:
+    "Data za ligi zimepungua kwa muda. Tunaonyesha picha ya mwisho ya mashindano iliyohifadhiwa.",
   refreshLiveMatch: "Inajisasisha kila sekunde 20 wakati mechi iko mubashara.",
   refreshKickoff: "Inajisasisha karibu na muda wa kuanza mechi.",
   refreshFinalSettle: "Inajisasisha wakati picha ya mwisho ya matokeo inakaa sawa.",

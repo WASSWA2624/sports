@@ -539,6 +539,9 @@ const fr = {
   globalErrorTitle: "Une erreur est survenue",
   globalErrorBody:
     "Nous avons rencontrÃ© un problÃ¨me de rendu pendant la construction de cette page. RÃ©essayez.",
+  leaguePageUnavailable: "Page ligue indisponible",
+  leaguePageUnavailableBody:
+    "Impossible d'assembler cette vue de ligue pour le moment. RÃƒÂ©essayez.",
   livePageUnavailable: "Page live indisponible",
   livePageUnavailableBody:
     "Impossible de construire le flux live pour le moment. RÃ©essayez la requÃªte.",
@@ -556,6 +559,8 @@ const fr = {
   refreshIdle: "Le rafraÃ®chissement live est inactif pour l'instant.",
   refreshLiveFeed: "Les matchs en direct se rafraÃ®chissent automatiquement.",
   refreshKickoffFeed: "Le flux se rafraÃ®chit autour des fenÃªtres de coup d'envoi actives.",
+  leagueDataDegraded:
+    "Les donnees de la ligue sont temporairement degradees. Affichage du dernier snapshot de competition disponible.",
   incidentGoals: "{count} buts",
   incidentYellows: "{count} jaunes",
   incidentReds: "{count} rouges",

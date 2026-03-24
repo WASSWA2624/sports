@@ -144,6 +144,12 @@ const ADMIN_EDITOR_KEYS = [
   "newsManagePredictionSave",
 ];
 
+const ROUTE_RESILIENCE_KEYS = [
+  "leaguePageUnavailable",
+  "leaguePageUnavailableBody",
+  "leagueDataDegraded",
+];
+
 describe("shell dictionaries", () => {
   it.each(SUPPORTED_DICTIONARY_LOCALES)(
     "provides every shell key for %s",
@@ -172,6 +178,17 @@ describe("shell dictionaries", () => {
       const dictionary = getDictionary(locale);
 
       for (const key of ADMIN_EDITOR_KEYS) {
+        expect(dictionary[key], `${locale}:${key}`).toBeTruthy();
+      }
+    }
+  );
+
+  it.each(SUPPORTED_DICTIONARY_LOCALES)(
+    "provides route resilience keys for %s",
+    (locale) => {
+      const dictionary = getDictionary(locale);
+
+      for (const key of ROUTE_RESILIENCE_KEYS) {
         expect(dictionary[key], `${locale}:${key}`).toBeTruthy();
       }
     }
