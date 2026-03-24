@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { closeSearch, openSearch } from "../../lib/store";
-import { ShellIcon } from "./shell-icons";
+import { formatFixtureStatus } from "../../lib/coreui/format";
+import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 import { SearchResultsSection } from "./search-results";
+import { ShellIcon } from "./shell-icons";
 import { usePreferences } from "./preferences-provider";
 import styles from "./styles.module.css";
 import searchStyles from "./search-experience.module.css";
-import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 
 const Overlay = styled.div`
   position: fixed;
@@ -24,9 +25,31 @@ const Overlay = styled.div`
   backdrop-filter: blur(10px);
 `;
 
-function mapRecentItems(locale, shellData, recentViews = []) {
-  const featuredCompetitions = shellData?.featuredCompetitions || [];
-  const competitionMap = new Map(featuredCompetitions.map((competition) => [competition.code, competition]));
+function getShortcutTypeLabel(type, dictionary) {
+  const labels = {
+    sport: dictionary.sports,
+    country: dictionary.countries,
+    competition: dictionary.competition,
+    team: dictionary.teams,
+    fixture: dictionary.match,
+  };
+
+  return labels[type] || type;
+}
+
+function mapRecentItems(locale, dictionary, shellData, recentViews = []) {
+  const featuredCompetitions = [
+    ...(shellData?.featuredCompetitions || []),
+    ...((shellData?.countryGroups || []).flatMap((group) =>
+      group.leagues.map((competition) => ({
+        ...competition,
+        country: competition.country || group.country,
+      }))
+    )),
+  ];
+  const competitionMap = new Map(
+    featuredCompetitions.map((competition) => [competition.code, competition])
+  );
   const teamMap = new Map((shellData?.teamDirectory || []).map((team) => [team.id, team]));
   const fixtureMap = new Map((shellData?.fixtureDirectory || []).map((fixture) => [fixture.id, fixture]));
 
@@ -43,7 +66,7 @@ function mapRecentItems(locale, shellData, recentViews = []) {
         return {
           key: itemId,
           title: competition.name,
-          subtitle: competition.country || "Competition",
+          subtitle: competition.country || dictionary.competition,
           href: `/${locale}/leagues/${competition.code}`,
         };
       }
@@ -57,7 +80,7 @@ function mapRecentItems(locale, shellData, recentViews = []) {
         return {
           key: itemId,
           title: team.name,
-          subtitle: team.leagueName || "Team",
+          subtitle: team.leagueName || dictionary.teams,
           href: `/${locale}/teams/${team.id}`,
         };
       }
@@ -71,7 +94,9 @@ function mapRecentItems(locale, shellData, recentViews = []) {
         return {
           key: itemId,
           title: fixture.label,
-          subtitle: [fixture.leagueName, fixture.status].filter(Boolean).join(" • "),
+          subtitle: [fixture.leagueName, formatFixtureStatus(fixture.status, locale)]
+            .filter(Boolean)
+            .join(" | "),
           href: `/${locale}/match/${fixture.externalRef || fixture.id}`,
         };
       }
@@ -93,8 +118,8 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
   const [searchResults, setSearchResults] = useState(null);
   const deferredQuery = useDeferredValue(query);
   const recentItems = useMemo(
-    () => mapRecentItems(locale, shellData, recentViews),
-    [locale, recentViews, shellData]
+    () => mapRecentItems(locale, dictionary, shellData, recentViews),
+    [dictionary, locale, recentViews, shellData]
   );
   const topCompetitions = (shellData?.featuredCompetitions || []).slice(0, 6);
   const normalizedQuery = deferredQuery.trim();
@@ -167,11 +192,7 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
     )
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        if (!payload) {
+        if (controller.signal.aborted || !payload) {
           return;
         }
 
@@ -206,13 +227,13 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    const normalizedQuery = query.trim();
+    const trimmedQuery = query.trim();
 
-    if (normalizedQuery.length < 2) {
+    if (trimmedQuery.length < 2) {
       return;
     }
 
-    router.push(`/${locale}/search?q=${encodeURIComponent(normalizedQuery)}`);
+    router.push(`/${locale}/search?q=${encodeURIComponent(trimmedQuery)}`);
     dispatch(closeSearch());
   }
 
@@ -404,7 +425,9 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
                         >
                           <span className={searchStyles.discoveryLabel}>
                             <strong>{shortcut.label}</strong>
-                            <span className={searchStyles.discoveryMeta}>{shortcut.type}</span>
+                            <span className={searchStyles.discoveryMeta}>
+                              {getShortcutTypeLabel(shortcut.type, dictionary)}
+                            </span>
                           </span>
                         </Link>
                       ))}

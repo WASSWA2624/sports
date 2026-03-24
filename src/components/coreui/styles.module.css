@@ -4460,3 +4460,107 @@
     min-height: 18rem;
   }
 }
+
+.brandMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.headerMarketBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--utility-chip-bg);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.headerUtilityAction,
+.headerUtilityActionActive {
+  display: none;
+}
+
+.headerUtilityActionActive {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.utilityCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.55rem;
+  min-height: 1.55rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--utility-chip-bg);
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.headerUtilityActionActive .utilityCount {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.railPromoCard {
+  background:
+    var(--promo-gradient),
+    var(--surface);
+}
+
+.rightRail .selectionCard {
+  padding: var(--dense-card-padding);
+  background: var(--surface-raised);
+}
+
+.rightRail .selectionCard .cardTitle {
+  font-size: 0.86rem;
+}
+
+.rightRail .infoBanner {
+  justify-content: flex-start;
+  width: 100%;
+  background: var(--legal-banner-bg);
+}
+
+.footerGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 899px) {
+  .headerMarketBadge {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .headerUtilityAction,
+  .headerUtilityActionActive {
+    display: inline-flex;
+  }
+
+  .mobileMenuButton {
+    display: none;
+  }
+}
+
+@media (max-width: 1120px) {
+  .footerGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .footerGrid {
+    grid-template-columns: 1fr;
+  }
+}

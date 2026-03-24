@@ -557,6 +557,54 @@ const sw = {
     "Mtoa huduma mmoja au zaidi wa social umewekwa kupitia env flags na uko tayari kwa hatua ya callback.",
   authSocialUnavailable:
     "Hakuna mtoa huduma wa social aliyewashwa sasa, kwa hiyo email, simu, na nenosiri bado ndio njia kuu ya kuingia.",
+  searchViewResults: "Fungua matokeo",
+  searchShortcutHint: "Bonyeza / au Ctrl+K",
+  searchTopResults: "Matokeo ya juu",
+  searchCompetitions: "Mashindano",
+  searchTeams: "Timu",
+  searchMatches: "Mechi",
+  searchPlayers: "Wachezaji",
+  searchArticles: "Makala",
+  searchNoResults: "Hakuna matokeo yaliyolingana na utafutaji huu bado.",
+  searchRecentItems: "Vipengee vya karibuni",
+  searchRecentEmpty: "Vipengee vyako vya karibuni vitaonekana hapa baada ya kutembelea mara chache.",
+  searchTopCompetitions: "Mashindano makuu",
+  searchShortcutsTitle: "Njia za haraka",
+  searchMetaTitle: "Matokeo ya utafutaji ya {query}",
+  searchMetaDescription:
+    "Matokeo ya utafutaji ya {query} katika timu, mashindano, wachezaji, mechi na habari.",
+  searchMetaDescriptionEmpty:
+    "Tafuta timu, mashindano, wachezaji, mechi na habari za michezo kutoka ukurasa mmoja.",
+  searchResultsTitle: "Matokeo ya utafutaji ya {query}",
+  searchResultsLead: "Matokeo {total} yamepatikana katika vipengee vikuu vya michezo.",
+  searchPageLead:
+    "Tafuta kwenye orodha nzima ya michezo kwa matokeo, mashindano, timu, wachezaji na habari.",
+  onboardingTitle: "Weka mpangilio wa feed yako ya kwanza ya michezo",
+  onboardingLead:
+    "Chagua michezo, mashindano na timu unazojali ili utafutaji, ugunduzi na vikumbusho viwe muhimu kuanzia ziara ya kwanza.",
+  onboardingSkip: "Ruka kwa sasa",
+  onboardingSports: "Michezo unayopenda",
+  onboardingCompetitions: "Mashindano unayopenda",
+  onboardingTeams: "Timu unazopenda",
+  onboardingSave: "Hifadhi mpangilio",
+  onboardingSaving: "Inahifadhi mpangilio...",
+  onboardingHint:
+    "Unaweza kubadilisha chaguo hizi baadaye kutoka profile, favorites, au kurasa za timu na mashindano.",
+  topCompetitionsTitle: "Mashindano makuu",
+  topCompetitionsLead:
+    "Tumia mashindano yenye shughuli nyingi kama njia ya haraka kurudi kwenye live board, misimamo na ratiba zijazo.",
+  recentItemsTitle: "Vipengee vya karibuni",
+  recentItemsLead:
+    "Rudi haraka kwenye timu, mashindano na mechi ulizotazama hivi karibuni.",
+  reminderTitle: "Washa vikumbusho",
+  reminderLead:
+    "Njia za haraka za arifa husaidia favorites ulizohifadhi kurudi tena wakati wa kickoff na filimbi ya mwisho.",
+  relatedMatchesTitle: "Mechi zinazohusiana",
+  relatedMatchesLead:
+    "Baki ndani ya simulizi hiyo hiyo ya mashindano au timu kupitia mechi na matokeo yaliyo karibu.",
+  relatedNewsTitle: "Habari zinazohusiana",
+  relatedNewsLead:
+    "Fuatilia muktadha wa uhariri unaozunguka mechi hii bila kuondoka kwenye kituo cha mechi.",
 };
 
 export default sw;

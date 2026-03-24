@@ -18,6 +18,8 @@
   --surface: #ffffff;
   --surface-strong: #f5f8f8;
   --surface-muted: #edf2f3;
+  --surface-raised: #fbfcfc;
+  --surface-tint: rgba(255, 255, 255, 0.74);
   --surface-inverse: #07181f;
   --text: #0d232a;
   --text-muted: #5f7075;
@@ -26,6 +28,10 @@
   --accent: #ff1f59;
   --accent-strong: #df1148;
   --accent-soft: rgba(255, 31, 89, 0.12);
+  --promo-gradient: linear-gradient(135deg, rgba(255, 31, 89, 0.14), rgba(33, 109, 255, 0.08));
+  --legal-banner-bg: rgba(13, 35, 42, 0.06);
+  --utility-chip-bg: rgba(13, 35, 42, 0.05);
+  --dense-card-padding: 0.85rem;
   --success: #18a66b;
   --warning: #c98a16;
   --danger: #d44d4d;
@@ -49,6 +55,8 @@ html[data-theme="dark"] {
   --surface: #081f26;
   --surface-strong: #0b2730;
   --surface-muted: #0d2b34;
+  --surface-raised: #0d2731;
+  --surface-tint: rgba(8, 31, 38, 0.8);
   --surface-inverse: #eff5f6;
   --text: #f2f6f7;
   --text-muted: #a5b8bc;
@@ -57,6 +65,9 @@ html[data-theme="dark"] {
   --accent: #ff1f59;
   --accent-strong: #ff4a7c;
   --accent-soft: rgba(255, 31, 89, 0.16);
+  --promo-gradient: linear-gradient(135deg, rgba(255, 31, 89, 0.18), rgba(33, 109, 255, 0.12));
+  --legal-banner-bg: rgba(255, 255, 255, 0.06);
+  --utility-chip-bg: rgba(255, 255, 255, 0.08);
   --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.26);
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.18);
   --overlay-backdrop: rgba(2, 10, 13, 0.72);

@@ -9,9 +9,77 @@ import { PreferencesProvider, usePreferences } from "./preferences-provider";
 import { ShellSearch } from "./shell-search";
 import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
-import { SCORES_NAV, SPORTS_STRIP, TOP_LEVEL_NAV } from "../../lib/coreui/config";
+import {
+  LOCALE_LABELS,
+  SCORES_NAV,
+  SPORTS_STRIP,
+  TOP_LEVEL_NAV,
+} from "../../lib/coreui/config";
 import { getScoreViewLabel, getSportLabel } from "../../lib/coreui/dictionaries";
 import { getGeoLabel, isGeoAllowed } from "../../lib/coreui/route-context";
+
+function formatCount(locale, value) {
+  return new Intl.NumberFormat(locale).format(Number(value || 0));
+}
+
+function formatList(locale, values = []) {
+  const items = (values || []).filter(Boolean);
+
+  if (!items.length) {
+    return "";
+  }
+
+  if (typeof Intl.ListFormat === "function") {
+    return new Intl.ListFormat(locale, {
+      style: "short",
+      type: "conjunction",
+    }).format(items);
+  }
+
+  return items.join(", ");
+}
+
+function getActiveSportKey(pathname, locale, favoriteSports = []) {
+  const segments = String(pathname || "")
+    .split("/")
+    .filter(Boolean);
+
+  if (segments[0] !== locale) {
+    return favoriteSports[0] || "football";
+  }
+
+  if (segments[1] === "favorites") {
+    return "favorites";
+  }
+
+  if (segments[1] === "sports" && segments[2]) {
+    return segments[2];
+  }
+
+  return favoriteSports[0] || "football";
+}
+
+function prioritizeSports(sports = [], favoriteSports = [], activeSportKey = "football") {
+  const favoriteSet = new Set((favoriteSports || []).filter(Boolean));
+
+  return [...sports].sort((left, right) => {
+    const leftScore =
+      (left.key === activeSportKey ? 40 : 0) +
+      (favoriteSet.has(left.key) ? 20 : 0) +
+      (left.key === "football" ? 10 : 0);
+    const rightScore =
+      (right.key === activeSportKey ? 40 : 0) +
+      (favoriteSet.has(right.key) ? 20 : 0) +
+      (right.key === "football" ? 10 : 0);
+
+    if (leftScore !== rightScore) {
+      return rightScore - leftScore;
+    }
+
+    return SPORTS_STRIP.findIndex((sport) => sport.key === left.key) -
+      SPORTS_STRIP.findIndex((sport) => sport.key === right.key);
+  });
+}
 
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, viewerGeo }) {
   const pathname = usePathname();
@@ -19,10 +87,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     compliance,
     ctaGeo,
     effectiveGeo,
+    favoriteSports,
     promptPreferences,
     recentViews,
     sessionUser,
     setPromptPreference,
+    theme,
     watchlist,
     watchlistCount,
   } = usePreferences();
@@ -50,9 +120,16 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     platform.affiliate?.partnerByGeo?.[currentGeo]?.[0] ||
     platform.affiliate?.primaryPartner ||
     null;
+  const bookmakerPartners =
+    platform.affiliate?.bookmakerByGeo?.[currentGeo] ||
+    platform.affiliate?.bookmakerByGeo?.INTL ||
+    [];
   const funnelActions = (platform.funnel?.actions || []).filter((action) =>
     action.url && isGeoAllowed(currentGeo, action.enabledGeos)
   );
+  const launchMarketLabels = [...new Set((platform.launchGeos || []).map((geo) =>
+    platform.geoLabels?.[geo] || getGeoLabel(geo)
+  ))];
   const allCompetitions = [
     ...(shellData?.featuredCompetitions || []),
     ...((shellData?.countryGroups || []).flatMap((group) =>
@@ -131,18 +208,47 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     savedCompetitions.length > 0
       ? savedCompetitions
       : (shellData?.featuredCompetitions || []).slice(0, 6);
+  const topCompetitions = (shellData?.featuredCompetitions || []).slice(0, 6);
   const favoriteSport = SPORTS_STRIP.find((sport) => sport.key === "favorites");
   const moreSport = SPORTS_STRIP.find((sport) => sport.key === "more");
-  const rankedSports = SPORTS_STRIP.filter(
-    (sport) => sport.key !== "favorites" && sport.key !== "more"
+  const activeSportKey = getActiveSportKey(pathname, locale, favoriteSports);
+  const rankedSports = prioritizeSports(
+    SPORTS_STRIP.filter((sport) => sport.key !== "favorites" && sport.key !== "more"),
+    favoriteSports,
+    activeSportKey
   );
-  const menuSports = SPORTS_STRIP.filter((sport) => sport.key !== "more");
+  const menuSports = [favoriteSport, ...rankedSports].filter(Boolean);
   const countryGroups = shellData?.countryGroups || [];
   const accountLabel = sessionUser ? dictionary.profile : dictionary.login;
   const accountHref = sessionUser ? "/profile" : `/${locale}/auth`;
-  const primarySports = rankedSports.slice(0, 3);
-  const overflowSports = rankedSports.slice(3);
-  const activeSport = rankedSports.find((sport) => sport.enabled) || rankedSports[0] || null;
+  const primarySports = rankedSports.slice(0, 4);
+  const overflowSports = rankedSports.slice(4);
+  const activeSport =
+    activeSportKey === "favorites"
+      ? favoriteSport
+      : rankedSports.find((sport) => sport.key === activeSportKey) ||
+        rankedSports.find((sport) => sport.enabled) ||
+        rankedSports[0] ||
+        null;
+  const activeThemeLabel = {
+    light: dictionary.themeLight,
+    dark: dictionary.themeDark,
+    system: dictionary.themeSystem,
+  }[theme] || dictionary.themeSystem;
+  const formattedWatchCount = formatCount(locale, watchCount);
+  const formattedSportCount = formatCount(locale, rankedSports.length);
+  const formattedPinnedCount = formatCount(locale, pinnedCompetitions.length);
+  const formattedTeamCount = formatCount(locale, savedTeams.length);
+  const formattedMarketCount = formatCount(locale, launchMarketLabels.length || 1);
+  const localeLabel = LOCALE_LABELS[locale] || locale.toUpperCase();
+  const bookmakerSummary = bookmakerPartners.length
+    ? formatList(locale, bookmakerPartners.slice(0, 3))
+    : null;
+  const legalNotices = [
+    dictionary.oddsLegalAge,
+    dictionary.oddsLegalJurisdiction,
+    dictionary.oddsLegalSupport,
+  ];
   const renderScoreViewContent = (item) => (
     <span className={styles.scoreViewItemContent}>
       <ShellIcon name={item.key} className={styles.controlIcon} />
@@ -182,7 +288,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                   <Link href={`/${locale}`} className={styles.brand}>
                     {dictionary.brand}
                   </Link>
-                  <p className={styles.brandTag}>{dictionary.brandTag}</p>
+                  <div className={styles.brandMetaRow}>
+                    <p className={styles.brandTag}>{dictionary.brandTag}</p>
+                    <span className={styles.headerMarketBadge}>{currentGeoLabel}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -209,6 +318,29 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 shortcuts={shellData?.searchShortcuts || []}
                 shellData={shellData}
               />
+              <Link
+                href={`/${locale}/favorites`}
+                className={
+                  isFavoritesPage
+                    ? `${styles.sectionAction} ${styles.headerAction} ${styles.headerUtilityActionActive}`
+                    : `${styles.sectionAction} ${styles.headerAction} ${styles.headerUtilityAction}`
+                }
+              >
+                <ShellIcon name="favorites" className={styles.controlIcon} />
+                <span className={styles.headerActionLabel}>{dictionary.favorites}</span>
+                <span className={styles.utilityCount}>{formattedWatchCount}</span>
+              </Link>
+              <Link
+                href={`/${locale}/settings`}
+                className={
+                  isSettingsPage
+                    ? `${styles.sectionAction} ${styles.headerAction} ${styles.headerUtilityActionActive}`
+                    : `${styles.sectionAction} ${styles.headerAction} ${styles.headerUtilityAction}`
+                }
+              >
+                <ShellIcon name="theme" className={styles.controlIcon} />
+                <span className={styles.headerActionLabel}>{dictionary.metaSettingsTitle}</span>
+              </Link>
               <Link
                 href={accountHref}
                 aria-label={sessionUser ? dictionary.profile : dictionary.login}
@@ -279,17 +411,19 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                       <ShellIcon name={favoriteSport.key} className={styles.sportIcon} />
                       <span>{getSportLabel(favoriteSport.key, dictionary)}</span>
                     </span>
-                    <span className={styles.sportsCount}>{watchCount}</span>
+                    <span className={styles.sportsCount}>{formattedWatchCount}</span>
                   </Link>
                 ) : null}
 
                 {primarySports.map((sport) => {
+                  const isActiveSport = sport.key === activeSportKey;
+
                   if (sport.enabled) {
                     return (
                       <Link
                         key={sport.key}
                         href={`/${locale}${sport.href}`}
-                        className={sport.key === "football" && !isNewsMode ? styles.sportsChipActive : styles.sportsChip}
+                        className={isActiveSport ? styles.sportsChipActive : styles.sportsChip}
                       >
                         <span className={styles.sportLinkContent}>
                           <ShellIcon name={sport.key} className={styles.sportIcon} />
@@ -380,11 +514,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <div className={styles.mobileMenuHeaderStats}>
                   <div className={styles.mobileMenuStat}>
                     <span>{dictionary.watchlist}</span>
-                    <strong>{watchCount}</strong>
+                    <strong>{formattedWatchCount}</strong>
                   </div>
                   <div className={styles.mobileMenuStat}>
                     <span>{dictionary.sports}</span>
-                    <strong>{menuSports.length}</strong>
+                    <strong>{formattedSportCount}</strong>
                   </div>
                 </div>
               </div>
@@ -436,7 +570,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionCompact}`}>
                   <div className={styles.mobileMenuSectionHead}>
                     <h2 className={styles.mobileMenuSectionTitle}>{dictionary.account}</h2>
-                    <span className={styles.mobileMenuSectionCount}>1</span>
+                    <span className={styles.mobileMenuSectionCount}>2</span>
                   </div>
 
                   <div className={`${styles.mobileMenuList} ${styles.mobileMenuQuickGrid}`}>
@@ -459,7 +593,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                     >
                       <span className={styles.mobileMenuItemContent}>
                         <ShellIcon name="theme" className={styles.controlIcon} />
-                        <span>{dictionary.settingsTitle}</span>
+                        <span>{dictionary.metaSettingsTitle}</span>
                       </span>
                     </Link>
                   </div>
@@ -496,7 +630,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <section className={`${styles.mobileMenuSection} ${styles.mobileMenuSectionWide}`}>
                   <div className={styles.mobileMenuSectionHead}>
                     <h2 className={styles.mobileMenuSectionTitle}>{dictionary.sports}</h2>
-                    <span className={styles.mobileMenuSectionCount}>{menuSports.length}</span>
+                    <span className={styles.mobileMenuSectionCount}>{formattedSportCount}</span>
                   </div>
 
                   <div className={`${styles.mobileMenuList} ${styles.mobileMenuSportsGrid}`}>
@@ -520,12 +654,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                               <ShellIcon name={sport.key} className={styles.sportIcon} />
                               <span>{getSportLabel(sport.key, dictionary)}</span>
                             </span>
-                            <span className={styles.badge}>{watchCount}</span>
+                            <span className={styles.badge}>{formattedWatchCount}</span>
                           </Link>
                         ) : (
                           <div key={sport.key} className={styles.mobileMenuSportRow}>
                             {content}
-                            <span className={styles.badge}>{watchCount}</span>
+                            <span className={styles.badge}>{formattedWatchCount}</span>
                           </div>
                         );
                       }
@@ -563,15 +697,46 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                     <div className={`${styles.watchPill} ${styles.mobileMenuWatchPill}`}>
                       <ShellIcon name="favorites" className={styles.controlIcon} />
                       <span>{dictionary.watchlist}</span>
-                      <strong className={styles.watchValue}>{watchCount}</strong>
+                      <strong className={styles.watchValue}>{formattedWatchCount}</strong>
                     </div>
                   </div>
                 </section>
 
                 <section className={styles.mobileMenuSection}>
                   <div className={styles.mobileMenuSectionHead}>
+                    <h2 className={styles.mobileMenuSectionTitle}>{dictionary.topCompetitionsTitle}</h2>
+                    <span className={styles.mobileMenuSectionCount}>
+                      {formatCount(locale, topCompetitions.length)}
+                    </span>
+                  </div>
+
+                  <div className={styles.mobileMenuList}>
+                    {topCompetitions.length ? (
+                      topCompetitions.map((competition) => (
+                        <Link
+                          key={competition.code}
+                          href={`/${locale}/leagues/${competition.code}`}
+                          className={styles.mobileMenuLink}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <span className={styles.mobileMenuItemContent}>
+                            <span>{competition.name}</span>
+                            {competition.country ? (
+                              <span className={styles.badge}>{competition.country}</span>
+                            ) : null}
+                          </span>
+                        </Link>
+                      ))
+                    ) : (
+                      <p className={styles.railMuted}>{dictionary.noData}</p>
+                    )}
+                  </div>
+                </section>
+
+                <section className={styles.mobileMenuSection}>
+                  <div className={styles.mobileMenuSectionHead}>
                     <h2 className={styles.mobileMenuSectionTitle}>{dictionary.pinnedCompetitions}</h2>
-                    <span className={styles.mobileMenuSectionCount}>{pinnedCompetitions.length}</span>
+                    <span className={styles.mobileMenuSectionCount}>{formattedPinnedCount}</span>
                   </div>
 
                   <div className={styles.mobileMenuList}>
@@ -595,7 +760,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <section className={styles.mobileMenuSection}>
                   <div className={styles.mobileMenuSectionHead}>
                     <h2 className={styles.mobileMenuSectionTitle}>{dictionary.myTeams}</h2>
-                    <span className={styles.mobileMenuSectionCount}>{savedTeams.length}</span>
+                    <span className={styles.mobileMenuSectionCount}>{formattedTeamCount}</span>
                   </div>
 
                   <div className={styles.mobileMenuList}>
@@ -656,7 +821,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
           <aside className={styles.leftRail}>
             <section className={styles.railCard}>
               <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.scoreViews}</h2>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.scoreViews}</h2>
+                  <span className={styles.badge}>{currentGeoLabel}</span>
+                </div>
                 <div className={styles.railList}>
                   {SCORES_NAV.map((item) => {
                     const href = `/${locale}${item.href}`;
@@ -681,7 +849,37 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.pinnedCompetitions}</h2>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.topCompetitionsTitle}</h2>
+                  <span className={styles.badge}>{formatCount(locale, topCompetitions.length)}</span>
+                </div>
+                <div className={styles.railList}>
+                  {topCompetitions.length ? (
+                    topCompetitions.map((competition) => (
+                      <Link
+                        key={competition.code}
+                        href={`/${locale}/leagues/${competition.code}`}
+                        className={styles.railLink}
+                      >
+                        <span>{competition.name}</span>
+                        {competition.country ? (
+                          <span className={styles.badge}>{competition.country}</span>
+                        ) : null}
+                      </Link>
+                    ))
+                  ) : (
+                    <p className={styles.railMuted}>{dictionary.noData}</p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.railCard}>
+              <div className={styles.railSection}>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.pinnedCompetitions}</h2>
+                  <span className={styles.badge}>{formattedPinnedCount}</span>
+                </div>
                 <div className={styles.railList}>
                   {pinnedCompetitions.length ? (
                     pinnedCompetitions.map((competition) => (
@@ -690,7 +888,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                         href={`/${locale}/leagues/${competition.code}`}
                         className={styles.railLink}
                       >
-                        {competition.name}
+                        <span>{competition.name}</span>
+                        {competition.country ? (
+                          <span className={styles.badge}>{competition.country}</span>
+                        ) : null}
                       </Link>
                     ))
                   ) : (
@@ -702,12 +903,18 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.myTeams}</h2>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.myTeams}</h2>
+                  <span className={styles.badge}>{formattedTeamCount}</span>
+                </div>
                 <div className={styles.railList}>
                   {savedTeams.length ? (
                     savedTeams.map((team) => (
                       <Link key={team.id} href={`/${locale}/teams/${team.id}`} className={styles.railLink}>
-                        {team.name}
+                        <span>{team.name}</span>
+                        {team.leagueName ? (
+                          <span className={styles.badge}>{team.leagueName}</span>
+                        ) : null}
                       </Link>
                     ))
                   ) : (
@@ -719,7 +926,10 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.recentItemsTitle}</h2>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.recentItemsTitle}</h2>
+                  <span className={styles.badge}>{formatCount(locale, recentItems.length)}</span>
+                </div>
                 <div className={styles.railList}>
                   {recentItems.length ? (
                     recentItems.map((item) => (
@@ -737,9 +947,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
             <section className={styles.railCard}>
               <div className={styles.railSection}>
-                <h2 className={styles.railSectionTitle}>{dictionary.countries}</h2>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.countries}</h2>
+                  <span className={styles.badge}>{formatCount(locale, countryGroups.length)}</span>
+                </div>
                 <div className={styles.railList}>
-                  {(shellData?.countryGroups || []).map((group) => (
+                  {countryGroups.map((group) => (
                     group.href ? (
                       <Link key={group.country} href={`/${locale}${group.href}`} className={styles.railLink}>
                         <span>{group.country}</span>
@@ -762,29 +975,112 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
           </div>
 
           <aside className={styles.rightRail}>
-            {adSlotEnabled ? (
-              <section className={styles.railCard}>
+            {supportEnabled ? (
+              <section className={`${styles.railCard} ${styles.railPromoCard}`}>
                 <div className={styles.railSection}>
-                  <h2 className={styles.railSectionTitle}>{dictionary.adSlot}</h2>
-                  <div className={styles.adSlot}>{adSlotCopy}</div>
+                  <div className={styles.inlineBadgeRow}>
+                    <h2 className={styles.railSectionTitle}>{dictionary.supportRail}</h2>
+                    <span className={styles.badge}>{localeLabel}</span>
+                  </div>
+                  <p className={styles.railMuted}>{dictionary.supportRailBody}</p>
+                  <div className={styles.inlineBadgeRow}>
+                    <Link href={`/${locale}/search`} className={styles.sectionAction}>
+                      {dictionary.search}
+                    </Link>
+                    <Link href={`/${locale}/favorites`} className={styles.sectionAction}>
+                      {dictionary.favorites}
+                    </Link>
+                    <Link href={`/${locale}/settings`} className={styles.sectionAction}>
+                      {dictionary.metaSettingsTitle}
+                    </Link>
+                  </div>
                 </div>
               </section>
             ) : null}
+
+            {adSlotEnabled ? (
+              <section className={styles.railCard}>
+                <div className={styles.railSection}>
+                  <div className={styles.inlineBadgeRow}>
+                    <h2 className={styles.railSectionTitle}>{dictionary.adSlot}</h2>
+                    {shellChrome.adSlot?.placement ? (
+                      <span className={styles.badge}>{shellChrome.adSlot.placement}</span>
+                    ) : null}
+                    {shellChrome.adSlot?.size ? (
+                      <span className={styles.badge}>{shellChrome.adSlot.size}</span>
+                    ) : null}
+                  </div>
+                  <div className={styles.adSlot}>{adSlotCopy}</div>
+                  {shellChrome.adSlot?.ctaLabel && shellChrome.adSlot?.ctaUrl ? (
+                    <a
+                      href={shellChrome.adSlot.ctaUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.sectionAction}
+                    >
+                      {shellChrome.adSlot.ctaLabel}
+                    </a>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
+
+            <section className={styles.railCard}>
+              <div className={styles.railSection}>
+                <div className={styles.inlineBadgeRow}>
+                  <h2 className={styles.railSectionTitle}>{dictionary.affiliatesPartnerTitle}</h2>
+                  <span className={styles.badge}>{currentGeoLabel}</span>
+                </div>
+                <p className={styles.railMuted}>{dictionary.affiliatesLead}</p>
+                <div className={styles.surfaceRowsCompact}>
+                  <div className={styles.selectionCard}>
+                    <strong className={styles.cardTitle}>{dictionary.affiliatesPartnerTitle}</strong>
+                    <p className={styles.railMuted}>
+                      {affiliatePartner || dictionary.affiliatesPartnerPending}
+                    </p>
+                  </div>
+                  <div className={styles.selectionCard}>
+                    <strong className={styles.cardTitle}>{dictionary.affiliatesBookmakerTitle}</strong>
+                    <p className={styles.railMuted}>
+                      {bookmakerSummary || dictionary.affiliatesBookmakerPending}
+                    </p>
+                  </div>
+                </div>
+                <Link href={`/${locale}/affiliates`} className={styles.sectionAction}>
+                  {dictionary.metaAffiliatesTitle}
+                </Link>
+              </div>
+            </section>
 
             {consentEnabled ? (
               <section className={styles.railCard}>
                 <div className={styles.railSection}>
-                  <h2 className={styles.railSectionTitle}>{consentTitle}</h2>
+                  <div className={styles.inlineBadgeRow}>
+                    <h2 className={styles.railSectionTitle}>{consentTitle}</h2>
+                    <span className={styles.badge}>
+                      {dictionary.currentMarket}: {currentGeoLabel}
+                    </span>
+                    <span className={styles.badge}>{formattedMarketCount}</span>
+                  </div>
                   <p className={styles.railMuted}>{consentBody}</p>
-                </div>
-              </section>
-            ) : null}
-
-            {supportEnabled ? (
-              <section className={styles.railCard}>
-                <div className={styles.railSection}>
-                  <h2 className={styles.railSectionTitle}>{dictionary.supportRail}</h2>
-                  <p className={styles.railMuted}>{dictionary.supportRailBody}</p>
+                  {launchMarketLabels.length ? (
+                    <div className={styles.inlineBadgeRow}>
+                      {launchMarketLabels.map((label) => (
+                        <span key={label} className={styles.badge}>
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {compliance.regulatedCopyRequired ? (
+                    <div className={styles.surfaceRowsCompact}>
+                      {legalNotices.map((notice) => (
+                        <span key={notice} className={styles.infoBanner}>
+                          {notice}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </section>
             ) : null}
@@ -800,6 +1096,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                   {affiliatePartner ? (
                     <p className={styles.railMuted}>
                       {dictionary.affiliatePartnerLabel}: {affiliatePartner}
+                    </p>
+                  ) : null}
+                  {bookmakerSummary ? (
+                    <p className={styles.railMuted}>
+                      {dictionary.affiliatesBookmakerTitle}: {bookmakerSummary}
                     </p>
                   ) : null}
                   {funnelActions.length && compliance.promptOptInAllowed ? (
@@ -831,7 +1132,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                             {dictionary.enableFunnelPrompts}
                           </button>
                           <Link href={`/${locale}/settings`} className={styles.sectionAction}>
-                            {dictionary.settingsTitle}
+                            {dictionary.metaSettingsTitle}
                           </Link>
                         </div>
                       </div>
@@ -869,6 +1170,12 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                   <span className={styles.badge}>
                     {dictionary.currentMarket}: {currentGeoLabel}
                   </span>
+                  <span className={styles.badge}>
+                    {dictionary.locale}: {localeLabel}
+                  </span>
+                  <span className={styles.badge}>
+                    {dictionary.theme}: {activeThemeLabel}
+                  </span>
                   {affiliatePartner ? (
                     <span className={styles.badge}>
                       {dictionary.affiliatePartnerLabel}: {affiliatePartner}
@@ -888,7 +1195,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                     {dictionary.favorites}
                   </Link>
                   <Link href={`/${locale}/settings`} className={styles.sectionAction}>
-                    {dictionary.settingsTitle}
+                    {dictionary.metaSettingsTitle}
                   </Link>
                   <Link href={accountHref} className={styles.sectionAction}>
                     {accountLabel}
@@ -904,20 +1211,49 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 <div className={styles.footerStatGrid}>
                   <div className={styles.footerStatCard}>
                     <span>{dictionary.watchlist}</span>
-                    <strong>{watchCount}</strong>
+                    <strong>{formattedWatchCount}</strong>
                   </div>
                   <div className={styles.footerStatCard}>
                     <span>{dictionary.pinnedCompetitions}</span>
-                    <strong>{pinnedCompetitions.length}</strong>
+                    <strong>{formattedPinnedCount}</strong>
                   </div>
                   <div className={styles.footerStatCard}>
                     <span>{dictionary.myTeams}</span>
-                    <strong>{savedTeams.length}</strong>
+                    <strong>{formattedTeamCount}</strong>
                   </div>
                   <div className={styles.footerStatCard}>
                     <span>{dictionary.currentMarket}</span>
                     <strong>{currentGeoLabel}</strong>
                   </div>
+                </div>
+              </section>
+
+              <section className={styles.footerPanel}>
+                <h2 className={styles.footerHeading}>{dictionary.consent}</h2>
+                <div className={styles.footerStatGrid}>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.locale}</span>
+                    <strong>{localeLabel}</strong>
+                  </div>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.theme}</span>
+                    <strong>{activeThemeLabel}</strong>
+                  </div>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.countries}</span>
+                    <strong>{formattedMarketCount}</strong>
+                  </div>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.sports}</span>
+                    <strong>{formattedSportCount}</strong>
+                  </div>
+                </div>
+                <div className={styles.inlineBadgeRow}>
+                  {legalNotices.map((notice) => (
+                    <span key={notice} className={styles.badge}>
+                      {notice}
+                    </span>
+                  ))}
                 </div>
               </section>
             </div>
