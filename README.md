@@ -33,6 +33,14 @@ npm run test
 npm run build
 ```
 
+Release validation bundle:
+
+```bash
+npm run validate:release
+RELEASE_PREFLIGHT_MODE=production npm run release:preflight
+npm run release:artifact
+```
+
 ## Sync Jobs
 
 Configure SportsMonks credentials and tracked IDs in `.env`, then trigger the admin sync endpoint for one of the registered buckets: `static-ish`, `daily`, or `high-frequency`.
@@ -66,9 +74,30 @@ The admin control room surfaces provider chain readiness, latency/cache/search o
 ```bash
 npm run db:generate
 npm run db:migrate
+npm run db:migrate:status
+npm run db:migrate:deploy
+npm run db:backup
 ```
 
 Set `DATABASE_URL` in `.env` before running DB commands.
+
+## Production Release
+
+Primary production handoff docs:
+
+- `docs/production-release-runbook.md`
+- `docs/production-release-2026-03-24.md`
+
+Useful commands:
+
+```bash
+RELEASE_PREFLIGHT_MODE=production npm run release:preflight
+npm run release:artifact
+npm run release:production
+BASE_URL=https://sports.example npm run test:smoke
+```
+
+`npm run release:artifact` creates a versioned bundle under `build/releases/<release-version>/`.
 
 ## Operational Health
 
@@ -76,6 +105,7 @@ Public health endpoint: `GET /api/health`
 
 The health response now includes:
 
+- release metadata for the deployed artifact
 - provider chain readiness
 - live-data stale rate
 - cache hit-rate summary

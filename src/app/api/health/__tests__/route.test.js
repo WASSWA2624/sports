@@ -2,6 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAssetDeliverySnapshot = vi.fn();
 const getOperationalDashboardSnapshot = vi.fn();
+const getReleaseInfo = vi.fn(() => ({
+  version: "0.1.0-test",
+  channel: "test",
+  commitSha: "abc123",
+  buildId: "BUILD_TEST",
+}));
 const getSportsSyncConfig = vi.fn(() => ({
   provider: "SPORTSMONKS",
   fallbackProviders: ["SCOREBOARD_BACKUP"],
@@ -19,6 +25,10 @@ vi.mock("../../../../lib/assets-server", () => ({
 
 vi.mock("../../../../lib/operations", () => ({
   getOperationalDashboardSnapshot,
+}));
+
+vi.mock("../../../../lib/release", () => ({
+  getReleaseInfo,
 }));
 
 vi.mock("../../../../lib/sports/config", () => ({
@@ -68,6 +78,10 @@ describe("GET /api/health", () => {
     expect(payload).toMatchObject({
       status: "ok",
       service: "sports",
+      release: {
+        version: "0.1.0-test",
+        channel: "test",
+      },
       providerChain: [{ code: "SPORTSMONKS", role: "primary" }],
       cache: {
         hitRate: 0.82,
@@ -99,6 +113,9 @@ describe("GET /api/health", () => {
     expect(payload).toMatchObject({
       status: "degraded",
       service: "sports",
+      release: {
+        version: "0.1.0-test",
+      },
       error: "DB unavailable",
     });
   });
