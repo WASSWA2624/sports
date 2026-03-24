@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sports-pulse-pink" x1="12" y1="10" x2="52" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF2B63"/>
+      <stop offset="1" stop-color="#D8144B"/>
+    </linearGradient>
+    <linearGradient id="sports-pulse-white" x1="13" y1="11" x2="39" y2="33" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDFE"/>
+      <stop offset="1" stop-color="#FFE9EF"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#sports-pulse-pink)"/>
+  <path d="M13 29.2C14.9 17.3 24.7 11 34.2 11C40 11 45.2 13.1 49.2 16.9L31.7 36.8H15.4C13.8 34.4 13 31.8 13 29.2Z" fill="url(#sports-pulse-white)"/>
+  <path d="M21.4 39.1H24.9C27.3 39.1 28.6 40 28.6 41.8C28.6 42.9 28 43.8 26.8 44.3C28.3 44.7 29.1 45.7 29.1 47.3C29.1 49.6 27.4 50.9 24.5 50.9H21.4V39.1ZM24.6 43.8C25.7 43.8 26.3 43.4 26.3 42.5C26.3 41.5 25.6 41.1 24.4 41.1H23.8V43.8H24.6ZM24.8 49C26.1 49 26.8 48.5 26.8 47.4C26.8 46.3 26 45.7 24.6 45.7H23.8V49H24.8Z" fill="#082A33"/>
+  <path d="M31 39.1H35.2C38.2 39.1 40 40.7 40 43.4C40 46.2 38.2 47.8 35.1 47.8H33.4V50.9H31V39.1ZM35 45.8C36.6 45.8 37.5 45 37.5 43.5C37.5 42 36.6 41.2 35 41.2H33.4V45.8H35Z" fill="#082A33"/>
+</svg>

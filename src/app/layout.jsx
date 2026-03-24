@@ -41,6 +41,11 @@ export async function generateMetadata() {
       template: `%s | ${dictionary.brand}`,
     },
     description: dictionary.heroBody,
+    icons: {
+      icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+      shortcut: [{ url: "/icon.svg", type: "image/svg+xml" }],
+      apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    },
   };
 }
 
