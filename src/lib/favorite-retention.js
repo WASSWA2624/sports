@@ -98,8 +98,11 @@ export function buildFavoriteChannelPanelModel({
       key: action.key,
       href: action.url,
       label:
-        action.label ||
-        (action.key === "telegram" ? dictionary.openTelegram : dictionary.openWhatsApp),
+        action.key === "telegram"
+          ? dictionary.openTelegram
+          : action.key === "whatsapp"
+            ? dictionary.openWhatsApp
+            : action.label || action.key,
     }));
 
   return {

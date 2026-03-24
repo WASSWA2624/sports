@@ -24,6 +24,7 @@ import {
 import { safeDataRead } from "../../../lib/data-access";
 import {
   getPersonalizationSnapshot,
+  sortCompetitionsByPersonalization,
 } from "../../../lib/personalization";
 
 export async function generateMetadata({ params, searchParams }) {
@@ -52,7 +53,7 @@ export default async function SearchPage({ params, searchParams }) {
   const dictionary = getDictionary(locale);
   const query = normalizeSearchQuery(queryParams?.q || "");
   const personalization = await getPersonalizationSnapshot();
-  const [results, topCompetitions, recentItems] = await Promise.all([
+  const [results, topCompetitionsRaw, recentItems] = await Promise.all([
     query.length >= 2
       ? safeDataRead(
           () => searchGlobal(query, { locale, limitPerSection: 8 }),
@@ -63,6 +64,11 @@ export default async function SearchPage({ params, searchParams }) {
     getTopCompetitionsModule(),
     getRecentItemsModule(personalization, { locale }),
   ]);
+  const topCompetitions = sortCompetitionsByPersonalization(
+    topCompetitionsRaw,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
 
   const structuredData = [
     buildBreadcrumbStructuredData([

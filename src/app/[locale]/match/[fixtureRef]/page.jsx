@@ -225,6 +225,7 @@ export default async function MatchDetailPage({ params, searchParams }) {
     detail.coverage.keyEvents === "available" ? "CARD" : null,
     detail.coverage.timeline === "available" ? "PERIOD_CHANGE" : null,
     "FINAL_RESULT",
+    relatedNews.total ? "NEWS" : null,
   ].filter(Boolean);
   const fixtureLabel = `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`;
   const structuredData = [
@@ -637,7 +638,14 @@ export default async function MatchDetailPage({ params, searchParams }) {
           {relatedMatches.length ? (
             <div className={styles.fixtureGrid}>
               {relatedMatches.map((relatedFixture) => (
-                <FixtureCard key={relatedFixture.id} fixture={relatedFixture} locale={locale} />
+                <FixtureCard
+                  key={relatedFixture.id}
+                  fixture={relatedFixture}
+                  locale={locale}
+                  showAlerts
+                  alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                  surface="match-detail"
+                />
               ))}
             </div>
           ) : (
@@ -947,7 +955,14 @@ export default async function MatchDetailPage({ params, searchParams }) {
           {headToHead?.completedMatches?.length ? (
             <div className={styles.fixtureGrid}>
               {headToHead.completedMatches.map((historyFixture) => (
-                <FixtureCard key={historyFixture.id} fixture={historyFixture} locale={locale} surface="match-detail" />
+                <FixtureCard
+                  key={historyFixture.id}
+                  fixture={historyFixture}
+                  locale={locale}
+                  showAlerts
+                  alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                  surface="match-detail"
+                />
               ))}
             </div>
           ) : (
@@ -965,7 +980,14 @@ export default async function MatchDetailPage({ params, searchParams }) {
               </div>
               <div className={styles.fixtureGrid}>
                 {headToHead.upcomingMatches.map((historyFixture) => (
-                  <FixtureCard key={historyFixture.id} fixture={historyFixture} locale={locale} surface="match-detail" />
+                  <FixtureCard
+                    key={historyFixture.id}
+                    fixture={historyFixture}
+                    locale={locale}
+                    showAlerts
+                    alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                    surface="match-detail"
+                  />
                 ))}
               </div>
             </div>

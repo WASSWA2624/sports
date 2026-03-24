@@ -30,6 +30,14 @@ describe("profile preferences", () => {
       theme: "system",
       timezone: "Africa/Kampala",
       favoriteSports: ["football", "basketball"],
+      alertPreferences: {
+        goals: true,
+        cards: false,
+        kickoff: true,
+        periodChange: false,
+        finalResult: true,
+        news: true,
+      },
       promptPreferences: {
         reminderPrompts: true,
         funnelPrompts: false,
@@ -80,6 +88,9 @@ describe("profile preferences", () => {
         reminderPrompts: true,
         funnelPrompts: true,
         bookmakerPrompts: false,
+      },
+      alertPreferences: {
+        news: true,
       },
       marketPreferences: {
         preferredGeo: "UG",

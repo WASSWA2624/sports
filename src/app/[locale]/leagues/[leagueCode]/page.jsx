@@ -306,7 +306,9 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           <AlertSubscriptionControl
             itemId={`competition:${league.code}`}
             locale={locale}
-            supportedTypes={["KICKOFF", "FINAL_RESULT"]}
+            supportedTypes={
+              competitionNews.total ? ["KICKOFF", "FINAL_RESULT", "NEWS"] : ["KICKOFF", "FINAL_RESULT"]
+            }
             label={league.name}
             metadata={{
               country: league.country || null,
@@ -457,7 +459,14 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             {prioritizedUpcomingFixtures.length ? (
               <div className={styles.fixtureGrid}>
                 {prioritizedUpcomingFixtures.slice(0, 6).map((fixture) => (
-                  <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
+                  <FixtureCard
+                    key={fixture.id}
+                    fixture={fixture}
+                    locale={locale}
+                    showAlerts
+                    alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                    surface="league-detail"
+                  />
                 ))}
               </div>
             ) : (
@@ -485,7 +494,14 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             {prioritizedRecentResults.length ? (
               <div className={styles.fixtureGrid}>
                 {prioritizedRecentResults.slice(0, 6).map((fixture) => (
-                  <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
+                  <FixtureCard
+                    key={fixture.id}
+                    fixture={fixture}
+                    locale={locale}
+                    showAlerts
+                    alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                    surface="league-detail"
+                  />
                 ))}
               </div>
             ) : (
@@ -609,7 +625,14 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           {prioritizedRecentResults.length ? (
             <div className={styles.fixtureGrid}>
               {prioritizedRecentResults.map((fixture) => (
-                <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
+                <FixtureCard
+                  key={fixture.id}
+                  fixture={fixture}
+                  locale={locale}
+                  showAlerts
+                  alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                  surface="league-detail"
+                />
               ))}
             </div>
           ) : (
@@ -630,7 +653,14 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           {prioritizedUpcomingFixtures.length ? (
             <div className={styles.fixtureGrid}>
               {prioritizedUpcomingFixtures.map((fixture) => (
-                <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
+                <FixtureCard
+                  key={fixture.id}
+                  fixture={fixture}
+                  locale={locale}
+                  showAlerts
+                  alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                  surface="league-detail"
+                />
               ))}
             </div>
           ) : (

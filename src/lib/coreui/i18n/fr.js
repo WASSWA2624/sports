@@ -705,6 +705,13 @@ const fr = {
   matchTopPrices: "Meilleurs prix",
   venue: "Stade",
   referee: "Arbitre",
+  favoriteChannelsTitle: "Suivez vos favoris",
+  favoriteChannelsLead:
+    "Les routes Telegram et WhatsApp gardent vos equipes, competitions et histoires de matchday a portee sans vous forcer a franchir un mur d'inscription.",
+  favoriteChannelsOptInLead:
+    "Activez les prompts messagerie pour ouvrir Telegram ou WhatsApp depuis les favoris que vous avez deja enregistres.",
+  favoriteChannelsOptInBody:
+    "Les prompts messagerie restent desactives tant que vous ne les activez pas pour ce marche.",
 };
 
 export default fr;

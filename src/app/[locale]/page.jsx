@@ -8,8 +8,8 @@ import { getHomepageNewsModule } from "../../lib/coreui/news-read";
 import { getHomeSnapshot } from "../../lib/coreui/read";
 import { getLiveMatchdayFeed } from "../../lib/coreui/live-read";
 import { resolveViewerTerritory } from "../../lib/coreui/odds-broadcast";
-import { buildCompetitionHref } from "../../lib/coreui/routes";
 import { FixtureFeedCard } from "../../components/coreui/fixture-feed-card";
+import { FavoriteToggle } from "../../components/coreui/favorite-toggle";
 import { LiveBoardGroupList } from "../../components/coreui/live-board-group-list";
 import { LiveBoardMonetization } from "../../components/coreui/live-board-monetization";
 import { LiveRefresh } from "../../components/coreui/live-refresh";
@@ -17,11 +17,16 @@ import { NewsModule } from "../../components/coreui/news-module";
 import { OnboardingPanel } from "../../components/coreui/onboarding-panel";
 import { PersonalizationUsageTracker } from "../../components/coreui/personalization-usage-tracker";
 import {
+  FavoriteChannelPanel,
   FavoriteReminderPanel,
   RecentItemsPanel,
   TopCompetitionsPanel,
 } from "../../components/coreui/discovery-panels";
 import styles from "../../components/coreui/styles.module.css";
+import {
+  buildFavoriteChannelPanelModel,
+  buildFavoriteReminderItems,
+} from "../../lib/favorite-retention";
 import {
   getFavoritesPageData,
   getPersonalizationSnapshot,
@@ -29,8 +34,10 @@ import {
   sortCompetitionsByPersonalization,
   sortFixturesByPersonalization,
 } from "../../lib/personalization";
-import { buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
 import { getRecentItemsModule, getTopCompetitionsModule } from "../../lib/coreui/discovery";
+import { getPreferenceSnapshot } from "../../lib/coreui/preferences-server";
+import { getPlatformPublicSnapshotData } from "../../lib/platform/env";
+import { getProfileComplianceSnapshot } from "../../lib/profile-preferences";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
@@ -56,11 +63,18 @@ export default async function LocaleHomePage({ params }) {
     getPersonalizationSnapshot(),
   ]);
   const usage = getPersonalizationUsage(personalization);
-  const [topCompetitions, recentItems, favoritePageData] = await Promise.all([
+  const [topCompetitionsRaw, recentItems, favoritePageData, preferenceSnapshot, platform] = await Promise.all([
     getTopCompetitionsModule(),
     getRecentItemsModule(personalization, { locale }),
     usage.hasFavorites ? getFavoritesPageData(personalization) : Promise.resolve(null),
+    getPreferenceSnapshot(),
+    getPlatformPublicSnapshotData(),
   ]);
+  const topCompetitions = sortCompetitionsByPersonalization(
+    topCompetitionsRaw,
+    personalization,
+    (left, right) => left.name.localeCompare(right.name)
+  );
   const prioritizedLeagues = sortCompetitionsByPersonalization(
     snapshot.leagues,
     personalization,
@@ -76,36 +90,28 @@ export default async function LocaleHomePage({ params }) {
     month: "2-digit",
     weekday: "short",
   }).format(new Date(homeBoardFeed.selectedDate));
+  const preferenceCompliance = getProfileComplianceSnapshot(preferenceSnapshot, {
+    viewerGeo: viewerTerritory,
+  });
   const reminderItems = favoritePageData
-    ? [
-        ...(favoritePageData.fixtures || []).map((fixture) => ({
-          itemId: `fixture:${fixture.id}`,
-          title: `${fixture.homeTeam?.name || dictionary.match} vs ${fixture.awayTeam?.name || dictionary.match}`,
-          subtitle: fixture.league?.name || dictionary.match,
-          href: buildMatchHref(locale, fixture),
-          supportedTypes: ["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT"],
-          surface: "home-reminders",
-        })),
-        ...(favoritePageData.teams || []).map((team) => ({
-          itemId: `team:${team.id}`,
-          title: team.name,
-          subtitle: team.league?.name || dictionary.teams,
-          href: buildTeamHref(locale, team),
-          supportedTypes: ["KICKOFF", "FINAL_RESULT"],
-          surface: "home-reminders",
-        })),
-        ...(favoritePageData.competitions || []).map((competition) => ({
-          itemId: `competition:${competition.code}`,
-          title: competition.name,
-          subtitle: competition.country || dictionary.competition,
-          href: buildCompetitionHref(locale, competition),
-          supportedTypes: ["KICKOFF", "FINAL_RESULT"],
-          surface: "home-reminders",
-        })),
-      ]
-        .filter((item) => !(personalization.alertSettings?.[item.itemId] || []).length)
-        .slice(0, 3)
+    ? buildFavoriteReminderItems({
+        favorites: favoritePageData,
+        locale,
+        dictionary,
+        alertSettings: personalization.alertSettings,
+        limit: 3,
+        surface: "home-reminders",
+      })
     : [];
+  const favoriteChannelPanel = favoritePageData
+    ? buildFavoriteChannelPanelModel({
+        favorites: favoritePageData,
+        locale,
+        dictionary,
+        platform,
+        geo: preferenceCompliance.ctaGeo || preferenceCompliance.effectiveGeo || viewerTerritory,
+      })
+    : { actions: [], items: [], geoLabel: null };
   const homeNewsExperience = flags.homeNews
     ? await getNewsModuleExperience({
         locale,
@@ -233,6 +239,16 @@ export default async function LocaleHomePage({ params }) {
                       <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
                     </h3>
                   </div>
+                  <FavoriteToggle
+                    itemId={`competition:${league.code}`}
+                    locale={locale}
+                    compact
+                    label={league.name}
+                    metadata={{
+                      country: league.country || null,
+                    }}
+                    surface="home-standings"
+                  />
                 </div>
 
                 <div className={styles.miniTable}>
@@ -273,6 +289,14 @@ export default async function LocaleHomePage({ params }) {
 
       <RecentItemsPanel dictionary={dictionary} items={recentItems} />
       <FavoriteReminderPanel locale={locale} dictionary={dictionary} items={reminderItems} />
+      <FavoriteChannelPanel
+        locale={locale}
+        dictionary={dictionary}
+        items={favoriteChannelPanel.items}
+        actions={favoriteChannelPanel.actions}
+        geoLabel={favoriteChannelPanel.geoLabel}
+        surface="home-favorites-channel"
+      />
       <TopCompetitionsPanel locale={locale} dictionary={dictionary} competitions={topCompetitions} />
 
       {flags.homeNews ? (

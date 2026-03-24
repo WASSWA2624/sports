@@ -559,6 +559,13 @@ const en = {
   reminderTitle: "Turn reminders on",
   reminderLead:
     "Quick alert entry points help saved favorites turn into reliable return visits on kickoff and final whistle.",
+  favoriteChannelsTitle: "Follow your favorites",
+  favoriteChannelsLead:
+    "Telegram and WhatsApp routes keep saved teams, competitions, and matchday storylines close without forcing a sign-up wall.",
+  favoriteChannelsOptInLead:
+    "Enable messaging prompts to open Telegram or WhatsApp routes for the favorites you already saved.",
+  favoriteChannelsOptInBody:
+    "Messaging prompts stay off until you explicitly opt in for this market.",
   relatedMatchesTitle: "Related matches",
   relatedMatchesLead: "Stay inside the same competition or team story with nearby fixtures and results.",
   relatedNewsTitle: "Related news",

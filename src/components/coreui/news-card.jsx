@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { FavoriteToggle } from "./favorite-toggle";
 import sharedStyles from "./styles.module.css";
 import styles from "./news-card.module.css";
-import { formatArticleEntityLabel } from "../../lib/coreui/news";
+import { formatArticleEntityLabel, getArticleFavoriteTarget } from "../../lib/coreui/news";
 
 function formatPublishedAt(value, locale) {
   if (!value) {
@@ -22,6 +23,7 @@ export function NewsCard({
 }) {
   const href = `/${locale}/news/${article.slug}`;
   const entityLabel = formatArticleEntityLabel(article);
+  const favoriteTarget = getArticleFavoriteTarget(article);
   const articleClassName = compact
     ? `${sharedStyles.panel} ${styles.card} ${styles.cardCompact}`
     : `${sharedStyles.panel} ${styles.card}`;
@@ -79,8 +81,21 @@ export function NewsCard({
               ))}
             </div>
           ) : null}
+
         </div>
       </Link>
+      {favoriteTarget ? (
+        <div className={sharedStyles.fixtureActionRow}>
+          <FavoriteToggle
+            itemId={favoriteTarget.itemId}
+            locale={locale}
+            compact
+            label={favoriteTarget.label}
+            metadata={favoriteTarget.metadata}
+            surface="news-card"
+          />
+        </div>
+      ) : null}
     </article>
   );
 }

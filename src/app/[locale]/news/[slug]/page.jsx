@@ -234,7 +234,14 @@ export default async function NewsArticlePage({ params }) {
             {article.entities.fixtures.length ? (
               <div className={sharedStyles.compactList}>
                 {article.entities.fixtures.map((fixture) => (
-                  <FixtureCard key={fixture.id} fixture={fixture} locale={locale} />
+                  <FixtureCard
+                    key={fixture.id}
+                    fixture={fixture}
+                    locale={locale}
+                    showAlerts
+                    alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
+                    surface="news-article"
+                  />
                 ))}
               </div>
             ) : (

@@ -81,6 +81,15 @@ function prioritizeSports(sports = [], favoriteSports = [], activeSportKey = "fo
   });
 }
 
+function buildPreferenceWeightMap(itemIds = []) {
+  const size = itemIds.length;
+
+  return itemIds.reduce((accumulator, itemId, index) => {
+    accumulator.set(itemId, Math.max(1, size - index));
+    return accumulator;
+  }, new Map());
+}
+
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, viewerGeo }) {
   const pathname = usePathname();
   const {
@@ -139,6 +148,9 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
       }))
     )),
   ];
+  const watchWeights = buildPreferenceWeightMap(watchlist || []);
+  const recentWeights = buildPreferenceWeightMap(recentViews || []);
+  const favoriteSportSet = new Set((favoriteSports || []).filter(Boolean));
 
   const savedCompetitions = [...new Set(
     [...watchlist, ...recentViews]
@@ -148,7 +160,25 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     .map((competitionCode) =>
       allCompetitions.find((competition) => competition.code === competitionCode)
     )
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((left, right) => {
+      const leftItemId = `competition:${left.code}`;
+      const rightItemId = `competition:${right.code}`;
+      const leftScore =
+        (watchWeights.get(leftItemId) || 0) * 100 +
+        (recentWeights.get(leftItemId) || 0) * 70 +
+        (favoriteSportSet.has(left.sportSlug) ? 24 : 0);
+      const rightScore =
+        (watchWeights.get(rightItemId) || 0) * 100 +
+        (recentWeights.get(rightItemId) || 0) * 70 +
+        (favoriteSportSet.has(right.sportSlug) ? 24 : 0);
+
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return (left.name || "").localeCompare(right.name || "");
+    });
 
   const savedTeams = [...new Set(
     [...watchlist, ...recentViews]
@@ -158,7 +188,27 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     .map((teamId) =>
       (shellData?.teamDirectory || []).find((team) => team.id === teamId || team.code === teamId)
     )
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((left, right) => {
+      const leftItemId = `team:${left.id}`;
+      const rightItemId = `team:${right.id}`;
+      const leftScore =
+        (watchWeights.get(leftItemId) || 0) * 100 +
+        (recentWeights.get(leftItemId) || 0) * 70 +
+        (watchWeights.get(`competition:${left.leagueCode}`) || 0) * 24 +
+        (recentWeights.get(`competition:${left.leagueCode}`) || 0) * 16;
+      const rightScore =
+        (watchWeights.get(rightItemId) || 0) * 100 +
+        (recentWeights.get(rightItemId) || 0) * 70 +
+        (watchWeights.get(`competition:${right.leagueCode}`) || 0) * 24 +
+        (recentWeights.get(`competition:${right.leagueCode}`) || 0) * 16;
+
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return (left.name || "").localeCompare(right.name || "");
+    });
   const recentItems = recentViews
     .map((itemId) => {
       const [prefix, entityId] = itemId.split(":");
@@ -207,8 +257,42 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
   const pinnedCompetitions =
     savedCompetitions.length > 0
       ? savedCompetitions
-      : (shellData?.featuredCompetitions || []).slice(0, 6);
-  const topCompetitions = (shellData?.featuredCompetitions || []).slice(0, 6);
+      : [...(shellData?.featuredCompetitions || [])]
+          .sort((left, right) => {
+            const leftScore =
+              (favoriteSportSet.has(left.sportSlug) ? 20 : 0) +
+              (watchWeights.get(`competition:${left.code}`) || 0) * 10 +
+              (recentWeights.get(`competition:${left.code}`) || 0) * 6;
+            const rightScore =
+              (favoriteSportSet.has(right.sportSlug) ? 20 : 0) +
+              (watchWeights.get(`competition:${right.code}`) || 0) * 10 +
+              (recentWeights.get(`competition:${right.code}`) || 0) * 6;
+
+            if (rightScore !== leftScore) {
+              return rightScore - leftScore;
+            }
+
+            return (left.name || "").localeCompare(right.name || "");
+          })
+          .slice(0, 6);
+  const topCompetitions = [...(shellData?.featuredCompetitions || [])]
+    .sort((left, right) => {
+      const leftScore =
+        (favoriteSportSet.has(left.sportSlug) ? 20 : 0) +
+        (watchWeights.get(`competition:${left.code}`) || 0) * 10 +
+        (recentWeights.get(`competition:${left.code}`) || 0) * 6;
+      const rightScore =
+        (favoriteSportSet.has(right.sportSlug) ? 20 : 0) +
+        (watchWeights.get(`competition:${right.code}`) || 0) * 10 +
+        (recentWeights.get(`competition:${right.code}`) || 0) * 6;
+
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return (left.name || "").localeCompare(right.name || "");
+    })
+    .slice(0, 6);
   const favoriteSport = SPORTS_STRIP.find((sport) => sport.key === "favorites");
   const moreSport = SPORTS_STRIP.find((sport) => sport.key === "more");
   const activeSportKey = getActiveSportKey(pathname, locale, favoriteSports);

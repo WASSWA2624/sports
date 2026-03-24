@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { AlertSubscriptionControl } from "../../../components/coreui/alert-subscription-control";
 import {
+  FavoriteChannelPanel,
   FavoriteReminderPanel,
   RecentItemsPanel,
 } from "../../../components/coreui/discovery-panels";
@@ -11,12 +13,20 @@ import styles from "../../../components/coreui/styles.module.css";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getRecentItemsModule } from "../../../lib/coreui/discovery";
-import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../../lib/coreui/routes";
+import { buildCompetitionHref, buildTeamHref } from "../../../lib/coreui/routes";
+import {
+  buildFavoriteChannelPanelModel,
+  buildFavoriteReminderItems,
+} from "../../../lib/favorite-retention";
+import { resolveViewerTerritory } from "../../../lib/coreui/odds-broadcast";
+import { getPreferenceSnapshot } from "../../../lib/coreui/preferences-server";
 import {
   getFavoritesPageData,
   getPersonalizationSnapshot,
   getPersonalizationUsage,
 } from "../../../lib/personalization";
+import { getPlatformPublicSnapshotData } from "../../../lib/platform/env";
+import { getProfileComplianceSnapshot } from "../../../lib/profile-preferences";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
@@ -33,41 +43,36 @@ export async function generateMetadata({ params }) {
 export default async function FavoritesPage({ params }) {
   const { locale } = await params;
   const dictionary = getDictionary(locale);
+  const viewerTerritory = resolveViewerTerritory({
+    headers: await headers(),
+  });
   const personalization = await getPersonalizationSnapshot();
   const usage = getPersonalizationUsage(personalization);
-  const [favorites, recentItems] = await Promise.all([
+  const [favorites, recentItems, preferenceSnapshot, platform] = await Promise.all([
     getFavoritesPageData(personalization),
     getRecentItemsModule(personalization, { locale }),
+    getPreferenceSnapshot(),
+    getPlatformPublicSnapshotData(),
   ]);
   const alertItemCount = Object.keys(personalization.alertSettings || {}).length;
-  const reminderItems = [
-    ...favorites.fixtures.map((fixture) => ({
-      itemId: `fixture:${fixture.id}`,
-      title: `${fixture.homeTeam?.name || dictionary.match} vs ${fixture.awayTeam?.name || dictionary.match}`,
-      subtitle: fixture.league?.name || dictionary.match,
-      href: buildMatchHref(locale, fixture),
-      supportedTypes: ["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT"],
-      surface: "favorites-reminders",
-    })),
-    ...favorites.teams.map((team) => ({
-      itemId: `team:${team.id}`,
-      title: team.name,
-      subtitle: team.league?.name || dictionary.teams,
-      href: buildTeamHref(locale, team),
-      supportedTypes: ["KICKOFF", "FINAL_RESULT"],
-      surface: "favorites-reminders",
-    })),
-    ...favorites.competitions.map((competition) => ({
-      itemId: `competition:${competition.code}`,
-      title: competition.name,
-      subtitle: competition.country || dictionary.competition,
-      href: buildCompetitionHref(locale, competition),
-      supportedTypes: ["KICKOFF", "FINAL_RESULT"],
-      surface: "favorites-reminders",
-    })),
-  ]
-    .filter((item) => !(personalization.alertSettings?.[item.itemId] || []).length)
-    .slice(0, 4);
+  const preferenceCompliance = getProfileComplianceSnapshot(preferenceSnapshot, {
+    viewerGeo: viewerTerritory,
+  });
+  const reminderItems = buildFavoriteReminderItems({
+    favorites,
+    locale,
+    dictionary,
+    alertSettings: personalization.alertSettings,
+    limit: 4,
+    surface: "favorites-reminders",
+  });
+  const favoriteChannelPanel = buildFavoriteChannelPanelModel({
+    favorites,
+    locale,
+    dictionary,
+    platform,
+    geo: preferenceCompliance.ctaGeo || preferenceCompliance.effectiveGeo || viewerTerritory,
+  });
 
   return (
     <section className={styles.section}>
@@ -100,6 +105,14 @@ export default async function FavoritesPage({ params }) {
 
       <RecentItemsPanel dictionary={dictionary} items={recentItems} />
       <FavoriteReminderPanel locale={locale} dictionary={dictionary} items={reminderItems} />
+      <FavoriteChannelPanel
+        locale={locale}
+        dictionary={dictionary}
+        items={favoriteChannelPanel.items}
+        actions={favoriteChannelPanel.actions}
+        geoLabel={favoriteChannelPanel.geoLabel}
+        surface="favorites-channel"
+      />
 
       {favorites.competitions.length ? (
         <section className={styles.section}>
@@ -146,7 +159,7 @@ export default async function FavoritesPage({ params }) {
                   <AlertSubscriptionControl
                     itemId={`competition:${competition.code}`}
                     locale={locale}
-                    supportedTypes={["KICKOFF", "FINAL_RESULT"]}
+                    supportedTypes={["KICKOFF", "FINAL_RESULT", "NEWS"]}
                     label={competition.name}
                     metadata={{
                       country: competition.country || null,
@@ -203,7 +216,7 @@ export default async function FavoritesPage({ params }) {
                   <AlertSubscriptionControl
                     itemId={`team:${team.id}`}
                     locale={locale}
-                    supportedTypes={["KICKOFF", "FINAL_RESULT"]}
+                    supportedTypes={["KICKOFF", "FINAL_RESULT", "NEWS"]}
                     label={team.name}
                     metadata={{
                       leagueCode: team.league?.code || null,
@@ -234,7 +247,7 @@ export default async function FavoritesPage({ params }) {
                 fixture={fixture}
                 locale={locale}
                 showAlerts
-                alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT"]}
+                alertSupportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
                 surface="favorites-page"
               />
             ))}

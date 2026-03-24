@@ -689,6 +689,13 @@ const sw = {
   reminderTitle: "Washa vikumbusho",
   reminderLead:
     "Njia za haraka za arifa husaidia favorites ulizohifadhi kurudi tena wakati wa kickoff na filimbi ya mwisho.",
+  favoriteChannelsTitle: "Fuatilia vipendwa vyako",
+  favoriteChannelsLead:
+    "Njia za Telegram na WhatsApp zinaweka timu, mashindano na simulizi za siku ya mechi ulizohifadhi karibu bila kukulazimisha kujiandikisha.",
+  favoriteChannelsOptInLead:
+    "Washa prompts za ujumbe ili kufungua njia za Telegram au WhatsApp kwa favorites ulizokwisha hifadhi.",
+  favoriteChannelsOptInBody:
+    "Prompts za ujumbe hubaki zimezimwa hadi utakapoamua kuziruhusu kwa soko hili.",
   relatedMatchesTitle: "Mechi zinazohusiana",
   relatedMatchesLead:
     "Baki ndani ya simulizi hiyo hiyo ya mashindano au timu kupitia mechi na matokeo yaliyo karibu.",

@@ -12,6 +12,49 @@ function pickString(...values) {
   return null;
 }
 
+export function getArticleFavoriteTarget(article) {
+  if (article?.primaryCompetition?.code) {
+    return {
+      itemId: `competition:${article.primaryCompetition.code}`,
+      label: article.primaryCompetition.shortName || article.primaryCompetition.name,
+      metadata: {
+        country:
+          article.primaryCompetition.country?.name ||
+          article.primaryCompetition.countryName ||
+          null,
+      },
+    };
+  }
+
+  if (article?.primaryTeam?.id) {
+    return {
+      itemId: `team:${article.primaryTeam.id}`,
+      label: article.primaryTeam.shortName || article.primaryTeam.name,
+      metadata: {
+        leagueCode:
+          article.primaryTeam.league?.code ||
+          article.primaryCompetition?.code ||
+          null,
+      },
+    };
+  }
+
+  if (article?.primaryFixture?.id) {
+    return {
+      itemId: `fixture:${article.primaryFixture.id}`,
+      label:
+        article.primaryFixture.homeTeam && article.primaryFixture.awayTeam
+          ? `${article.primaryFixture.homeTeam.name} vs ${article.primaryFixture.awayTeam.name}`
+          : article.title,
+      metadata: {
+        leagueCode: article.primaryFixture.league?.code || null,
+      },
+    };
+  }
+
+  return null;
+}
+
 function toPlainText(value) {
   return String(value || "")
     .replace(/\r\n/g, "\n")
