@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -106,6 +106,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     watchlistCount,
   } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const sportsMoreMenuRef = useRef(null);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
   const isPredictionsPage =
     pathname === `/${locale}/predictions` || pathname.startsWith(`/${locale}/predictions/`);
@@ -322,6 +323,11 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     dark: dictionary.themeDark,
     system: dictionary.themeSystem,
   }[theme] || dictionary.themeSystem;
+  const closeSportsMoreMenu = () => {
+    if (sportsMoreMenuRef.current) {
+      sportsMoreMenuRef.current.open = false;
+    }
+  };
   const formattedWatchCount = formatCount(locale, watchCount);
   const formattedSportCount = formatCount(locale, rankedSports.length);
   const formattedPinnedCount = formatCount(locale, pinnedCompetitions.length);
@@ -549,7 +555,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 })}
 
                 {overflowSports.length && moreSport ? (
-                  <details className={styles.sportsMoreMenu}>
+                  <details ref={sportsMoreMenuRef} className={styles.sportsMoreMenu}>
                     <summary className={styles.sportsMoreSummary}>
                       <span className={styles.sportLinkContent}>
                         <ShellIcon name={moreSport.key} className={styles.sportIcon} />
@@ -572,6 +578,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                               key={sport.key}
                               href={`/${locale}${sport.href}`}
                               className={styles.sportsMoreItem}
+                              onClick={closeSportsMoreMenu}
                             >
                               {content}
                             </Link>
@@ -583,6 +590,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                             key={sport.key}
                             type="button"
                             className={`${styles.sportsMoreItem} ${styles.sportsMoreItemMuted}`}
+                            onClick={closeSportsMoreMenu}
                           >
                             {content}
                           </button>
