@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import sharedStyles from "../../../../components/coreui/styles.module.css";
+import sharedStyles from "../../../components/coreui/styles.module.css";
 import styles from "./admin-console.module.css";
-import { KNOWN_CACHE_TAGS } from "../../../../lib/cache";
+import { KNOWN_CACHE_TAGS } from "../../../lib/cache-tags";
 
 function formatDateTime(value, locale) {
   if (!value) {
