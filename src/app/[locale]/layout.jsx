@@ -38,6 +38,11 @@ export default async function LocaleLayout({ children, params }) {
       initialAlertSettings={preferences.alertSettings}
       initialRecentViews={preferences.recentViews}
       initialFavoriteSports={preferences.favoriteSports}
+      initialTimezone={preferences.timezone}
+      initialPromptPreferences={preferences.promptPreferences}
+      initialMarketPreferences={preferences.marketPreferences}
+      initialOnboardingState={preferences.onboardingState}
+      initialViewerGeo={viewerGeo}
       shellData={shellData}
     >
       {children}

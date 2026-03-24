@@ -4,13 +4,15 @@ import { useRouter, usePathname } from "next/navigation";
 import { LOCALE_LABELS } from "../../lib/coreui/config";
 import { LOCALE_COOKIE_NAME, SUPPORTED_LOCALES } from "../../lib/coreui/preferences";
 import { ShellIcon } from "./shell-icons";
+import { usePreferences } from "./preferences-provider";
 import styles from "./styles.module.css";
 
 export function LocaleSwitcher({ locale, label }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { setLocalePreference } = usePreferences();
 
-  function handleChange(event) {
+  async function handleChange(event) {
     const nextLocale = event.target.value;
     const segments = pathname.split("/").filter(Boolean);
 
@@ -21,6 +23,7 @@ export function LocaleSwitcher({ locale, label }) {
     }
 
     document.cookie = `${LOCALE_COOKIE_NAME}=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
+    await setLocalePreference(nextLocale);
     router.replace(`/${segments.join("/")}`);
   }
 

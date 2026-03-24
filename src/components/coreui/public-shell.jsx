@@ -15,11 +15,23 @@ import { getGeoLabel, isGeoAllowed } from "../../lib/coreui/route-context";
 
 function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, viewerGeo }) {
   const pathname = usePathname();
-  const { sessionUser, watchlist, watchlistCount, recentViews } = usePreferences();
+  const {
+    compliance,
+    ctaGeo,
+    effectiveGeo,
+    promptPreferences,
+    recentViews,
+    sessionUser,
+    setPromptPreference,
+    watchlist,
+    watchlistCount,
+  } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isNewsMode = pathname === `/${locale}/news` || pathname.startsWith(`/${locale}/news/`);
   const isProfilePage = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isAuthPage = pathname === `/${locale}/auth` || pathname.startsWith(`/${locale}/auth/`);
   const isFavoritesPage = pathname === `/${locale}/favorites` || pathname.startsWith(`/${locale}/favorites/`);
+  const isSettingsPage = pathname === `/${locale}/settings` || pathname.startsWith(`/${locale}/settings/`);
   const watchCount = watchlistCount || watchlistItems.length;
   const shellChrome = shellData?.chrome || {};
   const platform = shellData?.platform || {};
@@ -32,7 +44,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
     shellChrome.adSlot?.copy || shellChrome.adSlot?.name || dictionary.adSlotCopy;
   const consentTitle = shellChrome.consentText?.title || dictionary.consent;
   const consentBody = shellChrome.consentText?.body || dictionary.consentBody;
-  const currentGeo = viewerGeo || platform.defaultGeo || "INTL";
+  const currentGeo = ctaGeo || effectiveGeo || viewerGeo || platform.defaultGeo || "INTL";
   const currentGeoLabel = platform.geoLabels?.[currentGeo] || getGeoLabel(currentGeo);
   const affiliatePartner =
     platform.affiliate?.partnerByGeo?.[currentGeo]?.[0] ||
@@ -127,6 +139,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
   const menuSports = SPORTS_STRIP.filter((sport) => sport.key !== "more");
   const countryGroups = shellData?.countryGroups || [];
   const accountLabel = sessionUser ? dictionary.profile : dictionary.login;
+  const accountHref = sessionUser ? "/profile" : `/${locale}/auth`;
   const primarySports = rankedSports.slice(0, 3);
   const overflowSports = rankedSports.slice(3);
   const activeSport = rankedSports.find((sport) => sport.enabled) || rankedSports[0] || null;
@@ -187,7 +200,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                 shellData={shellData}
               />
               <Link
-                href="/profile"
+                href={accountHref}
                 aria-label={sessionUser ? dictionary.profile : dictionary.login}
                 className={`${styles.sectionAction} ${styles.headerAction} ${styles.desktopAccountLink}`}
               >
@@ -418,13 +431,25 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
                   <div className={`${styles.mobileMenuList} ${styles.mobileMenuQuickGrid}`}>
                     <Link
-                      href="/profile"
-                      className={isProfilePage ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                      href={accountHref}
+                      className={
+                        isProfilePage || isAuthPage ? styles.mobileMenuLinkActive : styles.mobileMenuLink
+                      }
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span className={styles.mobileMenuItemContent}>
                         <ShellIcon name="profile" className={styles.controlIcon} />
                         <span>{accountLabel}</span>
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/settings`}
+                      className={isSettingsPage ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className={styles.mobileMenuItemContent}>
+                        <ShellIcon name="theme" className={styles.controlIcon} />
+                        <span>{dictionary.settingsTitle}</span>
                       </span>
                     </Link>
                   </div>
@@ -765,24 +790,46 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
                       {dictionary.affiliatePartnerLabel}: {affiliatePartner}
                     </p>
                   ) : null}
-                  {funnelActions.length ? (
-                    <div className={styles.inlineBadgeRow}>
-                      {funnelActions.map((action) => (
-                        <a
-                          key={action.key}
-                          href={action.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={styles.sectionAction}
-                        >
-                          {action.key === "telegram"
-                            ? dictionary.openTelegram
-                            : dictionary.openWhatsApp}
-                        </a>
-                      ))}
-                    </div>
+                  {funnelActions.length && compliance.promptOptInAllowed ? (
+                    promptPreferences.funnelPrompts ? (
+                      <div className={styles.inlineBadgeRow}>
+                        {funnelActions.map((action) => (
+                          <a
+                            key={action.key}
+                            href={action.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={styles.sectionAction}
+                          >
+                            {action.key === "telegram"
+                              ? dictionary.openTelegram
+                              : dictionary.openWhatsApp}
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={styles.railSection}>
+                        <p className={styles.railMuted}>{dictionary.funnelOptInLead}</p>
+                        <div className={styles.inlineBadgeRow}>
+                          <button
+                            type="button"
+                            className={styles.sectionAction}
+                            onClick={() => setPromptPreference("funnelPrompts", true)}
+                          >
+                            {dictionary.enableFunnelPrompts}
+                          </button>
+                          <Link href={`/${locale}/settings`} className={styles.sectionAction}>
+                            {dictionary.settingsTitle}
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  ) : funnelActions.length ? (
+                    <p className={styles.railMuted}>{dictionary.promptOptInUnavailable}</p>
                   ) : (
-                    <p className={styles.railMuted}>{dictionary.funnelUnavailable}</p>
+                    <div className={styles.inlineBadgeRow}>
+                      <p className={styles.railMuted}>{dictionary.funnelUnavailable}</p>
+                    </div>
                   )}
                 </div>
               </section>
@@ -810,6 +857,10 @@ export function PublicShell({
   initialAlertSettings,
   initialRecentViews,
   initialFavoriteSports,
+  initialTimezone,
+  initialPromptPreferences,
+  initialMarketPreferences,
+  initialOnboardingState,
   shellData,
 }) {
   return (
@@ -820,6 +871,11 @@ export function PublicShell({
       initialAlertSettings={initialAlertSettings}
       initialRecentViews={initialRecentViews}
       initialFavoriteSports={initialFavoriteSports}
+      initialTimezone={initialTimezone}
+      initialPromptPreferences={initialPromptPreferences}
+      initialMarketPreferences={initialMarketPreferences}
+      initialOnboardingState={initialOnboardingState}
+      initialViewerGeo={viewerGeo}
     >
       <ShellFrame
         locale={locale}

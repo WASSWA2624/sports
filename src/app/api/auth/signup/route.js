@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { signUpWithEmailPassword, writeSessionCookie } from "../../../../lib/auth";
+import {
+  signUpWithEmailPassword,
+  toSessionUserPayload,
+  writeSessionCookie,
+} from "../../../../lib/auth";
 
 export async function POST(request) {
   try {
@@ -11,15 +15,15 @@ export async function POST(request) {
 
     const { user, session } = await signUpWithEmailPassword(body, requestMeta);
     const response = NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        displayName: user.displayName,
+      user: toSessionUserPayload({
+        user,
         roles: user.roles.map((entry) => entry.role.name),
-      },
+      }),
     });
-    return writeSessionCookie(response, session.token);
+    return writeSessionCookie(response, session.token, {
+      user,
+      roles: user.roles.map((entry) => entry.role.name),
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error.message || "Signup failed" },

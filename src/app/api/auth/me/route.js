@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserFromRequest } from "../../../../lib/auth";
+import {
+  getCurrentUserFromRequest,
+  toSessionUserPayload,
+  writeAccessCookie,
+} from "../../../../lib/auth";
 
 export async function GET(request) {
   const userContext = await getCurrentUserFromRequest(request);
@@ -7,13 +11,9 @@ export async function GET(request) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  return NextResponse.json({
-    user: {
-      id: userContext.user.id,
-      email: userContext.user.email,
-      username: userContext.user.username,
-      displayName: userContext.user.displayName,
-      roles: userContext.roles,
-    },
+  const response = NextResponse.json({
+    user: toSessionUserPayload(userContext),
   });
+
+  return writeAccessCookie(response, userContext);
 }

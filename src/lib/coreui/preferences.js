@@ -9,6 +9,10 @@ export const WATCHLIST_COOKIE_NAME = "sports_watchlist";
 export const ALERT_SETTINGS_COOKIE_NAME = "sports_alert_settings";
 export const RECENT_VIEWS_COOKIE_NAME = "sports_recent_views";
 export const FAVORITE_SPORTS_COOKIE_NAME = "sports_favorite_sports";
+export const TIMEZONE_COOKIE_NAME = "sports_timezone";
+export const PROMPT_PREFERENCES_COOKIE_NAME = "sports_prompt_preferences";
+export const MARKET_PREFERENCES_COOKIE_NAME = "sports_market_preferences";
+export const ONBOARDING_STATE_COOKIE_NAME = "sports_onboarding_state";
 export const DEFAULT_THEME = "system";
 export const SUPPORTED_THEMES = ["light", "dark", "system"];
 export const WATCHLIST_LIMIT = 24;
@@ -116,7 +120,60 @@ export function writeFavoriteSports(items) {
       (items || [])
         .map((item) => String(item || "").trim().toLowerCase())
         .filter(Boolean)
-        .slice(0, FAVORITE_SPORTS_LIMIT)
+      .slice(0, FAVORITE_SPORTS_LIMIT)
     )]
   );
+}
+
+function readJsonObject(value) {
+  if (!value) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeJsonObject(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return JSON.stringify({});
+  }
+
+  return JSON.stringify(value);
+}
+
+export function readTimezone(value) {
+  return String(value || "").trim() || "UTC";
+}
+
+export function writeTimezone(value) {
+  return String(value || "").trim() || "UTC";
+}
+
+export function readPromptPreferences(value) {
+  return readJsonObject(value);
+}
+
+export function writePromptPreferences(value) {
+  return writeJsonObject(value);
+}
+
+export function readMarketPreferences(value) {
+  return readJsonObject(value);
+}
+
+export function writeMarketPreferences(value) {
+  return writeJsonObject(value);
+}
+
+export function readOnboardingState(value) {
+  return readJsonObject(value);
+}
+
+export function writeOnboardingState(value) {
+  return writeJsonObject(value);
 }

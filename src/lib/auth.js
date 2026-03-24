@@ -13,6 +13,7 @@ import { logAuditEvent } from "./audit";
 
 const SESSION_COOKIE = "sports_session";
 const STEP_UP_COOKIE = "sports_step_up";
+const ACCESS_COOKIE = "sports_access";
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const STEP_UP_TTL_MS = 1000 * 60 * 10;
@@ -38,6 +39,60 @@ function getAuthSecret() {
 
 export function getSessionCookieName() {
   return SESSION_COOKIE;
+}
+
+export function getAccessCookieName() {
+  return ACCESS_COOKIE;
+}
+
+function getAccessTokenPayload(input = {}) {
+  const roles = Array.isArray(input.roles)
+    ? input.roles
+    : Array.isArray(input.user?.roles)
+      ? input.user.roles.map((entry) => entry?.role?.name || entry?.name).filter(Boolean)
+      : [];
+
+  return {
+    userId: input.user?.id || input.userId || null,
+    roles: [...new Set(roles.map((role) => String(role || "").toUpperCase()).filter(Boolean))],
+    exp: Date.now() + SESSION_TTL_MS,
+  };
+}
+
+function createSignedCookieToken(payload) {
+  const body = JSON.stringify(payload);
+  return `${Buffer.from(body).toString("base64url")}.${signPayload(body, getAuthSecret())}`;
+}
+
+export function writeAccessCookie(response, input) {
+  const payload = getAccessTokenPayload(input);
+
+  if (!payload.userId) {
+    return response;
+  }
+
+  response.cookies.set(ACCESS_COOKIE, createSignedCookieToken(payload), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_TTL_MS / 1000,
+  });
+  return response;
+}
+
+export function toSessionUserPayload(userContext) {
+  if (!userContext?.user) {
+    return null;
+  }
+
+  return {
+    id: userContext.user.id,
+    email: userContext.user.email,
+    username: userContext.user.username,
+    displayName: userContext.user.displayName,
+    roles: userContext.roles || [],
+  };
 }
 
 export async function signUpWithEmailPassword(input, requestMeta) {
@@ -130,7 +185,7 @@ export async function createSession(userId, requestMeta = {}) {
   return { ...session, token };
 }
 
-export function writeSessionCookie(response, token) {
+export function writeSessionCookie(response, token, accessInput = null) {
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -138,7 +193,8 @@ export function writeSessionCookie(response, token) {
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,
   });
-  return response;
+
+  return accessInput ? writeAccessCookie(response, accessInput) : response;
 }
 
 export function clearSessionCookie(response) {
@@ -150,6 +206,13 @@ export function clearSessionCookie(response) {
     maxAge: 0,
   });
   response.cookies.set(STEP_UP_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  response.cookies.set(ACCESS_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -295,6 +358,64 @@ export async function requireAuthenticatedUser(request) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
   return { userContext };
+}
+
+export async function revokeSessionById(userId, sessionId) {
+  if (!userId || !sessionId) {
+    return 0;
+  }
+
+  const result = await db.session.updateMany({
+    where: {
+      id: sessionId,
+      userId,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.count;
+}
+
+export async function revokeOtherSessions(userId, currentSessionId) {
+  if (!userId || !currentSessionId) {
+    return 0;
+  }
+
+  const result = await db.session.updateMany({
+    where: {
+      userId,
+      revokedAt: null,
+      id: {
+        not: currentSessionId,
+      },
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.count;
+}
+
+export async function revokeAllSessionsForUser(userId) {
+  if (!userId) {
+    return 0;
+  }
+
+  const result = await db.session.updateMany({
+    where: {
+      userId,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.count;
 }
 
 export async function getCurrentUserFromServer() {

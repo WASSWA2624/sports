@@ -459,6 +459,98 @@ const fr = {
   settingsFunnelBody:
     "Le routage funnel reste separe de l'etat du profil afin que les CTA sensibles au marche evoluent sans casser les preferences compte.",
   openFunnelsWorkspace: "Ouvrir l'espace funnels",
+  reminderOptInLead:
+    "Activez d'abord les rappels, puis choisissez quels matchs, equipes et competitions enregistres doivent faire remonter des suivis.",
+  reminderOptInBody:
+    "Les rappels sensibles au consentement restent desactives tant que vous ne les activez pas pour ce marche.",
+  enableReminderPrompts: "Activer les rappels",
+  profileSecurityTitle: "Securite et identite",
+  profileSecurityLead:
+    "Verifiez avec votre mot de passe actuel avant de modifier votre nom public ou votre mot de passe.",
+  profileCurrentPassword: "Mot de passe actuel",
+  profileCurrentPasswordRequired:
+    "Entrez votre mot de passe actuel pour verifier cette modification.",
+  profileNewPassword: "Nouveau mot de passe",
+  profileSecuritySave: "Enregistrer la securite",
+  profileSecuritySaved: "Parametres de securite mis a jour.",
+  profileSecurityFailed: "Impossible de mettre a jour la securite.",
+  profileLogout: "Se deconnecter",
+  profileSessionsTitle: "Sessions",
+  profileSessionsLead:
+    "Verifiez les appareils connectes a votre compte et retirez toute session que vous ne reconnaissez plus.",
+  profileSessionsUpdated: "Liste des sessions mise a jour.",
+  profileSessionsFailed: "Impossible de mettre a jour les sessions.",
+  profileSessionsSignOutOthers: "Deconnecter les autres appareils",
+  profileSessionsCurrent: "Appareil actuel",
+  profileSessionsDevice: "Session enregistree",
+  profileSessionsUnknownAgent: "Navigateur inconnu",
+  profileSessionsNever: "Jamais",
+  profileSessionsLastSeen: "Derniere activite",
+  profileSessionsCreated: "Creee",
+  profileSessionsSignOutCurrent: "Deconnecter cet appareil",
+  profileSessionsSignOutDevice: "Retirer la session",
+  onboardingPrompts: "Choix de prompts",
+  onboardingReminderOptIn: "Prompts de rappel",
+  onboardingReminderOptInBody:
+    "Autorisez les matchs et equipes enregistres a faire apparaitre des rappels dans les pages coeur.",
+  onboardingFunnelOptIn: "Prompts messagerie",
+  onboardingFunnelOptInBody:
+    "Autorisez les prompts Telegram et WhatsApp la ou ce marche les permet.",
+  funnelOptInLead:
+    "Activez d'abord les prompts messagerie avant que les CTA Telegram ou WhatsApp n'apparaissent pour ce marche.",
+  enableFunnelPrompts: "Activer les prompts messagerie",
+  promptOptInUnavailable:
+    "Ce marche n'autorise pas encore les opt-ins pour les rappels ou la messagerie.",
+  settingsGuestCopy:
+    "Ces parametres restent sur cet appareil tant que vous ne vous connectez pas. Ils personnaliseront quand meme votre navigation.",
+  settingsAccountCopy:
+    "Ces parametres se synchronisent avec votre compte et restent disponibles sur vos sessions et appareils.",
+  settingsSave: "Enregistrer les parametres",
+  settingsSaved: "Parametres enregistres.",
+  settingsSaveFailed: "Impossible d'enregistrer les parametres.",
+  settingsGeoPreference: "Marche prefere",
+  settingsBookmakerGeo: "Marche bookmaker",
+  settingsCtaGeo: "Marche CTA",
+  settingsPromptTitle: "Prompts avec consentement",
+  settingsReminderPrompts: "Prompts de rappel",
+  settingsFunnelPrompts: "Prompts messagerie",
+  settingsBookmakerPrompts: "Prompts bookmaker",
+  settingsPromptHint:
+    "Les opt-ins de prompts ne s'activent que dans les marches ou rappels et messagerie sont autorises.",
+  settingsOnboardingTitle: "Etat de l'onboarding",
+  settingsOnboardingHint:
+    "Reinitialisez l'onboarding si vous voulez revoir le selecteur de premiere visite sur l'accueil.",
+  settingsResetOnboarding: "Reinitialiser l'onboarding",
+  settingsOnboardingReset:
+    "Onboarding reinitialise. Il reapparaitra sur la page d'accueil.",
+  authTitle: "Se connecter ou creer un compte",
+  authLead:
+    "Gardez vos favoris, choix d'onboarding et preferences de prompts entre les sessions tout en laissant les invites naviguer librement.",
+  authReasonRequired: "Connectez-vous pour continuer vers la page demandee.",
+  authReasonForbidden:
+    "Cette route demande un acces eleve. Connectez-vous avec un compte qui a le role requis.",
+  authFavoritesSync:
+    "Vos equipes, matchs, competitions et sports enregistres seront synchronises avec le compte utilise ici.",
+  authSignedInTitle: "Vous etes deja connecte",
+  authSignedInLead: "Ouvrez votre compte, vos parametres ou vos favoris et continuez.",
+  authOpenProfile: "Ouvrir le profil",
+  authOpenFavorites: "Ouvrir les favoris",
+  authOpenSettings: "Ouvrir les parametres",
+  authModeLogin: "Se connecter",
+  authModeSignup: "Creer un compte",
+  authEmail: "Email",
+  authPassword: "Mot de passe",
+  authUsername: "Nom d'utilisateur",
+  authDisplayName: "Nom public",
+  authSubmitLogin: "Se connecter",
+  authSubmitSignup: "Creer un compte",
+  authSubmitFailed: "Echec d'authentification. Reessayez.",
+  authLoading: "Traitement...",
+  authSocialTitle: "Hooks social auth",
+  authSocialConfigured:
+    "Un ou plusieurs fournisseurs sociaux sont configures derriere des variables d'environnement et prets pour la phase callback.",
+  authSocialUnavailable:
+    "Aucun fournisseur social n'est actif pour l'instant, donc l'email et le mot de passe restent le chemin principal.",
 };
 
 export default fr;

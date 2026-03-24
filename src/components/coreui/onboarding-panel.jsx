@@ -1,41 +1,12 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import styles from "./onboarding-panel.module.css";
 import { usePreferences } from "./preferences-provider";
 import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 
-const ONBOARDING_STORAGE_KEY = "sports:onboarding:completed";
-const ONBOARDING_DISMISS_KEY = "sports:onboarding:dismissed";
-const ONBOARDING_STORAGE_EVENT = "sports:onboarding-storage";
-
 function toggleSelection(items, value) {
   return items.includes(value) ? items.filter((entry) => entry !== value) : [...items, value];
-}
-
-function readDismissedByStorage() {
-  if (typeof window === "undefined") {
-    return true;
-  }
-
-  return (
-    window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1" ||
-    window.localStorage.getItem(ONBOARDING_DISMISS_KEY) === "1"
-  );
-}
-
-function subscribeToOnboardingStorage(onStoreChange) {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(ONBOARDING_STORAGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(ONBOARDING_STORAGE_EVENT, onStoreChange);
-  };
 }
 
 export function OnboardingPanel({
@@ -46,31 +17,29 @@ export function OnboardingPanel({
   teamOptions = [],
 }) {
   const {
+    compliance,
     favoriteSports,
-    watchlist,
+    onboardingState,
+    promptPreferences,
     sessionUser,
-    setFavoriteSports,
+    updateProfilePreferences,
     addFavoriteItems,
+    dismissOnboarding,
+    watchlist,
   } = usePreferences();
-  const dismissedByStorage = useSyncExternalStore(
-    subscribeToOnboardingStorage,
-    readDismissedByStorage,
-    () => true
-  );
   const [saving, setSaving] = useState(false);
   const [selectedSports, setSelectedSports] = useState(favoriteSports || []);
-  const [selectedCompetitions, setSelectedCompetitions] = useState(
-    (watchlist || [])
-      .filter((itemId) => itemId.startsWith("competition:"))
-      .map((itemId) => itemId.split(":")[1])
+  const [selectedCompetitions, setSelectedCompetitions] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
+  const [optInReminders, setOptInReminders] = useState(
+    Boolean(promptPreferences?.reminderPrompts)
   );
-  const [selectedTeams, setSelectedTeams] = useState(
-    (watchlist || [])
-      .filter((itemId) => itemId.startsWith("team:"))
-      .map((itemId) => itemId.split(":")[1])
-  );
+  const [optInFunnels, setOptInFunnels] = useState(Boolean(promptPreferences?.funnelPrompts));
   const dismissed =
-    dismissedByStorage || Boolean((watchlist || []).length || (favoriteSports || []).length);
+    onboardingState?.completed ||
+    onboardingState?.dismissed ||
+    Boolean((watchlist || []).length) ||
+    Boolean((favoriteSports || []).length);
 
   if (dismissed) {
     return null;
@@ -81,13 +50,26 @@ export function OnboardingPanel({
       ...selectedCompetitions.map((code) => `competition:${code}`),
       ...selectedTeams.map((teamId) => `team:${teamId}`),
     ];
+    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
     setSaving(true);
-    await setFavoriteSports(selectedSports, { silent: true });
+    await updateProfilePreferences((current) => ({
+      ...current,
+      timezone: current.timezone === "UTC" ? detectedTimezone : current.timezone,
+      favoriteSports: selectedSports,
+      promptPreferences: {
+        ...current.promptPreferences,
+        reminderPrompts: compliance.promptOptInAllowed ? optInReminders : false,
+        funnelPrompts: compliance.promptOptInAllowed ? optInFunnels : false,
+      },
+      onboardingState: {
+        ...current.onboardingState,
+        completed: true,
+        dismissed: false,
+        completedAt: new Date().toISOString(),
+      },
+    }));
     await addFavoriteItems(favoriteItemIds, { surface: "home-onboarding" });
-    window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
-    window.localStorage.removeItem(ONBOARDING_DISMISS_KEY);
-    window.dispatchEvent(new Event(ONBOARDING_STORAGE_EVENT));
 
     trackProductAnalyticsEvent({
       event: "onboarding_completed",
@@ -97,6 +79,8 @@ export function OnboardingPanel({
         sportCount: selectedSports.length,
         competitionCount: selectedCompetitions.length,
         teamCount: selectedTeams.length,
+        reminderPrompts: compliance.promptOptInAllowed ? optInReminders : false,
+        funnelPrompts: compliance.promptOptInAllowed ? optInFunnels : false,
         authenticated: Boolean(sessionUser),
       },
     });
@@ -104,9 +88,8 @@ export function OnboardingPanel({
     setSaving(false);
   }
 
-  function handleDismiss() {
-    window.localStorage.setItem(ONBOARDING_DISMISS_KEY, "1");
-    window.dispatchEvent(new Event(ONBOARDING_STORAGE_EVENT));
+  async function handleDismiss() {
+    await dismissOnboarding();
   }
 
   return (
@@ -130,8 +113,8 @@ export function OnboardingPanel({
           </div>
           <div className={styles.choiceGrid}>
             {sportOptions.map((sport) => {
-              const selected = selectedSports.includes(sport.slug || sport.code);
               const value = sport.slug || sport.code;
+              const selected = selectedSports.includes(value);
 
               return (
                 <button
@@ -195,6 +178,36 @@ export function OnboardingPanel({
               );
             })}
           </div>
+        </article>
+
+        <article className={styles.column}>
+          <div className={styles.columnHeader}>
+            <h3>{dictionary.onboardingPrompts}</h3>
+            <span>{compliance.promptOptInAllowed ? 2 : 0}</span>
+          </div>
+          {compliance.promptOptInAllowed ? (
+            <div className={styles.choiceGrid}>
+              <button
+                type="button"
+                className={optInReminders ? styles.choiceButtonActive : styles.choiceButton}
+                onClick={() => setOptInReminders((current) => !current)}
+              >
+                <span>{dictionary.onboardingReminderOptIn}</span>
+                <small>{dictionary.onboardingReminderOptInBody}</small>
+              </button>
+
+              <button
+                type="button"
+                className={optInFunnels ? styles.choiceButtonActive : styles.choiceButton}
+                onClick={() => setOptInFunnels((current) => !current)}
+              >
+                <span>{dictionary.onboardingFunnelOptIn}</span>
+                <small>{dictionary.onboardingFunnelOptInBody}</small>
+              </button>
+            </div>
+          ) : (
+            <p className={styles.lead}>{dictionary.promptOptInUnavailable}</p>
+          )}
         </article>
       </div>
 

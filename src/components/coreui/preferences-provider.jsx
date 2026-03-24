@@ -1,33 +1,40 @@
 "use client";
 
-import { createContext, useContext, useMemo, useEffect, useState, useCallback } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { mergeAlertSettings } from "../../lib/alerts";
 import {
   ALERT_SETTINGS_COOKIE_NAME,
-  DEFAULT_THEME,
   FAVORITE_SPORTS_COOKIE_NAME,
   LOCALE_COOKIE_NAME,
+  MARKET_PREFERENCES_COOKIE_NAME,
+  ONBOARDING_STATE_COOKIE_NAME,
+  PROMPT_PREFERENCES_COOKIE_NAME,
   RECENT_VIEWS_COOKIE_NAME,
   THEME_COOKIE_NAME,
+  TIMEZONE_COOKIE_NAME,
   WATCHLIST_COOKIE_NAME,
   WATCHLIST_LIMIT,
-  writeFavoriteSports,
   writeAlertSettings,
+  writeFavoriteSports,
+  writeMarketPreferences,
+  writeOnboardingState,
+  writePromptPreferences,
   writeRecentViews,
-  normalizeTheme,
+  writeTimezone,
   writeWatchlist,
 } from "../../lib/coreui/preferences";
+import { GEO_COOKIE_NAME } from "../../lib/coreui/route-context";
+import {
+  DEFAULT_ONBOARDING_STATE,
+  DEFAULT_PROFILE_PREFERENCES,
+  getProfileComplianceSnapshot,
+  mergeProfilePreferences,
+  normalizeProfilePreferences,
+} from "../../lib/profile-preferences";
 import { trackPersonalizationEvent } from "../../lib/personalization-analytics";
 import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 
 const PreferencesContext = createContext(null);
-const DEFAULT_ALERT_PREFERENCES = {
-  goals: true,
-  cards: false,
-  kickoff: true,
-  periodChange: false,
-  finalResult: true,
-};
 
 function setCookie(name, value) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
@@ -35,6 +42,10 @@ function setCookie(name, value) {
 
 function prependUniqueItem(items, itemId, limit = WATCHLIST_LIMIT) {
   return [itemId, ...items.filter((entry) => entry !== itemId)].slice(0, limit);
+}
+
+function prependUniqueItems(items, additions, limit = WATCHLIST_LIMIT) {
+  return [...new Set([...(additions || []), ...(items || [])])].slice(0, limit);
 }
 
 function toggleAlertSetting(current, itemId, notificationType, enabled) {
@@ -63,30 +74,38 @@ function resolveTheme(theme) {
   return theme;
 }
 
-function normalizeFavoriteSportsInput(value) {
-  return [...new Set(
-    (Array.isArray(value) ? value : [value])
-      .map((entry) => String(entry || "").trim().toLowerCase())
-      .filter(Boolean)
-  )].slice(0, 12);
+function areEquivalentPreferences(left, right, fallbackGeo) {
+  return (
+    JSON.stringify(normalizeProfilePreferences(left, { fallbackGeo })) ===
+    JSON.stringify(normalizeProfilePreferences(right, { fallbackGeo }))
+  );
 }
 
-function prependUniqueItems(items, additions, limit = WATCHLIST_LIMIT) {
-  return [...new Set([...(additions || []), ...(items || [])])].slice(0, limit);
-}
-
-function buildDefaultProfilePreferences({
-  locale,
-  theme,
-  favoriteSports,
+function buildInitialProfilePreferences({
+  initialLocale,
+  initialTheme,
+  initialTimezone,
+  initialFavoriteSports,
+  initialPromptPreferences,
+  initialMarketPreferences,
+  initialOnboardingState,
+  initialViewerGeo,
 }) {
-  return {
-    locale,
-    theme,
-    timezone: "UTC",
-    favoriteSports: normalizeFavoriteSportsInput(favoriteSports),
-    alertPreferences: DEFAULT_ALERT_PREFERENCES,
-  };
+  return normalizeProfilePreferences(
+    {
+      ...DEFAULT_PROFILE_PREFERENCES,
+      locale: initialLocale,
+      theme: initialTheme,
+      timezone: initialTimezone,
+      favoriteSports: initialFavoriteSports,
+      promptPreferences: initialPromptPreferences,
+      marketPreferences: initialMarketPreferences,
+      onboardingState: initialOnboardingState,
+    },
+    {
+      fallbackGeo: initialViewerGeo,
+    }
+  );
 }
 
 export function PreferencesProvider({
@@ -97,35 +116,61 @@ export function PreferencesProvider({
   initialAlertSettings,
   initialRecentViews,
   initialFavoriteSports,
+  initialTimezone,
+  initialPromptPreferences,
+  initialMarketPreferences,
+  initialOnboardingState,
+  initialViewerGeo,
 }) {
-  const [theme, setThemeState] = useState(normalizeTheme(initialTheme));
+  const initialProfilePreferences = useMemo(
+    () =>
+      buildInitialProfilePreferences({
+        initialLocale,
+        initialTheme,
+        initialTimezone,
+        initialFavoriteSports,
+        initialPromptPreferences,
+        initialMarketPreferences,
+        initialOnboardingState,
+        initialViewerGeo,
+      }),
+    [
+      initialFavoriteSports,
+      initialLocale,
+      initialMarketPreferences,
+      initialOnboardingState,
+      initialPromptPreferences,
+      initialTheme,
+      initialTimezone,
+      initialViewerGeo,
+    ]
+  );
+  const [profilePreferences, setProfilePreferences] = useState(initialProfilePreferences);
   const [watchlist, setWatchlist] = useState(initialWatchlist || []);
   const [alertSettings, setAlertSettings] = useState(initialAlertSettings || {});
   const [recentViews, setRecentViews] = useState(initialRecentViews || []);
-  const [favoriteSports, setFavoriteSportsState] = useState(
-    normalizeFavoriteSportsInput(initialFavoriteSports || [])
-  );
   const [sessionUser, setSessionUser] = useState(null);
   const [favoritesHydrated, setFavoritesHydrated] = useState(false);
-  const [profilePreferences, setProfilePreferences] = useState(() =>
-    buildDefaultProfilePreferences({
-      locale: initialLocale,
-      theme: normalizeTheme(initialTheme),
-      favoriteSports: initialFavoriteSports,
-    })
+
+  const compliance = useMemo(
+    () =>
+      getProfileComplianceSnapshot(profilePreferences, {
+        viewerGeo: initialViewerGeo,
+      }),
+    [initialViewerGeo, profilePreferences]
   );
 
   useEffect(() => {
-    const nextTheme = normalizeTheme(theme || DEFAULT_THEME);
+    const nextTheme = profilePreferences.theme;
     document.documentElement.dataset.theme = resolveTheme(nextTheme);
     document.documentElement.dataset.themePreference = nextTheme;
     window.localStorage.setItem(THEME_COOKIE_NAME, nextTheme);
     setCookie(THEME_COOKIE_NAME, nextTheme);
-  }, [theme]);
+  }, [profilePreferences.theme]);
 
   useEffect(() => {
-    setCookie(LOCALE_COOKIE_NAME, initialLocale);
-  }, [initialLocale]);
+    setCookie(LOCALE_COOKIE_NAME, profilePreferences.locale);
+  }, [profilePreferences.locale]);
 
   useEffect(() => {
     const serialized = writeWatchlist(watchlist);
@@ -146,27 +191,52 @@ export function PreferencesProvider({
   }, [recentViews]);
 
   useEffect(() => {
-    const serialized = writeFavoriteSports(favoriteSports);
+    const serialized = writeFavoriteSports(profilePreferences.favoriteSports);
     window.localStorage.setItem(FAVORITE_SPORTS_COOKIE_NAME, serialized);
     setCookie(FAVORITE_SPORTS_COOKIE_NAME, serialized);
-  }, [favoriteSports]);
+  }, [profilePreferences.favoriteSports]);
+
+  useEffect(() => {
+    const serialized = writeTimezone(profilePreferences.timezone);
+    window.localStorage.setItem(TIMEZONE_COOKIE_NAME, serialized);
+    setCookie(TIMEZONE_COOKIE_NAME, serialized);
+  }, [profilePreferences.timezone]);
+
+  useEffect(() => {
+    const serialized = writePromptPreferences(profilePreferences.promptPreferences);
+    window.localStorage.setItem(PROMPT_PREFERENCES_COOKIE_NAME, serialized);
+    setCookie(PROMPT_PREFERENCES_COOKIE_NAME, serialized);
+  }, [profilePreferences.promptPreferences]);
+
+  useEffect(() => {
+    const serialized = writeMarketPreferences(profilePreferences.marketPreferences);
+    window.localStorage.setItem(MARKET_PREFERENCES_COOKIE_NAME, serialized);
+    setCookie(MARKET_PREFERENCES_COOKIE_NAME, serialized);
+    setCookie(GEO_COOKIE_NAME, profilePreferences.marketPreferences.preferredGeo);
+  }, [profilePreferences.marketPreferences]);
+
+  useEffect(() => {
+    const serialized = writeOnboardingState(profilePreferences.onboardingState);
+    window.localStorage.setItem(ONBOARDING_STATE_COOKIE_NAME, serialized);
+    setCookie(ONBOARDING_STATE_COOKIE_NAME, serialized);
+  }, [profilePreferences.onboardingState]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (theme === "system") {
-        document.documentElement.dataset.theme = resolveTheme(theme);
+      if (profilePreferences.theme === "system") {
+        document.documentElement.dataset.theme = resolveTheme(profilePreferences.theme);
       }
     };
 
     media.addEventListener("change", handleChange);
     return () => media.removeEventListener("change", handleChange);
-  }, [theme]);
+  }, [profilePreferences.theme]);
 
   useEffect(() => {
     let active = true;
 
-    async function hydrateFavorites() {
+    async function hydratePreferences() {
       try {
         const meResponse = await fetch("/api/auth/me", { credentials: "same-origin" });
         if (!meResponse.ok) {
@@ -200,15 +270,17 @@ export function PreferencesProvider({
         const remoteWatchlist = (favoritesJson.items || [])
           .map((item) => item.itemId)
           .filter(Boolean);
-        const localOnly = (initialWatchlist || []).filter((itemId) => !remoteWatchlist.includes(itemId));
+        const localOnlyFavorites = (initialWatchlist || []).filter(
+          (itemId) => !remoteWatchlist.includes(itemId)
+        );
 
-        if (localOnly.length) {
+        if (localOnlyFavorites.length) {
           await fetch("/api/favorites", {
             method: "POST",
             headers: { "content-type": "application/json" },
             credentials: "same-origin",
-            body: JSON.stringify({ itemIds: localOnly }),
-          });
+            body: JSON.stringify({ itemIds: localOnlyFavorites }),
+          }).catch(() => null);
         }
 
         const remoteAlertSettings = alertsResponse.ok
@@ -216,21 +288,20 @@ export function PreferencesProvider({
           : {};
         const remoteProfilePreferences = profilePreferencesResponse.ok
           ? await profilePreferencesResponse.json()
-          : buildDefaultProfilePreferences({
-              locale: initialLocale,
-              theme: normalizeTheme(initialTheme),
-              favoriteSports: initialFavoriteSports,
-            });
+          : null;
+        const mergedProfilePreferences = mergeProfilePreferences(
+          initialProfilePreferences,
+          remoteProfilePreferences || {},
+          {
+            fallbackGeo: initialViewerGeo,
+          }
+        );
         const localAlertItems = Object.entries(initialAlertSettings || {}).map(
           ([itemId, notificationTypes]) => ({
             itemId,
             notificationTypes,
           })
         );
-        const mergedFavoriteSports = normalizeFavoriteSportsInput([
-          ...(initialFavoriteSports || []),
-          ...(remoteProfilePreferences.favoriteSports || []),
-        ]);
 
         if (localAlertItems.length) {
           await fetch("/api/alerts", {
@@ -238,44 +309,32 @@ export function PreferencesProvider({
             headers: { "content-type": "application/json" },
             credentials: "same-origin",
             body: JSON.stringify({ items: localAlertItems }),
-          });
+          }).catch(() => null);
         }
 
-        const remoteFavoriteSports = normalizeFavoriteSportsInput(
-          remoteProfilePreferences.favoriteSports || []
-        );
-        const missingFavoriteSports = mergedFavoriteSports.filter(
-          (sport) => !remoteFavoriteSports.includes(sport)
-        );
-
-        if (missingFavoriteSports.length) {
+        if (
+          remoteProfilePreferences &&
+          !areEquivalentPreferences(
+            remoteProfilePreferences,
+            mergedProfilePreferences,
+            initialViewerGeo
+          )
+        ) {
           await fetch("/api/profile/preferences", {
             method: "PUT",
             headers: { "content-type": "application/json" },
             credentials: "same-origin",
-            body: JSON.stringify({
-              ...remoteProfilePreferences,
-              favoriteSports: mergedFavoriteSports,
-            }),
-          }).catch(() => {});
+            body: JSON.stringify(mergedProfilePreferences),
+          }).catch(() => null);
         }
 
         if (!active) {
           return;
         }
 
-        setWatchlist([...new Set([...remoteWatchlist, ...localOnly])]);
+        setProfilePreferences(mergedProfilePreferences);
+        setWatchlist([...new Set([...remoteWatchlist, ...localOnlyFavorites])]);
         setAlertSettings(mergeAlertSettings(remoteAlertSettings, initialAlertSettings || {}));
-        setFavoriteSportsState(mergedFavoriteSports);
-        setProfilePreferences({
-          ...buildDefaultProfilePreferences({
-            locale: initialLocale,
-            theme: normalizeTheme(initialTheme),
-            favoriteSports: mergedFavoriteSports,
-          }),
-          ...remoteProfilePreferences,
-          favoriteSports: mergedFavoriteSports,
-        });
       } finally {
         if (active) {
           setFavoritesHydrated(true);
@@ -283,16 +342,24 @@ export function PreferencesProvider({
       }
     }
 
-    hydrateFavorites();
+    hydratePreferences();
 
     return () => {
       active = false;
     };
-  }, [initialAlertSettings, initialFavoriteSports, initialLocale, initialTheme, initialWatchlist]);
+  }, [
+    initialAlertSettings,
+    initialProfilePreferences,
+    initialViewerGeo,
+    initialWatchlist,
+  ]);
 
   const persistProfilePreferences = useCallback(
-    async (nextProfilePreferences) => {
-      setProfilePreferences(nextProfilePreferences);
+    async (nextValue) => {
+      const normalized = normalizeProfilePreferences(nextValue, {
+        fallbackGeo: initialViewerGeo,
+      });
+      setProfilePreferences(normalized);
 
       if (!sessionUser) {
         return true;
@@ -302,73 +369,97 @@ export function PreferencesProvider({
         method: "PUT",
         headers: { "content-type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify(nextProfilePreferences),
+        body: JSON.stringify(normalized),
       }).catch(() => null);
 
       return Boolean(response?.ok);
     },
-    [sessionUser]
+    [initialViewerGeo, sessionUser]
   );
 
-  const toggleWatch = useCallback(async (itemId, options = {}) => {
-    const shouldSave = !watchlist.includes(itemId);
-    const nextWatchlist = shouldSave
-      ? prependUniqueItem(watchlist, itemId)
-      : watchlist.filter((entry) => entry !== itemId);
+  const updateProfilePreferences = useCallback(
+    async (nextValue, options = {}) => {
+      const previous = profilePreferences;
+      const resolvedValue =
+        typeof nextValue === "function" ? nextValue(profilePreferences) : nextValue;
+      const normalized = normalizeProfilePreferences(resolvedValue, {
+        fallbackGeo: initialViewerGeo,
+      });
 
-    setWatchlist(nextWatchlist);
+      setProfilePreferences(normalized);
+      const persisted = await persistProfilePreferences(normalized);
+      if (persisted) {
+        return true;
+      }
 
-    trackProductAnalyticsEvent({
-      event: "favorites_depth_changed",
-      surface: options.surface || "app",
-      entityId: itemId,
-      metadata: {
-        action: shouldSave ? "add" : "remove",
-        count: nextWatchlist.length,
-        authenticated: Boolean(sessionUser),
-      },
-    });
+      setProfilePreferences(previous);
+      return options.silent ? false : false;
+    },
+    [initialViewerGeo, persistProfilePreferences, profilePreferences]
+  );
 
-    if (shouldSave) {
-      trackPersonalizationEvent({
-        event: "favorite_created",
+  const toggleWatch = useCallback(
+    async (itemId, options = {}) => {
+      const shouldSave = !watchlist.includes(itemId);
+      const nextWatchlist = shouldSave
+        ? prependUniqueItem(watchlist, itemId)
+        : watchlist.filter((entry) => entry !== itemId);
+
+      setWatchlist(nextWatchlist);
+
+      trackProductAnalyticsEvent({
+        event: "favorites_depth_changed",
         surface: options.surface || "app",
-        itemId,
+        entityId: itemId,
         metadata: {
+          action: shouldSave ? "add" : "remove",
+          count: nextWatchlist.length,
           authenticated: Boolean(sessionUser),
-          label: options.label || null,
         },
       });
-    }
 
-    if (!sessionUser) {
-      return;
-    }
-
-    const response = await fetch(
-      shouldSave
-        ? "/api/favorites"
-        : `/api/favorites?itemId=${encodeURIComponent(itemId)}`,
-      {
-        method: shouldSave ? "POST" : "DELETE",
-        headers: shouldSave ? { "content-type": "application/json" } : undefined,
-        credentials: "same-origin",
-        body: shouldSave
-          ? JSON.stringify({
-              itemId,
-              label: options.label,
-              metadata: options.metadata,
-            })
-          : undefined,
+      if (shouldSave) {
+        trackPersonalizationEvent({
+          event: "favorite_created",
+          surface: options.surface || "app",
+          itemId,
+          metadata: {
+            authenticated: Boolean(sessionUser),
+            label: options.label || null,
+          },
+        });
       }
-    );
 
-    if (response.ok) {
-      return;
-    }
+      if (!sessionUser) {
+        return;
+      }
 
-    setWatchlist(watchlist);
-  }, [sessionUser, watchlist]);
+      const response = await fetch(
+        shouldSave
+          ? "/api/favorites"
+          : `/api/favorites?itemId=${encodeURIComponent(itemId)}`,
+        {
+          method: shouldSave ? "POST" : "DELETE",
+          headers: shouldSave ? { "content-type": "application/json" } : undefined,
+          credentials: "same-origin",
+          body: shouldSave
+            ? JSON.stringify({
+                itemId,
+                label: options.label,
+                metadata: options.metadata,
+              })
+            : undefined,
+        }
+      ).catch(() => null);
+
+      if (response?.ok) {
+        return;
+      }
+
+      setWatchlist(watchlist);
+    },
+    [sessionUser, watchlist]
+  );
 
   const addFavoriteItems = useCallback(
     async (itemIds = [], options = {}) => {
@@ -489,9 +580,9 @@ export function PreferencesProvider({
         )
       );
 
-      const responses = await Promise.all(requests);
+      const responses = await Promise.all(requests).catch(() => []);
 
-      if (responses.every((response) => response.ok)) {
+      if (responses.length && responses.every((response) => response.ok)) {
         return;
       }
 
@@ -528,75 +619,197 @@ export function PreferencesProvider({
     [sessionUser]
   );
 
+  const setTheme = useCallback(
+    async (theme) =>
+      updateProfilePreferences((current) => ({
+        ...current,
+        theme,
+      })),
+    [updateProfilePreferences]
+  );
+
+  const setLocalePreference = useCallback(
+    async (locale) =>
+      updateProfilePreferences((current) => ({
+        ...current,
+        locale,
+      })),
+    [updateProfilePreferences]
+  );
+
+  const setTimezonePreference = useCallback(
+    async (timezone) =>
+      updateProfilePreferences((current) => ({
+        ...current,
+        timezone,
+      })),
+    [updateProfilePreferences]
+  );
+
   const saveFavoriteSports = useCallback(
-    async (sports, options = {}) => {
-      const normalizedSports = normalizeFavoriteSportsInput(sports);
-      const previousFavoriteSports = favoriteSports;
-      const previousProfilePreferences = profilePreferences;
-      const nextProfilePreferences = {
-        ...profilePreferences,
-        favoriteSports: normalizedSports,
-      };
+    async (sports, options = {}) =>
+      updateProfilePreferences(
+        (current) => ({
+          ...current,
+          favoriteSports: sports,
+        }),
+        options
+      ),
+    [updateProfilePreferences]
+  );
 
-      setFavoriteSportsState(normalizedSports);
-      setProfilePreferences(nextProfilePreferences);
+  const setPromptPreferences = useCallback(
+    async (nextPromptPreferences, options = {}) =>
+      updateProfilePreferences(
+        (current) => ({
+          ...current,
+          promptPreferences: {
+            ...current.promptPreferences,
+            ...nextPromptPreferences,
+          },
+        }),
+        options
+      ),
+    [updateProfilePreferences]
+  );
 
-      const persisted = await persistProfilePreferences(nextProfilePreferences);
-      if (persisted) {
-        return true;
-      }
+  const setPromptPreference = useCallback(
+    async (key, value, options = {}) =>
+      setPromptPreferences(
+        {
+          [key]: value,
+        },
+        options
+      ),
+    [setPromptPreferences]
+  );
 
-      setFavoriteSportsState(previousFavoriteSports);
-      setProfilePreferences(previousProfilePreferences);
+  const setMarketPreferences = useCallback(
+    async (nextMarketPreferences, options = {}) =>
+      updateProfilePreferences(
+        (current) => ({
+          ...current,
+          marketPreferences: {
+            ...current.marketPreferences,
+            ...nextMarketPreferences,
+          },
+        }),
+        options
+      ),
+    [updateProfilePreferences]
+  );
 
-      if (options.silent) {
-        return false;
-      }
+  const completeOnboarding = useCallback(
+    async (options = {}) =>
+      updateProfilePreferences(
+        (current) => ({
+          ...current,
+          onboardingState: {
+            ...current.onboardingState,
+            completed: true,
+            dismissed: false,
+            completedAt: new Date().toISOString(),
+          },
+        }),
+        options
+      ),
+    [updateProfilePreferences]
+  );
 
-      return false;
-    },
-    [favoriteSports, persistProfilePreferences, profilePreferences]
+  const dismissOnboarding = useCallback(
+    async (options = {}) =>
+      updateProfilePreferences(
+        (current) => ({
+          ...current,
+          onboardingState: {
+            ...current.onboardingState,
+            dismissed: true,
+            dismissedAt: new Date().toISOString(),
+          },
+        }),
+        options
+      ),
+    [updateProfilePreferences]
+  );
+
+  const resetOnboarding = useCallback(
+    async (options = {}) =>
+      updateProfilePreferences(
+        (current) => ({
+          ...current,
+          onboardingState: DEFAULT_ONBOARDING_STATE,
+        }),
+        options
+      ),
+    [updateProfilePreferences]
   );
 
   const value = useMemo(
     () => ({
-      locale: initialLocale,
-      theme,
-      setTheme: setThemeState,
+      locale: profilePreferences.locale,
+      theme: profilePreferences.theme,
+      timezone: profilePreferences.timezone,
+      favoriteSports: profilePreferences.favoriteSports,
+      promptPreferences: profilePreferences.promptPreferences,
+      marketPreferences: profilePreferences.marketPreferences,
+      onboardingState: profilePreferences.onboardingState,
+      profilePreferences,
+      compliance,
+      effectiveGeo: compliance.effectiveGeo,
+      ctaGeo: compliance.ctaGeo,
       watchlist,
       watchlistCount: watchlist.length,
       favoritesCount: watchlist.length,
       alertSettings,
       alertCount: Object.values(alertSettings).reduce((count, entry) => count + entry.length, 0),
       recentViews,
-      favoriteSports,
       favoritesHydrated,
+      recentViews,
       sessionUser,
       isWatched: (itemId) => watchlist.includes(itemId),
       isFavorite: (itemId) => watchlist.includes(itemId),
       getAlertTypes: (itemId) => alertSettings[itemId] || [],
       hasAlertType: (itemId, notificationType) =>
         (alertSettings[itemId] || []).includes(notificationType),
+      setTheme,
+      setLocalePreference,
+      setTimezonePreference,
+      setFavoriteSports: saveFavoriteSports,
+      setPromptPreferences,
+      setPromptPreference,
+      setMarketPreferences,
+      updateProfilePreferences,
+      completeOnboarding,
+      dismissOnboarding,
+      resetOnboarding,
       toggleWatch,
       toggleFavorite: toggleWatch,
       addFavoriteItems,
       toggleAlertType,
       recordView,
-      setFavoriteSports: saveFavoriteSports,
     }),
     [
       addFavoriteItems,
       alertSettings,
-      favoriteSports,
+      compliance,
+      completeOnboarding,
+      dismissOnboarding,
       favoritesHydrated,
-      initialLocale,
+      profilePreferences,
       recentViews,
       recordView,
+      resetOnboarding,
       saveFavoriteSports,
       sessionUser,
-      theme,
+      setLocalePreference,
+      setMarketPreferences,
+      setPromptPreference,
+      setPromptPreferences,
+      setTheme,
+      setTimezonePreference,
       toggleAlertType,
       toggleWatch,
+      updateProfilePreferences,
       watchlist,
     ]
   );

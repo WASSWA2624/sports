@@ -461,6 +461,98 @@ const sw = {
   settingsFunnelBody:
     "Routing ya funnel imetenganishwa na hali ya wasifu ili tabia salama za CTA kwa kila soko zibadilike bila kuvunja mapendeleo ya akaunti.",
   openFunnelsWorkspace: "Fungua eneo la funnels",
+  reminderOptInLead:
+    "Washa kwanza prompts za reminder, kisha chagua mechi, timu na mashindano yaliyohifadhiwa yatakayoleta ufuatiliaji.",
+  reminderOptInBody:
+    "Prompts za reminder zinazosimamiwa kwa consent hubaki zimezimwa hadi uziruhusu kwa soko hili.",
+  enableReminderPrompts: "Washa prompts za reminder",
+  profileSecurityTitle: "Usalama na utambulisho",
+  profileSecurityLead:
+    "Thibitisha kwa nenosiri lako la sasa kabla ya kubadilisha jina la kuonekana au nenosiri.",
+  profileCurrentPassword: "Nenosiri la sasa",
+  profileCurrentPasswordRequired:
+    "Weka nenosiri lako la sasa ili kuthibitisha mabadiliko haya.",
+  profileNewPassword: "Nenosiri jipya",
+  profileSecuritySave: "Hifadhi usalama",
+  profileSecuritySaved: "Mipangilio ya usalama imesasishwa.",
+  profileSecurityFailed: "Imeshindikana kusasisha mipangilio ya usalama.",
+  profileLogout: "Toka",
+  profileSessionsTitle: "Sessions",
+  profileSessionsLead:
+    "Kagua vifaa vilivyoingia kwenye akaunti yako na ondoa session yoyote usiyoamini tena.",
+  profileSessionsUpdated: "Orodha ya sessions imesasishwa.",
+  profileSessionsFailed: "Imeshindikana kusasisha sessions.",
+  profileSessionsSignOutOthers: "Toa vifaa vingine",
+  profileSessionsCurrent: "Kifaa cha sasa",
+  profileSessionsDevice: "Session iliyohifadhiwa",
+  profileSessionsUnknownAgent: "Browser isiyojulikana",
+  profileSessionsNever: "Kamwe",
+  profileSessionsLastSeen: "Mwisho kuonekana",
+  profileSessionsCreated: "Iliundwa",
+  profileSessionsSignOutCurrent: "Toa kifaa hiki",
+  profileSessionsSignOutDevice: "Ondoa session",
+  onboardingPrompts: "Chaguo za prompts",
+  onboardingReminderOptIn: "Prompts za reminder",
+  onboardingReminderOptInBody:
+    "Ruhusu mechi na timu zilizohifadhiwa kuonyesha prompts za reminder kwenye kurasa kuu.",
+  onboardingFunnelOptIn: "Prompts za ujumbe",
+  onboardingFunnelOptInBody:
+    "Ruhusu prompts za Telegram na WhatsApp pale soko hili linapoziruhusu.",
+  funnelOptInLead:
+    "Washa kwanza prompts za ujumbe kabla CTA za Telegram au WhatsApp kuonekana kwa soko hili.",
+  enableFunnelPrompts: "Washa prompts za ujumbe",
+  promptOptInUnavailable:
+    "Soko hili haliruhusu kwa sasa opt-in za reminder au ujumbe.",
+  settingsGuestCopy:
+    "Mipangilio hii itabaki kwenye kifaa hiki hadi utakapoingia. Bado itabinafsisha safari yako ya kuvinjari.",
+  settingsAccountCopy:
+    "Mipangilio hii itasawazishwa na akaunti yako na kubaki kwenye sessions na vifaa vyako.",
+  settingsSave: "Hifadhi mipangilio",
+  settingsSaved: "Mipangilio imehifadhiwa.",
+  settingsSaveFailed: "Imeshindikana kuhifadhi mipangilio.",
+  settingsGeoPreference: "Soko unalopendelea",
+  settingsBookmakerGeo: "Soko la bookmaker",
+  settingsCtaGeo: "Soko la CTA",
+  settingsPromptTitle: "Prompts zenye consent",
+  settingsReminderPrompts: "Prompts za reminder",
+  settingsFunnelPrompts: "Prompts za ujumbe",
+  settingsBookmakerPrompts: "Prompts za bookmaker",
+  settingsPromptHint:
+    "Opt-in za prompts huwashwa tu katika masoko ambayo reminder na ujumbe vinaruhusiwa.",
+  settingsOnboardingTitle: "Hali ya onboarding",
+  settingsOnboardingHint:
+    "Weka upya onboarding kama unataka picker ya kwanza kuonekana tena kwenye ukurasa wa nyumbani.",
+  settingsResetOnboarding: "Weka upya onboarding",
+  settingsOnboardingReset:
+    "Onboarding imewekwa upya. Itaonekana tena kwenye ukurasa wa nyumbani.",
+  authTitle: "Ingia au fungua akaunti",
+  authLead:
+    "Hifadhi favorites, chaguo za onboarding na mapendeleo ya prompts katika sessions tofauti huku wageni wakiendelea kuvinjari kwanza.",
+  authReasonRequired: "Ingia ili kuendelea na ukurasa uliouomba.",
+  authReasonForbidden:
+    "Njia hii inahitaji ufikiaji wa juu. Ingia na akaunti yenye role inayohitajika.",
+  authFavoritesSync:
+    "Timu, mechi, mashindano na sports ulizohifadhi zitasawazishwa kwenye akaunti utakayotumia hapa.",
+  authSignedInTitle: "Tayari umeingia",
+  authSignedInLead: "Fungua akaunti yako, mipangilio au favorites kisha endelea.",
+  authOpenProfile: "Fungua profile",
+  authOpenFavorites: "Fungua favorites",
+  authOpenSettings: "Fungua settings",
+  authModeLogin: "Ingia",
+  authModeSignup: "Fungua akaunti",
+  authEmail: "Barua pepe",
+  authPassword: "Nenosiri",
+  authUsername: "Jina la mtumiaji",
+  authDisplayName: "Jina la kuonekana",
+  authSubmitLogin: "Ingia",
+  authSubmitSignup: "Fungua akaunti",
+  authSubmitFailed: "Auth imeshindikana. Jaribu tena.",
+  authLoading: "Inafanya kazi...",
+  authSocialTitle: "Hooks za social auth",
+  authSocialConfigured:
+    "Mtoa huduma mmoja au zaidi wa social umewekwa kupitia env flags na uko tayari kwa hatua ya callback.",
+  authSocialUnavailable:
+    "Hakuna mtoa huduma wa social aliyewashwa sasa, kwa hiyo email na nenosiri bado ndio njia kuu ya kuingia.",
 };
 
 export default sw;

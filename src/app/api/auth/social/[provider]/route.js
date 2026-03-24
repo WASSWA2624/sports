@@ -1,28 +1,19 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const providerSchema = z.enum(["google"]);
-
-function isProviderConfigured(provider) {
-  if (provider === "google") {
-    return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-  }
-  return false;
-}
+import { getSocialAuthProvider } from "../../../../../lib/social-auth";
 
 export async function GET(_request, { params }) {
-  const parsed = providerSchema.safeParse(params.provider);
-  if (!parsed.success) {
+  const provider = getSocialAuthProvider(params.provider);
+
+  if (!provider) {
     return NextResponse.json({ error: "Unsupported provider." }, { status: 400 });
   }
 
-  const provider = parsed.data;
-  const enabled = isProviderConfigured(provider);
   return NextResponse.json({
-    provider,
-    enabled,
-    message: enabled
-      ? "Provider is configured. Integrate OAuth callback flow in next phase."
+    provider: provider.key,
+    label: provider.label,
+    enabled: provider.enabled,
+    message: provider.enabled
+      ? "Provider is configured. Complete the OAuth callback flow in the next auth iteration."
       : "Provider disabled via environment variables.",
   });
 }

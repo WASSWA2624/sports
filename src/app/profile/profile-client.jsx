@@ -1,89 +1,144 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { LOCALE_LABELS } from "../../lib/coreui/config";
-import { SUPPORTED_LOCALES } from "../../lib/coreui/preferences";
+import { useCallback, useEffect, useState } from "react";
 import styles from "./profile.module.css";
 
-const defaultPreferences = {
-  locale: "en",
-  theme: "system",
-  timezone: "UTC",
-  favoriteSports: [],
-  alertPreferences: {
-    goals: true,
-    cards: false,
-    kickoff: true,
-    periodChange: false,
-    finalResult: true,
-  },
-};
+function formatDate(value, locale, fallback) {
+  if (!value) {
+    return fallback;
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 export default function ProfileClient({ dictionary, locale }) {
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
-  const [preferences, setPreferences] = useState(defaultPreferences);
+  const [sessions, setSessions] = useState([]);
   const [message, setMessage] = useState("");
+  const [securityDraft, setSecurityDraft] = useState({
+    displayName: "",
+    currentPassword: "",
+    nextPassword: "",
+  });
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const [meRes, sessionsRes] = await Promise.all([
+        fetch("/api/auth/me"),
+        fetch("/api/profile/sessions"),
+      ]);
+
+      if (!meRes.ok) {
+        setMessage(dictionary.profileNotSignedIn);
+        setSessionUser(null);
+        setSessions([]);
+        return;
+      }
+
+      const meJson = await meRes.json();
+      setSessionUser(meJson.user);
+      setSecurityDraft((current) => ({
+        ...current,
+        displayName: meJson.user.displayName || "",
+      }));
+
+      if (sessionsRes.ok) {
+        const sessionsJson = await sessionsRes.json();
+        setSessions(sessionsJson.sessions || []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [dictionary.profileNotSignedIn]);
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const [meRes, prefsRes] = await Promise.all([
-          fetch("/api/auth/me"),
-          fetch("/api/profile/preferences"),
-        ]);
-
-        if (!meRes.ok) {
-          setMessage(dictionary.profileNotSignedIn);
-          return;
-        }
-
-        const meJson = await meRes.json();
-        setSessionUser(meJson.user);
-
-        if (prefsRes.ok) {
-          const prefsJson = await prefsRes.json();
-          setPreferences({
-            locale: prefsJson.locale ?? locale,
-            theme: prefsJson.theme ?? "system",
-            timezone: prefsJson.timezone ?? "UTC",
-            favoriteSports: prefsJson.favoriteSports ?? [],
-            alertPreferences:
-              prefsJson.alertPreferences ?? {
-                goals: true,
-                cards: false,
-                kickoff: true,
-                periodChange: false,
-                finalResult: true,
-              },
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadProfile();
-  }, [dictionary.profileNotSignedIn, locale]);
+  }, [loadProfile]);
 
-  async function handleSavePreferences(event) {
+  async function handleSecuritySave(event) {
     event.preventDefault();
     setMessage("");
 
-    const response = await fetch("/api/profile/preferences", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(preferences),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      setMessage(data.error || dictionary.profileSaveFailed);
+    if (!securityDraft.currentPassword) {
+      setMessage(dictionary.profileCurrentPasswordRequired);
       return;
     }
 
-    setMessage(dictionary.profileSaved);
+    const stepUpResponse = await fetch("/api/auth/step-up", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        password: securityDraft.currentPassword,
+        purpose: "profile-security",
+      }),
+    });
+    const stepUpData = await stepUpResponse.json().catch(() => ({}));
+
+    if (!stepUpResponse.ok) {
+      setMessage(stepUpData.error || dictionary.profileSecurityFailed);
+      return;
+    }
+
+    const response = await fetch("/api/profile/security", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        displayName: securityDraft.displayName,
+        nextPassword: securityDraft.nextPassword || undefined,
+        signOutOtherSessions: true,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setMessage(data.error || dictionary.profileSecurityFailed);
+      return;
+    }
+
+    setSessionUser(data.user || sessionUser);
+    setSecurityDraft((current) => ({
+      ...current,
+      currentPassword: "",
+      nextPassword: "",
+    }));
+    setMessage(data.message || dictionary.profileSecuritySaved);
+    await loadProfile();
+  }
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    window.location.assign(`/${locale}/auth`);
+  }
+
+  async function handleSessionRevoke(payload) {
+    setMessage("");
+
+    const response = await fetch("/api/profile/sessions", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setMessage(data.error || dictionary.profileSessionsFailed);
+      return;
+    }
+
+    if (data.signedOutCurrentSession) {
+      window.location.assign(`/${locale}/auth`);
+      return;
+    }
+
+    setMessage(dictionary.profileSessionsUpdated);
+    await loadProfile();
   }
 
   if (loading) {
@@ -93,14 +148,6 @@ export default function ProfileClient({ dictionary, locale }) {
   if (!sessionUser) {
     return <main className={styles.statusPage}>{dictionary.profileAuthRequired}</main>;
   }
-
-  const alertLabels = [
-    ["goals", dictionary.profileAlertGoals],
-    ["cards", dictionary.profileAlertCards],
-    ["kickoff", dictionary.profileAlertKickoff],
-    ["periodChange", dictionary.profileAlertPeriodChange],
-    ["finalResult", dictionary.profileAlertFinalResult],
-  ];
 
   return (
     <main className={styles.profilePage}>
@@ -119,112 +166,150 @@ export default function ProfileClient({ dictionary, locale }) {
             </p>
           </div>
 
-          {sessionUser.roles.some((role) => ["EDITOR", "ADMIN"].includes(role)) ? (
-            <div className={styles.quickLinks}>
+          <div className={styles.quickLinks}>
+            <Link href={`/${locale}/settings`} className={styles.quickLink}>
+              {dictionary.settingsTitle}
+            </Link>
+            <Link href={`/${locale}/favorites`} className={styles.quickLink}>
+              {dictionary.favorites}
+            </Link>
+            {sessionUser.roles.some((role) => ["EDITOR", "ADMIN"].includes(role)) ? (
               <Link href={`/${locale}/news/manage`} className={styles.quickLink}>
                 {dictionary.newsManage}
               </Link>
-              {sessionUser.roles.includes("ADMIN") ? (
-                <Link href={`/${locale}/admin`} className={styles.quickLink}>
-                  Admin control room
-                </Link>
-              ) : null}
-            </div>
-          ) : null}
+            ) : null}
+            {sessionUser.roles.includes("ADMIN") ? (
+              <Link href={`/${locale}/admin`} className={styles.quickLink}>
+                Admin Control Room
+              </Link>
+            ) : null}
+          </div>
         </header>
 
-        <form className={styles.form} onSubmit={handleSavePreferences}>
-          <div className={styles.grid}>
-            <label className={styles.field}>
-              <span>{dictionary.profileLocale}</span>
-              <select
-                value={preferences.locale}
-                onChange={(event) =>
-                  setPreferences((prev) => ({ ...prev, locale: event.target.value }))
-                }
-              >
-                {SUPPORTED_LOCALES.map((item) => (
-                  <option key={item} value={item}>
-                    {LOCALE_LABELS[item]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className={styles.field}>
-              <span>{dictionary.profileTheme}</span>
-              <select
-                value={preferences.theme}
-                onChange={(event) =>
-                  setPreferences((prev) => ({ ...prev, theme: event.target.value }))
-                }
-              >
-                <option value="system">{dictionary.themeSystem}</option>
-                <option value="light">{dictionary.themeLight}</option>
-                <option value="dark">{dictionary.themeDark}</option>
-              </select>
-            </label>
-          </div>
-
-          <div className={styles.grid}>
-            <label className={styles.field}>
-              <span>{dictionary.profileTimezone}</span>
-              <input
-                value={preferences.timezone}
-                onChange={(event) =>
-                  setPreferences((prev) => ({ ...prev, timezone: event.target.value }))
-                }
-              />
-            </label>
-
-            <label className={styles.field}>
-              <span>{dictionary.profileFavoriteSports}</span>
-              <input
-                value={preferences.favoriteSports.join(", ")}
-                onChange={(event) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    favoriteSports: event.target.value
-                      .split(",")
-                      .map((value) => value.trim())
-                      .filter(Boolean),
-                  }))
-                }
-              />
-            </label>
-          </div>
-
-          <fieldset className={styles.fieldset}>
-            <legend>{dictionary.profileAlerts}</legend>
-            <div className={styles.alertList}>
-              {alertLabels.map(([key, label]) => (
-                <label key={key} className={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(preferences.alertPreferences[key])}
-                    onChange={(event) =>
-                      setPreferences((prev) => ({
-                        ...prev,
-                        alertPreferences: {
-                          ...prev.alertPreferences,
-                          [key]: event.target.checked,
-                        },
-                      }))
-                    }
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
+        <section className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 className={styles.sectionTitle}>{dictionary.profileSecurityTitle}</h2>
+              <p className={styles.copy}>{dictionary.profileSecurityLead}</p>
             </div>
-          </fieldset>
-
-          <div className={styles.actions}>
-            <button type="submit" className={styles.saveButton}>
-              {dictionary.profileSave}
-            </button>
-            {message ? <p className={styles.message}>{message}</p> : null}
           </div>
-        </form>
+
+          <form className={styles.form} onSubmit={handleSecuritySave}>
+            <div className={styles.grid}>
+              <label className={styles.field}>
+                <span>{dictionary.authDisplayName}</span>
+                <input
+                  value={securityDraft.displayName}
+                  onChange={(event) =>
+                    setSecurityDraft((current) => ({
+                      ...current,
+                      displayName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span>{dictionary.profileCurrentPassword}</span>
+                <input
+                  type="password"
+                  value={securityDraft.currentPassword}
+                  onChange={(event) =>
+                    setSecurityDraft((current) => ({
+                      ...current,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+
+            <div className={styles.grid}>
+              <label className={styles.field}>
+                <span>{dictionary.profileNewPassword}</span>
+                <input
+                  type="password"
+                  value={securityDraft.nextPassword}
+                  onChange={(event) =>
+                    setSecurityDraft((current) => ({
+                      ...current,
+                      nextPassword: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+
+            <div className={styles.actions}>
+              <button type="submit" className={styles.saveButton}>
+                {dictionary.profileSecuritySave}
+              </button>
+              <button type="button" className={styles.secondaryButton} onClick={handleLogout}>
+                {dictionary.profileLogout}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 className={styles.sectionTitle}>{dictionary.profileSessionsTitle}</h2>
+              <p className={styles.copy}>{dictionary.profileSessionsLead}</p>
+            </div>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => handleSessionRevoke({ scope: "others" })}
+              >
+                {dictionary.profileSessionsSignOutOthers}
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.sessionList}>
+            {sessions.map((session) => (
+              <article key={session.id} className={styles.sessionCard}>
+                <div className={styles.sessionMeta}>
+                  <strong>
+                    {session.isCurrent
+                      ? dictionary.profileSessionsCurrent
+                      : dictionary.profileSessionsDevice}
+                  </strong>
+                  <span>{session.userAgent || dictionary.profileSessionsUnknownAgent}</span>
+                  <span>
+                    {dictionary.profileSessionsLastSeen}:{" "}
+                    {formatDate(session.lastSeenAt, locale, dictionary.profileSessionsNever)}
+                  </span>
+                  <span>
+                    {dictionary.profileSessionsCreated}:{" "}
+                    {formatDate(session.createdAt, locale, dictionary.profileSessionsNever)}
+                  </span>
+                </div>
+                <div className={styles.sessionActions}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() =>
+                      handleSessionRevoke(
+                        session.isCurrent
+                          ? { scope: "current" }
+                          : { sessionId: session.id, scope: "current" }
+                      )
+                    }
+                  >
+                    {session.isCurrent
+                      ? dictionary.profileSessionsSignOutCurrent
+                      : dictionary.profileSessionsSignOutDevice}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {message ? <p className={styles.message}>{message}</p> : null}
       </section>
     </main>
   );

@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { AlertSubscriptionControl } from "./alert-subscription-control";
 import sharedStyles from "./styles.module.css";
 import styles from "./search-experience.module.css";
 import { buildCompetitionHref } from "../../lib/coreui/routes";
+import { usePreferences } from "./preferences-provider";
 
 export function TopCompetitionsPanel({ locale, dictionary, competitions = [] }) {
   if (!competitions.length) {
@@ -80,7 +83,13 @@ export function RecentItemsPanel({ dictionary, items = [] }) {
 }
 
 export function FavoriteReminderPanel({ locale, dictionary, items = [] }) {
+  const { compliance, promptPreferences, setPromptPreference } = usePreferences();
+
   if (!items.length) {
+    return null;
+  }
+
+  if (!compliance.promptOptInAllowed) {
     return null;
   }
 
@@ -90,32 +99,56 @@ export function FavoriteReminderPanel({ locale, dictionary, items = [] }) {
         <div>
           <p className={sharedStyles.eyebrow}>{dictionary.profileAlerts}</p>
           <h2 className={sharedStyles.sectionTitle}>{dictionary.reminderTitle}</h2>
-          <p className={sharedStyles.sectionLead}>{dictionary.reminderLead}</p>
+          <p className={sharedStyles.sectionLead}>
+            {promptPreferences.reminderPrompts
+              ? dictionary.reminderLead
+              : dictionary.reminderOptInLead}
+          </p>
         </div>
       </div>
 
-      <div className={styles.discoveryGrid}>
-        {items.map((item) => (
-          <article key={item.itemId} className={styles.discoveryPanel}>
-            <div className={sharedStyles.cardHeader}>
-              <div>
-                <h3 className={sharedStyles.cardTitle}>
-                  <Link href={item.href}>{item.title}</Link>
-                </h3>
-                {item.subtitle ? <p className={sharedStyles.muted}>{item.subtitle}</p> : null}
+      {promptPreferences.reminderPrompts ? (
+        <div className={styles.discoveryGrid}>
+          {items.map((item) => (
+            <article key={item.itemId} className={styles.discoveryPanel}>
+              <div className={sharedStyles.cardHeader}>
+                <div>
+                  <h3 className={sharedStyles.cardTitle}>
+                    <Link href={item.href}>{item.title}</Link>
+                  </h3>
+                  {item.subtitle ? <p className={sharedStyles.muted}>{item.subtitle}</p> : null}
+                </div>
               </div>
-            </div>
 
-            <AlertSubscriptionControl
-              itemId={item.itemId}
-              locale={locale}
-              supportedTypes={item.supportedTypes}
-              label={item.title}
-              surface={item.surface || "favorites-reminder"}
-            />
-          </article>
-        ))}
-      </div>
+              <AlertSubscriptionControl
+                itemId={item.itemId}
+                locale={locale}
+                supportedTypes={item.supportedTypes}
+                label={item.title}
+                surface={item.surface || "favorites-reminder"}
+              />
+            </article>
+          ))}
+        </div>
+      ) : (
+        <article className={styles.discoveryPanel}>
+          <div className={sharedStyles.section}>
+            <p className={sharedStyles.muted}>{dictionary.reminderOptInBody}</p>
+            <div className={sharedStyles.inlineBadgeRow}>
+              <button
+                type="button"
+                className={sharedStyles.sectionAction}
+                onClick={() => setPromptPreference("reminderPrompts", true)}
+              >
+                {dictionary.enableReminderPrompts}
+              </button>
+              <Link href={`/${locale}/settings`} className={sharedStyles.sectionAction}>
+                {dictionary.settingsTitle}
+              </Link>
+            </div>
+          </div>
+        </article>
+      )}
     </section>
   );
 }

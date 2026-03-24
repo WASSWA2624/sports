@@ -1,24 +1,23 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { requireAuthenticatedUser } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
 import { logAuditEvent } from "../../../../lib/audit";
+import { VIEWER_GEO_HEADER } from "../../../../lib/coreui/route-context";
+import {
+  PROFILE_PREFERENCE_KEYS,
+  getProfileComplianceSnapshot,
+  mapProfilePreferencesToRecords,
+  normalizeProfilePreferences,
+  readProfilePreferencesFromEntries,
+} from "../../../../lib/profile-preferences";
 
-const preferencesSchema = z.object({
-  locale: z.string().min(2).max(10).default("en"),
-  theme: z.enum(["light", "dark", "system"]).default("system"),
-  timezone: z.string().min(2).max(80).default("UTC"),
-  favoriteSports: z.array(z.string().min(2).max(40)).max(12).default([]),
-  alertPreferences: z
-    .object({
-      goals: z.boolean().default(true),
-      cards: z.boolean().default(false),
-      kickoff: z.boolean().default(true),
-      periodChange: z.boolean().default(false),
-      finalResult: z.boolean().default(true),
-    })
-    .default({ goals: true, cards: false, kickoff: true, periodChange: false, finalResult: true }),
-});
+function getViewerGeoFromRequest(request) {
+  return (
+    request.headers.get(VIEWER_GEO_HEADER) ||
+    request.cookies.get("sports_geo")?.value ||
+    "INTL"
+  );
+}
 
 export async function GET(request) {
   const { error, userContext } = await requireAuthenticatedUser(request);
@@ -29,24 +28,19 @@ export async function GET(request) {
   const prefs = await db.userPreference.findMany({
     where: {
       userId: userContext.user.id,
-      key: { in: ["locale", "theme", "timezone", "favoriteSports", "alertPreferences"] },
+      key: { in: PROFILE_PREFERENCE_KEYS },
     },
   });
+  const viewerGeo = getViewerGeoFromRequest(request);
+  const preferences = readProfilePreferencesFromEntries(prefs, {
+    fallbackGeo: viewerGeo,
+  });
 
-  const result = Object.fromEntries(prefs.map((item) => [item.key, item.value]));
   return NextResponse.json({
-    locale: result.locale ?? "en",
-    theme: result.theme ?? "system",
-    timezone: result.timezone ?? "UTC",
-    favoriteSports: result.favoriteSports ?? [],
-    alertPreferences:
-      result.alertPreferences ?? {
-        goals: true,
-        cards: false,
-        kickoff: true,
-        periodChange: false,
-        finalResult: true,
-      },
+    ...preferences,
+    compliance: getProfileComplianceSnapshot(preferences, {
+      viewerGeo,
+    }),
   });
 }
 
@@ -57,40 +51,73 @@ export async function PUT(request) {
       return error;
     }
 
-    const payload = preferencesSchema.parse(await request.json());
+    const viewerGeo = getViewerGeoFromRequest(request);
+    const payload = normalizeProfilePreferences(await request.json(), {
+      fallbackGeo: viewerGeo,
+    });
+    const records = mapProfilePreferencesToRecords(payload, {
+      fallbackGeo: viewerGeo,
+    });
 
     await db.$transaction([
       db.userPreference.upsert({
         where: { userId_key: { userId: userContext.user.id, key: "locale" } },
-        update: { value: payload.locale },
-        create: { userId: userContext.user.id, key: "locale", value: payload.locale },
+        update: { value: records.locale },
+        create: { userId: userContext.user.id, key: "locale", value: records.locale },
       }),
       db.userPreference.upsert({
         where: { userId_key: { userId: userContext.user.id, key: "theme" } },
-        update: { value: payload.theme },
-        create: { userId: userContext.user.id, key: "theme", value: payload.theme },
+        update: { value: records.theme },
+        create: { userId: userContext.user.id, key: "theme", value: records.theme },
       }),
       db.userPreference.upsert({
         where: { userId_key: { userId: userContext.user.id, key: "timezone" } },
-        update: { value: payload.timezone },
-        create: { userId: userContext.user.id, key: "timezone", value: payload.timezone },
+        update: { value: records.timezone },
+        create: { userId: userContext.user.id, key: "timezone", value: records.timezone },
       }),
       db.userPreference.upsert({
         where: { userId_key: { userId: userContext.user.id, key: "favoriteSports" } },
-        update: { value: payload.favoriteSports },
+        update: { value: records.favoriteSports },
         create: {
           userId: userContext.user.id,
           key: "favoriteSports",
-          value: payload.favoriteSports,
+          value: records.favoriteSports,
         },
       }),
       db.userPreference.upsert({
         where: { userId_key: { userId: userContext.user.id, key: "alertPreferences" } },
-        update: { value: payload.alertPreferences },
+        update: { value: records.alertPreferences },
         create: {
           userId: userContext.user.id,
           key: "alertPreferences",
-          value: payload.alertPreferences,
+          value: records.alertPreferences,
+        },
+      }),
+      db.userPreference.upsert({
+        where: { userId_key: { userId: userContext.user.id, key: "promptPreferences" } },
+        update: { value: records.promptPreferences },
+        create: {
+          userId: userContext.user.id,
+          key: "promptPreferences",
+          value: records.promptPreferences,
+        },
+      }),
+      db.userPreference.upsert({
+        where: { userId_key: { userId: userContext.user.id, key: "marketPreferences" } },
+        update: { value: records.marketPreferences },
+        create: {
+          userId: userContext.user.id,
+          key: "marketPreferences",
+          value: records.marketPreferences,
+        },
+      }),
+      db.userPreference.upsert({
+        where: { userId_key: { userId: userContext.user.id, key: "onboardingState" } },
+        update: { value: records.onboardingState },
+        create: {
+          userId: userContext.user.id,
+          key: "onboardingState",
+          value: records.onboardingState,
         },
       }),
     ]);
@@ -103,7 +130,13 @@ export async function PUT(request) {
       metadata: payload,
     });
 
-    return NextResponse.json({ ok: true, ...payload });
+    return NextResponse.json({
+      ok: true,
+      ...payload,
+      compliance: getProfileComplianceSnapshot(payload, {
+        viewerGeo,
+      }),
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error.message || "Failed to update preferences." },

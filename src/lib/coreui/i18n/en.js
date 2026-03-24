@@ -82,6 +82,11 @@ const en = {
   alertsSyncAccount: "Alert choices sync to your account.",
   alertsSyncGuest: "Alert choices stay on this device until you sign in.",
   alertsUnavailable: "Alert subscriptions are not available for this item yet.",
+  reminderOptInLead:
+    "Enable reminder prompts first, then choose which saved teams, matches, and competitions should trigger follow-up alerts.",
+  reminderOptInBody:
+    "Consent-aware reminder prompts stay off until you enable them for this market.",
+  enableReminderPrompts: "Enable reminder prompts",
   seoSuffix: "Sports coverage",
   home: "Home",
   live: "Live",
@@ -357,6 +362,9 @@ const en = {
   profileTitle: "Profile",
   profileSignedInAs: "Signed in as",
   profileRoles: "Roles",
+  profileSecurityTitle: "Security and identity",
+  profileSecurityLead:
+    "Verify with your current password before changing your display name or rotating your password.",
   profileLocale: "Locale",
   profileTheme: "Theme",
   profileTimezone: "Timezone",
@@ -367,7 +375,28 @@ const en = {
   profileAlertKickoff: "Kickoff",
   profileAlertPeriodChange: "Period change",
   profileAlertFinalResult: "Final result",
+  profileCurrentPassword: "Current password",
+  profileCurrentPasswordRequired: "Enter your current password to verify this change.",
+  profileNewPassword: "New password",
   profileSave: "Save preferences",
+  profileSecuritySave: "Save security changes",
+  profileSecuritySaved: "Security settings updated.",
+  profileSecurityFailed: "Failed to update security settings.",
+  profileLogout: "Sign out",
+  profileSessionsTitle: "Sessions",
+  profileSessionsLead:
+    "Review the devices signed into your account and remove any session you no longer trust.",
+  profileSessionsUpdated: "Session list updated.",
+  profileSessionsFailed: "Failed to update sessions.",
+  profileSessionsSignOutOthers: "Sign out other devices",
+  profileSessionsCurrent: "Current device",
+  profileSessionsDevice: "Saved session",
+  profileSessionsUnknownAgent: "Unknown browser",
+  profileSessionsNever: "Never",
+  profileSessionsLastSeen: "Last seen",
+  profileSessionsCreated: "Created",
+  profileSessionsSignOutCurrent: "Sign out this device",
+  profileSessionsSignOutDevice: "Remove session",
   profileLoading: "Loading profile...",
   profileAuthRequired: "Authentication required.",
   profileNotSignedIn: "You are not signed in.",
@@ -413,6 +442,11 @@ const en = {
   onboardingSports: "Favorite sports",
   onboardingCompetitions: "Favorite competitions",
   onboardingTeams: "Favorite teams",
+  onboardingPrompts: "Prompt choices",
+  onboardingReminderOptIn: "Reminder prompts",
+  onboardingReminderOptInBody: "Let saved matches and teams surface reminder prompts on core pages.",
+  onboardingFunnelOptIn: "Messaging prompts",
+  onboardingFunnelOptInBody: "Allow Telegram and WhatsApp retention prompts where this market supports them.",
   onboardingSave: "Save setup",
   onboardingSaving: "Saving setup...",
   onboardingHint: "You can change these choices later from profile, favorites, or any team and competition page.",
@@ -442,7 +476,7 @@ const en = {
     "Telegram and WhatsApp funnel entry routing with market-aware visibility rules.",
   metaSettingsTitle: "Settings",
   metaSettingsDescription:
-    "Locale, theme, profile, and market-routing foundations for the sports platform shell.",
+    "Manage locale, theme, timezone, favorites, prompts, and market-aware routing preferences.",
   predictionsEyebrow: "Predictions foundation",
   predictionsTitle: "Predictions workspace",
   predictionsLead:
@@ -483,20 +517,74 @@ const en = {
   funnelsWhatsAppBody:
     "Use this entry point for regional message-channel distribution and follow-up prompts.",
   funnelsUnavailableTitle: "Funnel availability",
+  funnelOptInLead:
+    "Enable messaging prompts before Telegram or WhatsApp CTAs appear in this market.",
+  enableFunnelPrompts: "Enable messaging prompts",
+  promptOptInUnavailable:
+    "This market does not currently allow reminder or messaging prompt opt-ins.",
   settingsEyebrow: "Settings foundation",
   settingsTitle: "Settings workspace",
   settingsLead:
-    "Locale, theme, profile, and market-routing controls now have a stable route foundation for later preference expansion.",
+    "Manage locale, theme, timezone, favorite sports, alert defaults, prompt consent, and market-aware routing from one mobile-first workspace.",
+  settingsGuestCopy:
+    "These settings stay on this device until you sign in. Favorites, prompts, and market choices will still personalize your browsing session.",
+  settingsAccountCopy:
+    "These settings sync to your account and stay with you across sessions and devices.",
+  settingsSave: "Save settings",
+  settingsSaved: "Settings saved.",
+  settingsSaveFailed: "Failed to save settings.",
   settingsProfileTitle: "Profile settings",
   settingsProfileBody:
     "Use the authenticated profile surface for saved locale, theme, alert, and favorite-sports preferences.",
   openProfileSettings: "Open profile settings",
   settingsMarketTitle: "Market routing",
   settingsMarketAction: "Open geo-aware settings",
+  settingsGeoPreference: "Preferred market",
+  settingsBookmakerGeo: "Bookmaker market",
+  settingsCtaGeo: "CTA market",
+  settingsPromptTitle: "Consent-aware prompts",
+  settingsReminderPrompts: "Reminder prompts",
+  settingsFunnelPrompts: "Messaging prompts",
+  settingsBookmakerPrompts: "Bookmaker prompts",
+  settingsPromptHint:
+    "Prompt opt-ins only light up in markets where reminder and messaging prompts are allowed.",
+  settingsOnboardingTitle: "Onboarding state",
+  settingsOnboardingHint:
+    "Reset onboarding if you want the first-run picker to appear again on your next homepage visit.",
+  settingsResetOnboarding: "Reset onboarding",
+  settingsOnboardingReset: "Onboarding reset. It will appear again on the homepage.",
   settingsFunnelTitle: "Funnels and channels",
   settingsFunnelBody:
     "Funnel routing is separated from profile state so market-safe CTA behavior can evolve without breaking account preferences.",
   openFunnelsWorkspace: "Open funnels workspace",
+  authTitle: "Sign in or create your account",
+  authLead:
+    "Keep favorites, onboarding choices, and prompt preferences across sessions while still letting guests browse freely first.",
+  authReasonRequired: "Sign in to continue to the page you asked for.",
+  authReasonForbidden:
+    "This route needs elevated access. Sign in with an account that has the required role.",
+  authFavoritesSync:
+    "Your saved teams, matches, competitions, and sports will sync into the account you use here.",
+  authSignedInTitle: "You are already signed in",
+  authSignedInLead: "Open your account, settings, or favorites and keep moving.",
+  authOpenProfile: "Open profile",
+  authOpenFavorites: "Open favorites",
+  authOpenSettings: "Open settings",
+  authModeLogin: "Sign in",
+  authModeSignup: "Create account",
+  authEmail: "Email",
+  authPassword: "Password",
+  authUsername: "Username",
+  authDisplayName: "Display name",
+  authSubmitLogin: "Sign in",
+  authSubmitSignup: "Create account",
+  authSubmitFailed: "Authentication failed. Try again.",
+  authLoading: "Working...",
+  authSocialTitle: "Social auth hooks",
+  authSocialConfigured:
+    "One or more social providers are configured behind environment flags and ready for the callback phase.",
+  authSocialUnavailable:
+    "No social provider is enabled right now, so email and password remain the active sign-in path.",
 };
 
 export default en;
