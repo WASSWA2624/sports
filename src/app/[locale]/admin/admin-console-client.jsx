@@ -362,7 +362,7 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
               </div>
 
               <div className={styles.actionRow}>
-                {["static-ish", "daily", "high-frequency"].map((job) => (
+                {["static-ish", "daily", "high-frequency", "catalog"].map((job) => (
                   <button
                     key={job}
                     type="button"

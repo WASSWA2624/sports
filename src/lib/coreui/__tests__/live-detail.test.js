@@ -150,4 +150,89 @@ describe("live detail helpers", () => {
       })
     );
   });
+
+  it("prefers persisted match-center relations when they are already normalized", () => {
+    const fixture = buildFixture({
+      metadata: {
+        state: {
+          name: "In Play",
+          minute: 63,
+        },
+      },
+      incidents: [
+        {
+          id: "incident-1",
+          minute: 63,
+          extraMinute: 1,
+          side: "HOME",
+          incidentKey: "GOAL",
+          type: "GOAL",
+          title: "Goal",
+          description: "Close-range finish",
+          player: { id: "player-1", name: "Bukayo Saka" },
+          secondaryPlayer: { id: "player-2", name: "Martin Odegaard" },
+        },
+      ],
+      statistics: [
+        {
+          id: "stat-1",
+          side: "HOME",
+          metricKey: "shots_on_target",
+          name: "Shots on target",
+          value: "7",
+        },
+        {
+          id: "stat-2",
+          side: "AWAY",
+          metricKey: "shots_on_target",
+          name: "Shots on target",
+          value: "4",
+        },
+      ],
+      lineups: [
+        {
+          id: "lineup-1",
+          side: "HOME",
+          jerseyNumber: "7",
+          formationSlot: "3-3",
+          isStarter: true,
+          player: { id: "player-1", name: "Bukayo Saka" },
+        },
+        {
+          id: "lineup-2",
+          side: "AWAY",
+          jerseyNumber: "15",
+          isStarter: false,
+          player: { id: "player-3", name: "Nicolas Jackson" },
+        },
+      ],
+    });
+
+    const detail = buildFixtureDetailModules(fixture);
+
+    expect(detail.timeline[0]).toEqual(
+      expect.objectContaining({
+        actor: "Bukayo Saka",
+        secondaryActor: "Martin Odegaard",
+        minuteLabel: "63+1'",
+      })
+    );
+    expect(detail.statistics[0]).toEqual(
+      expect.objectContaining({
+        label: "Shots on target",
+        home: "7",
+        away: "4",
+      })
+    );
+    expect(detail.lineups.home.starters[0]).toEqual(
+      expect.objectContaining({
+        name: "Bukayo Saka",
+      })
+    );
+    expect(detail.lineups.away.bench[0]).toEqual(
+      expect.objectContaining({
+        name: "Nicolas Jackson",
+      })
+    );
+  });
 });

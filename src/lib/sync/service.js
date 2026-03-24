@@ -1,8 +1,62 @@
 import { db } from "../db";
+import { getProviderDescriptor } from "../sports/provider";
+
+function buildProviderMetadata(descriptor) {
+  if (!descriptor) {
+    return null;
+  }
+
+  return {
+    role: descriptor.role || null,
+    tier: descriptor.tier || null,
+    family: descriptor.adapter || null,
+    namespace: descriptor.envNamespace || null,
+    sports: descriptor.sports || [],
+    fallbackFor: descriptor.fallbackFor || [],
+    assetHosts: descriptor.defaultAssetHosts || [],
+  };
+}
+
+async function ensureSyncSourceProvider(providerCode) {
+  const descriptor = getProviderDescriptor(providerCode);
+  if (!descriptor) {
+    return null;
+  }
+
+  const kind = descriptor.sports?.[0] ? `${descriptor.sports[0]}-feed` : null;
+
+  return db.sourceProvider.upsert({
+    where: {
+      code: providerCode,
+    },
+    update: {
+      name: descriptor.name,
+      kind,
+      family: descriptor.adapter || null,
+      namespace: descriptor.envNamespace || null,
+      role: descriptor.role || null,
+      tier: descriptor.tier || null,
+      metadata: buildProviderMetadata(descriptor),
+    },
+    create: {
+      code: providerCode,
+      name: descriptor.name,
+      kind,
+      family: descriptor.adapter || null,
+      namespace: descriptor.envNamespace || null,
+      role: descriptor.role || null,
+      tier: descriptor.tier || null,
+      metadata: buildProviderMetadata(descriptor),
+    },
+  });
+}
 
 export async function startSyncJob({ provider, source, bucket }) {
+  const sourceProvider = await ensureSyncSourceProvider(provider);
+
   return db.syncJob.create({
     data: {
+      sourceProviderId: sourceProvider?.id || null,
       provider,
       source,
       bucket,
@@ -46,19 +100,28 @@ export async function saveCheckpoint({
   payload = null,
   errorMessage = null,
   success = true,
+  markSuccess = success,
+  markFailure = !success,
 }) {
+  const sourceProvider = await ensureSyncSourceProvider(provider);
   const updateData = {
+    sourceProviderId: sourceProvider?.id || null,
     syncJobId,
     cursor,
     payload,
     errorMessage,
   };
 
-  if (success) {
+  if (markSuccess) {
     updateData.lastSuccessAt = new Date();
-    updateData.errorMessage = null;
   } else {
+    updateData.lastSuccessAt = undefined;
+  }
+
+  if (markFailure) {
     updateData.lastFailureAt = new Date();
+  } else if (markSuccess) {
+    updateData.errorMessage = null;
   }
 
   return db.syncCheckpoint.upsert({
@@ -70,14 +133,15 @@ export async function saveCheckpoint({
     },
     update: updateData,
     create: {
+      sourceProviderId: sourceProvider?.id || null,
       provider,
       key,
       syncJobId,
       cursor,
       payload,
       errorMessage,
-      lastSuccessAt: success ? new Date() : null,
-      lastFailureAt: success ? null : new Date(),
+      lastSuccessAt: markSuccess ? new Date() : null,
+      lastFailureAt: markFailure ? new Date() : null,
     },
   });
 }

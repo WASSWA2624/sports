@@ -150,6 +150,23 @@ function normalizeSide(location) {
   return null;
 }
 
+function normalizeStoredSide(value) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = String(value).toLowerCase();
+  if (normalized.includes("home")) {
+    return "home";
+  }
+
+  if (normalized.includes("away")) {
+    return "away";
+  }
+
+  return null;
+}
+
 function getSideIds(side, fixture, payload) {
   const ids = new Set();
   const participants = asArray(payload?.participants);
@@ -252,6 +269,7 @@ function getEventDescription(event, fallback = "") {
 
 function getEventSortValue(event) {
   return pickFirst(
+    toNumber(event?.sortValue),
     toNumber(getEventMinute(event)),
     toNumber(event?.sort_order),
     toNumber(event?.order),
@@ -275,7 +293,39 @@ function isFeaturedEvent(typeKey, title) {
   );
 }
 
+function buildTimelineItemsFromRelations(fixture) {
+  return asArray(fixture?.incidents)
+    .map((incident) => {
+      const typeKey = normalizeEventTypeKey({
+        type: {
+          developer_name: incident?.incidentKey || incident?.type,
+          name: incident?.title,
+        },
+      });
+      const title = incident?.title || incident?.type || "Event";
+
+      return {
+        id: String(incident?.id || `${title}-${incident?.minute || 0}-${incident?.sortOrder || 0}`),
+        minuteLabel: formatMinuteLabel(incident?.minute, incident?.extraMinute),
+        side: normalizeStoredSide(incident?.side),
+        title,
+        typeKey,
+        actor: incident?.player?.name || null,
+        secondaryActor: incident?.secondaryPlayer?.name || null,
+        description: incident?.description || incident?.secondaryLabel || title,
+        score: incident?.secondaryLabel || null,
+        sortValue: toNumber(incident?.minute) ?? toNumber(incident?.sortOrder) ?? 0,
+        featured: isFeaturedEvent(typeKey, title),
+      };
+    })
+    .sort(compareTimelineItems);
+}
+
 function buildTimelineItems(fixture, payload, locale = "en") {
+  if (Array.isArray(fixture?.incidents) && fixture.incidents.length) {
+    return buildTimelineItemsFromRelations(fixture);
+  }
+
   const dictionary = getDictionary(locale);
   const sourceEvents = asArray(payload?.events).length
     ? asArray(payload.events)
@@ -352,7 +402,59 @@ function getStatisticOrderKey(label) {
   return priorityIndex === -1 ? STAT_PRIORITY.length + 1 : priorityIndex;
 }
 
+function buildStatisticsFromRelations(fixture) {
+  return asArray(fixture?.statistics)
+    .reduce((accumulator, entry) => {
+      const label = entry?.name || "Statistic";
+      const key = String(entry?.metricKey || label).toLowerCase();
+      const side = normalizeStoredSide(entry?.side);
+
+      if (!side) {
+        return accumulator;
+      }
+
+      if (!accumulator.has(key)) {
+        accumulator.set(key, {
+          key,
+          label,
+          home: null,
+          away: null,
+          group: entry?.statGroup || "general",
+        });
+      }
+
+      accumulator.get(key)[side] = normalizeDisplayValue(entry?.value);
+      return accumulator;
+    }, new Map())
+    .values();
+}
+
 function buildStatistics(payload, fixture, locale = "en") {
+  if (Array.isArray(fixture?.statistics) && fixture.statistics.length) {
+    return [...buildStatisticsFromRelations(fixture)]
+      .filter((entry) => entry.home != null || entry.away != null)
+      .sort((left, right) => {
+        const priorityDifference = getStatisticOrderKey(left.label) - getStatisticOrderKey(right.label);
+        if (priorityDifference !== 0) {
+          return priorityDifference;
+        }
+
+        return left.label.localeCompare(right.label);
+      })
+      .slice(0, 10)
+      .map((entry) => {
+        const homeNumeric = toNumber(entry.home);
+        const awayNumeric = toNumber(entry.away);
+        const total = (homeNumeric || 0) + (awayNumeric || 0);
+
+        return {
+          ...entry,
+          homeShare: total > 0 ? Math.round(((homeNumeric || 0) / total) * 100) : 50,
+          awayShare: total > 0 ? Math.round(((awayNumeric || 0) / total) * 100) : 50,
+        };
+      });
+  }
+
   const grouped = new Map();
 
   for (const entry of asArray(payload?.statistics)) {
@@ -467,7 +569,32 @@ function sortLineupPlayers(left, right) {
   });
 }
 
+function buildLineupSideFromRelations(side, fixture) {
+  const players = asArray(fixture?.lineups)
+    .filter((entry) => normalizeStoredSide(entry?.side) === side)
+    .map((entry) => ({
+      id: String(entry?.id || entry?.player?.id || entry?.player?.name || `${side}-player`),
+      name: entry?.player?.name || "Player",
+      jerseyNumber: entry?.jerseyNumber || "?",
+      formationField: entry?.formationSlot || null,
+      formationPosition: null,
+      position: entry?.positionLabel || null,
+      isStarter: Boolean(entry?.isStarter),
+    }))
+    .sort(sortLineupPlayers);
+
+  return {
+    formation: getFormationForSide(side, getFixturePayload(fixture), fixture),
+    starters: players.filter((entry) => entry.isStarter),
+    bench: players.filter((entry) => !entry.isStarter),
+  };
+}
+
 function buildLineupSide(side, payload, fixture, locale = "en") {
+  if (Array.isArray(fixture?.lineups) && fixture.lineups.length) {
+    return buildLineupSideFromRelations(side, fixture);
+  }
+
   const sideIds = getSideIds(side, fixture, payload);
   const players = asArray(payload?.lineups)
     .filter((entry) =>

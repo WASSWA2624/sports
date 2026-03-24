@@ -97,6 +97,18 @@ function buildPlayerSourceCode(player) {
   );
 }
 
+function mergeJsonMetadata(existingMetadata, nextMetadata) {
+  const existing =
+    existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {};
+  const next = nextMetadata && typeof nextMetadata === "object" ? nextMetadata : {};
+  const merged = {
+    ...existing,
+    ...next,
+  };
+
+  return Object.keys(merged).length ? merged : null;
+}
+
 async function upsertProviderRef(
   tx,
   {
@@ -1217,7 +1229,7 @@ export async function persistFixtureBatch(fixtures) {
         round: fixture.round || round?.name || null,
         stateReason: fixture.stateReason,
         lastSyncedAt: new Date(),
-        metadata: fixture.metadata,
+        metadata: mergeJsonMetadata(existingFixture?.metadata, fixture.metadata),
       };
 
       const storedFixture = existingFixture
@@ -1655,6 +1667,146 @@ export async function persistOddsBatch(markets) {
           metadata: selection.metadata,
         });
       }
+    });
+
+    processed += 1;
+  }
+
+  return processed;
+}
+
+export async function persistPredictionBatch(predictions) {
+  const providerContext = getProviderContext();
+  let processed = 0;
+
+  for (const prediction of predictions || []) {
+    if (!prediction?.key || !prediction?.title) {
+      continue;
+    }
+
+    await db.$transaction(async (tx) => {
+      const sourceProvider = await ensureSourceProvider(tx, providerContext);
+      const fixtureId =
+        prediction.fixtureExternalRef
+          ? (await findEntityIdByProviderRef(
+              tx,
+              sourceProvider.id,
+              "FIXTURE",
+              prediction.fixtureExternalRef
+            )) ||
+            (
+              await tx.fixture.findUnique({
+                where: { externalRef: prediction.fixtureExternalRef },
+                select: { id: true },
+              })
+            )?.id ||
+            null
+          : null;
+      const competitionId =
+        prediction.competitionExternalRef
+          ? (await findEntityIdByProviderRef(
+              tx,
+              sourceProvider.id,
+              "COMPETITION",
+              prediction.competitionExternalRef
+            )) ||
+            (
+              await tx.competition.findUnique({
+                where: { externalRef: prediction.competitionExternalRef },
+                select: { id: true },
+              })
+            )?.id ||
+            null
+          : null;
+      const teamId =
+        prediction.teamExternalRef
+          ? (await findEntityIdByProviderRef(
+              tx,
+              sourceProvider.id,
+              "TEAM",
+              prediction.teamExternalRef
+            )) ||
+            (
+              await tx.team.findUnique({
+                where: { externalRef: prediction.teamExternalRef },
+                select: { id: true },
+              })
+            )?.id ||
+            null
+          : null;
+      const bookmakerId =
+        prediction.bookmakerExternalRef
+          ? (await findEntityIdByProviderRef(
+              tx,
+              sourceProvider.id,
+              "BOOKMAKER",
+              prediction.bookmakerExternalRef
+            )) ||
+            (
+              await tx.bookmaker.findFirst({
+                where: {
+                  OR: [
+                    { code: prediction.bookmakerExternalRef },
+                    { slug: prediction.bookmakerExternalRef },
+                    { name: prediction.bookmakerExternalRef },
+                  ],
+                },
+                select: { id: true },
+              })
+            )?.id ||
+            null
+          : null;
+
+      await tx.predictionRecommendation.upsert({
+        where: {
+          key: prediction.key,
+        },
+        update: {
+          sourceProviderId: sourceProvider.id,
+          fixtureId,
+          competitionId,
+          teamId,
+          bookmakerId,
+          recommendationType: toStringOrNull(prediction.recommendationType) || "PICK",
+          title: prediction.title,
+          summary: toStringOrNull(prediction.summary),
+          marketType: toStringOrNull(prediction.marketType),
+          selectionLabel: toStringOrNull(prediction.selectionLabel),
+          line: decimalOrNull(prediction.line),
+          priceDecimal: decimalOrNull(prediction.priceDecimal),
+          confidence: Number.isFinite(Number(prediction.confidence))
+            ? Number(prediction.confidence)
+            : null,
+          edgeScore: decimalOrNull(prediction.edgeScore),
+          isPublished: prediction.isPublished !== false,
+          publishedAt: prediction.publishedAt || null,
+          expiresAt: prediction.expiresAt || null,
+          metadata: prediction.metadata || null,
+        },
+        create: {
+          sourceProviderId: sourceProvider.id,
+          fixtureId,
+          competitionId,
+          teamId,
+          bookmakerId,
+          key: prediction.key,
+          recommendationType: toStringOrNull(prediction.recommendationType) || "PICK",
+          title: prediction.title,
+          summary: toStringOrNull(prediction.summary),
+          marketType: toStringOrNull(prediction.marketType),
+          selectionLabel: toStringOrNull(prediction.selectionLabel),
+          line: decimalOrNull(prediction.line),
+          priceDecimal: decimalOrNull(prediction.priceDecimal),
+          confidence: Number.isFinite(Number(prediction.confidence))
+            ? Number(prediction.confidence)
+            : null,
+          edgeScore: decimalOrNull(prediction.edgeScore),
+          isPublished: prediction.isPublished !== false,
+          publishedAt: prediction.publishedAt || null,
+          expiresAt: prediction.expiresAt || null,
+          metadata: prediction.metadata || null,
+        },
+      });
     });
 
     processed += 1;

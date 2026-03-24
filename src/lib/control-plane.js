@@ -340,12 +340,20 @@ function serializeAuditLog(entry) {
 }
 
 function checkpointBudgetMs(key) {
-  if (key === "fixtures:live" || key === "fixtures:active-detail") {
+  if (
+    key === "fixtures:live" ||
+    key === "fixtures:active-detail" ||
+    key.startsWith("fixture-detail:")
+  ) {
     return 1000 * 60 * 10;
   }
 
   if (key.startsWith("odds:")) {
     return 1000 * 60 * 20;
+  }
+
+  if (key === "bookmakers:catalog" || key === "predictions:catalog" || key.startsWith("predictions:")) {
+    return 1000 * 60 * 60 * 12;
   }
 
   if (key.startsWith("broadcast:")) {

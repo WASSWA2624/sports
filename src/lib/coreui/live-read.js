@@ -79,6 +79,27 @@ function buildFixtureDetailInclude() {
       orderBy: [{ bookmaker: "asc" }, { marketType: "asc" }],
       take: 8,
     },
+    incidents: {
+      orderBy: [{ minute: "asc" }, { sortOrder: "asc" }],
+      include: {
+        team: true,
+        player: true,
+        secondaryPlayer: true,
+      },
+    },
+    lineups: {
+      orderBy: [{ side: "asc" }, { sortOrder: "asc" }],
+      include: {
+        team: true,
+        player: true,
+      },
+    },
+    statistics: {
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: {
+        team: true,
+      },
+    },
     broadcastChannels: {
       orderBy: [{ territory: "asc" }, { name: "asc" }],
     },

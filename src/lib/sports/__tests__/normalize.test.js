@@ -22,6 +22,36 @@ describe("sports normalizers", () => {
           { score: { participant: "home", goals: 2 } },
           { score: { participant: "away", goals: 1 } },
         ],
+        events: [
+          {
+            id: 900,
+            minute: 34,
+            participant_id: 1,
+            player_id: 77,
+            player_name: "Bukayo Saka",
+            type: { name: "Goal", developer_name: "GOAL" },
+            info: "Right-foot finish",
+          },
+        ],
+        statistics: [
+          {
+            participant_id: 1,
+            location: "home",
+            data: { value: 7 },
+            type: { name: "Shots On Target", code: "shots_on_target" },
+          },
+        ],
+        lineups: [
+          {
+            id: 3001,
+            team_id: 1,
+            player_id: 77,
+            player_name: "Bukayo Saka",
+            jersey_number: 7,
+            formation_field: "3:3",
+            type_id: 11,
+          },
+        ],
         starting_at: "2026-03-23T18:00:00Z",
       },
     ]);
@@ -33,6 +63,38 @@ describe("sports normalizers", () => {
       homeTeam: { name: "Arsenal" },
       awayTeam: { name: "Chelsea" },
       resultSnapshot: { homeScore: 2, awayScore: 1 },
+      incidents: [
+        expect.objectContaining({
+          minute: 34,
+          side: "HOME",
+          teamExternalRef: "1",
+          player: expect.objectContaining({
+            externalRef: "77",
+            name: "Bukayo Saka",
+          }),
+        }),
+      ],
+      lineups: [
+        expect.objectContaining({
+          side: "HOME",
+          teamExternalRef: "1",
+          player: expect.objectContaining({
+            externalRef: "77",
+          }),
+        }),
+      ],
+      statistics: [
+        expect.objectContaining({
+          side: "HOME",
+          metricKey: "shots_on_target",
+          value: "7",
+        }),
+      ],
+      detailPayloads: {
+        incidents: true,
+        lineups: true,
+        statistics: true,
+      },
     });
   });
 
