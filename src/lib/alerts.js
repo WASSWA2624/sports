@@ -6,6 +6,7 @@ export const ALERT_NOTIFICATION_TYPES = [
   "CARD",
   "PERIOD_CHANGE",
   "FINAL_RESULT",
+  "NEWS",
 ];
 
 const ALERT_TYPE_ALIASES = {
@@ -25,6 +26,8 @@ const ALERT_TYPE_ALIASES = {
   final_result: "FINAL_RESULT",
   finalResult: "FINAL_RESULT",
   FINAL_RESULT: "FINAL_RESULT",
+  news: "NEWS",
+  NEWS: "NEWS",
 };
 
 export function normalizeAlertType(value) {

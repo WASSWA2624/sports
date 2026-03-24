@@ -429,6 +429,7 @@ const fr = {
   profileAlertCards: "Cartons",
   profileAlertKickoff: "Coup d'envoi",
   profileAlertPeriodChange: "Changement de periode",
+  profileAlertNews: "Actualites",
   profileAlertFinalResult: "RÃ©sultat final",
   profileSave: "Enregistrer les prÃ©fÃ©rences",
   profileLoading: "Chargement du profil...",

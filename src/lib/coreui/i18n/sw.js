@@ -432,6 +432,7 @@ const sw = {
   profileAlertKickoff: "Mwanzo wa mechi",
   profileAlertPeriodChange: "Mabadiliko ya kipindi",
   profileAlertFinalResult: "Matokeo ya mwisho",
+  profileAlertNews: "Habari",
   profileSave: "Hifadhi mapendeleo",
   profileLoading: "Inapakia wasifu...",
   profileAuthRequired: "Uthibitisho unahitajika.",

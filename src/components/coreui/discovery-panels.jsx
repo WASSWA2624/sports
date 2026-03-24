@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { AlertSubscriptionControl } from "./alert-subscription-control";
+import { FavoriteToggle } from "./favorite-toggle";
 import sharedStyles from "./styles.module.css";
 import styles from "./search-experience.module.css";
 import { buildCompetitionHref } from "../../lib/coreui/routes";
+import { TrackedActionLink } from "./tracked-action-link";
 import { usePreferences } from "./preferences-provider";
 
 export function TopCompetitionsPanel({ locale, dictionary, competitions = [] }) {
@@ -41,6 +43,33 @@ export function TopCompetitionsPanel({ locale, dictionary, competitions = [] }) 
               ) : null}
               <span className={sharedStyles.badge}>{dictionary.live}: {competition.liveCount}</span>
               <span className={sharedStyles.badge}>{dictionary.fixtures}: {competition.scheduledCount}</span>
+            </div>
+
+            <div className={sharedStyles.fixtureActionRow}>
+              <FavoriteToggle
+                itemId={`competition:${competition.code}`}
+                locale={locale}
+                compact
+                label={competition.name}
+                metadata={{
+                  country: competition.country || null,
+                }}
+                surface="top-competitions"
+              />
+              <AlertSubscriptionControl
+                itemId={`competition:${competition.code}`}
+                locale={locale}
+                supportedTypes={["KICKOFF", "FINAL_RESULT", "NEWS"]}
+                compact
+                label={competition.name}
+                metadata={{
+                  country: competition.country || null,
+                }}
+                surface="top-competitions"
+              />
+              <Link href={buildCompetitionHref(locale, competition)} className={sharedStyles.sectionAction}>
+                {dictionary.overview}
+              </Link>
             </div>
           </article>
         ))}
@@ -146,6 +175,91 @@ export function FavoriteReminderPanel({ locale, dictionary, items = [] }) {
                 {dictionary.settingsTitle}
               </Link>
             </div>
+          </div>
+        </article>
+      )}
+    </section>
+  );
+}
+
+export function FavoriteChannelPanel({
+  locale,
+  dictionary,
+  items = [],
+  actions = [],
+  surface = "favorite-channels",
+  geoLabel = null,
+}) {
+  const { compliance, promptPreferences, setPromptPreference } = usePreferences();
+
+  if (!items.length || !actions.length) {
+    return null;
+  }
+
+  if (!compliance.promptOptInAllowed) {
+    return null;
+  }
+
+  return (
+    <section className={sharedStyles.section}>
+      <div className={sharedStyles.sectionHeader}>
+        <div>
+          <p className={sharedStyles.eyebrow}>{dictionary.favorites}</p>
+          <h2 className={sharedStyles.sectionTitle}>{dictionary.favoriteChannelsTitle}</h2>
+          <p className={sharedStyles.sectionLead}>
+            {promptPreferences.funnelPrompts
+              ? dictionary.favoriteChannelsLead
+              : dictionary.favoriteChannelsOptInLead}
+          </p>
+        </div>
+        {geoLabel ? <span className={sharedStyles.badge}>{geoLabel}</span> : null}
+      </div>
+
+      {promptPreferences.funnelPrompts ? (
+        <article className={styles.discoveryPanel}>
+          <div className={sharedStyles.inlineBadgeRow}>
+            {items.map((item) => (
+              <Link key={item.itemId} href={item.href} className={sharedStyles.badge}>
+                {item.title}
+              </Link>
+            ))}
+          </div>
+
+          <div className={sharedStyles.fixtureActionRow}>
+            {actions.map((action) => (
+              <TrackedActionLink
+                key={action.key}
+                href={action.href}
+                external
+                className={sharedStyles.actionLink}
+                analyticsEvent="funnel_cta_click"
+                analyticsSurface={surface}
+                analyticsEntityType="favorite_channel"
+                analyticsEntityId={action.key}
+                analyticsAction={`favorite-channel:${action.key}`}
+                analyticsMetadata={{
+                  itemIds: items.map((item) => item.itemId),
+                }}
+              >
+                {action.label}
+              </TrackedActionLink>
+            ))}
+          </div>
+        </article>
+      ) : (
+        <article className={styles.discoveryPanel}>
+          <p className={sharedStyles.muted}>{dictionary.favoriteChannelsOptInBody}</p>
+          <div className={sharedStyles.fixtureActionRow}>
+            <button
+              type="button"
+              className={sharedStyles.sectionAction}
+              onClick={() => setPromptPreference("funnelPrompts", true)}
+            >
+              {dictionary.enableFunnelPrompts}
+            </button>
+            <Link href={`/${locale}/settings`} className={sharedStyles.sectionAction}>
+              {dictionary.settingsTitle}
+            </Link>
           </div>
         </article>
       )}

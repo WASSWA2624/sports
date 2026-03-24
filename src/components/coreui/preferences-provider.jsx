@@ -485,6 +485,18 @@ export function PreferencesProvider({
         },
       });
 
+      additions.forEach((itemId) => {
+        trackPersonalizationEvent({
+          event: "favorite_created",
+          surface: options.surface || "app",
+          itemId,
+          metadata: {
+            authenticated: Boolean(sessionUser),
+            source: options.source || "batch",
+          },
+        });
+      });
+
       if (!sessionUser) {
         return;
       }
@@ -536,6 +548,31 @@ export function PreferencesProvider({
           metadata: {
             authenticated: Boolean(sessionUser),
             label: options.label || null,
+          },
+        });
+      }
+
+      if (shouldAutoFavorite) {
+        trackProductAnalyticsEvent({
+          event: "favorites_depth_changed",
+          surface: options.surface || "app",
+          entityId: itemId,
+          metadata: {
+            action: "add",
+            count: nextWatchlist.length,
+            authenticated: Boolean(sessionUser),
+            source: "alert_opt_in",
+          },
+        });
+
+        trackPersonalizationEvent({
+          event: "favorite_created",
+          surface: options.surface || "app",
+          itemId,
+          metadata: {
+            authenticated: Boolean(sessionUser),
+            label: options.label || null,
+            source: "alert_opt_in",
           },
         });
       }

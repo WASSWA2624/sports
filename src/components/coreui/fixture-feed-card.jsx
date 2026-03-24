@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertSubscriptionControl } from "./alert-subscription-control";
 import { FavoriteToggle } from "./favorite-toggle";
 import styles from "./styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
@@ -19,6 +20,10 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
   const href = buildMatchHref(locale, fixture);
   const dictionary = getDictionary(locale);
   const fixtureLabel = `${fixture.homeTeam?.name} vs ${fixture.awayTeam?.name}`;
+  const supportedAlertTypes =
+    mode === "results"
+      ? ["FINAL_RESULT", "NEWS"]
+      : ["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"];
   const minuteLabel = fixture.status === "LIVE" ? getFixtureMinute(fixture) : null;
   const refreshProfile = buildFixtureRefreshProfile(fixture, locale);
   const isFrozen = isTerminalStatus(fixture.status) && fixture.resultSnapshot?.capturedAt;
@@ -86,6 +91,17 @@ export function FixtureFeedCard({ fixture, locale, mode = "live", showLeague = t
         <FavoriteToggle
           itemId={`fixture:${fixture.id}`}
           locale={locale}
+          compact
+          label={fixtureLabel}
+          metadata={{
+            leagueCode: fixture.league?.code || null,
+          }}
+          surface={`fixture-feed-${mode}`}
+        />
+        <AlertSubscriptionControl
+          itemId={`fixture:${fixture.id}`}
+          locale={locale}
+          supportedTypes={supportedAlertTypes}
           compact
           label={fixtureLabel}
           metadata={{

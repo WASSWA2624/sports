@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertSubscriptionControl } from "./alert-subscription-control";
 import { FavoriteToggle } from "./favorite-toggle";
 import boardStyles from "./live-board.module.css";
 import sharedStyles from "./styles.module.css";
@@ -86,6 +87,17 @@ export function LiveBoardFixtureRow({ fixture, locale, dictionary, surface = "li
         <FavoriteToggle
           itemId={`fixture:${fixture.id}`}
           locale={locale}
+          compact
+          label={fixtureLabel}
+          metadata={{
+            leagueCode: fixture.league?.code || null,
+          }}
+          surface={`${surface}-row`}
+        />
+        <AlertSubscriptionControl
+          itemId={`fixture:${fixture.id}`}
+          locale={locale}
+          supportedTypes={["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"]}
           compact
           label={fixtureLabel}
           metadata={{

@@ -475,6 +475,7 @@ const en = {
   profileAlertKickoff: "Kickoff",
   profileAlertPeriodChange: "Period change",
   profileAlertFinalResult: "Final result",
+  profileAlertNews: "News",
   profileCurrentPassword: "Current password",
   profileCurrentPasswordRequired: "Enter your current password to verify this change.",
   profileNewPassword: "New password",

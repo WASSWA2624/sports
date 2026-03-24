@@ -43,6 +43,7 @@ export default function SettingsClient({ dictionary }) {
     ["kickoff", dictionary.profileAlertKickoff],
     ["periodChange", dictionary.profileAlertPeriodChange],
     ["finalResult", dictionary.profileAlertFinalResult],
+    ["news", dictionary.profileAlertNews],
   ];
 
   async function handleSave(event) {

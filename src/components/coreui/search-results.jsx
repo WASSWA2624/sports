@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AlertSubscriptionControl } from "./alert-subscription-control";
 import { FavoriteToggle } from "./favorite-toggle";
 import sharedStyles from "./styles.module.css";
 import styles from "./search-experience.module.css";
@@ -21,6 +22,22 @@ function getResultTypeLabel(result, dictionary) {
     default:
       return dictionary.search;
   }
+}
+
+function getSearchResultAlertTypes(result) {
+  if (result?.type === "competition") {
+    return ["KICKOFF", "FINAL_RESULT", "NEWS"];
+  }
+
+  if (result?.type === "team") {
+    return ["KICKOFF", "FINAL_RESULT", "NEWS"];
+  }
+
+  if (result?.type === "match") {
+    return ["KICKOFF", "GOAL", "CARD", "PERIOD_CHANGE", "FINAL_RESULT", "NEWS"];
+  }
+
+  return [];
 }
 
 export function SearchResultsSection({
@@ -50,6 +67,7 @@ export function SearchResultsSection({
 
       <div className={compact ? styles.resultListCompact : styles.resultList}>
         {results.map((result) => {
+          const supportedAlertTypes = getSearchResultAlertTypes(result);
           const content = (
             <>
               <div className={styles.resultMeta}>
@@ -97,13 +115,25 @@ export function SearchResultsSection({
               )}
 
               {result.itemId ? (
-                <FavoriteToggle
-                  itemId={result.itemId}
-                  locale={locale}
-                  compact
-                  label={result.title}
-                  surface={surface}
-                />
+                <div className={sharedStyles.fixtureActionRow}>
+                  <FavoriteToggle
+                    itemId={result.itemId}
+                    locale={locale}
+                    compact
+                    label={result.title}
+                    surface={surface}
+                  />
+                  {supportedAlertTypes.length ? (
+                    <AlertSubscriptionControl
+                      itemId={result.itemId}
+                      locale={locale}
+                      supportedTypes={supportedAlertTypes}
+                      compact
+                      label={result.title}
+                      surface={surface}
+                    />
+                  ) : null}
+                </div>
               ) : null}
             </article>
           );

@@ -17,6 +17,7 @@ export const DEFAULT_ALERT_PREFERENCES = Object.freeze({
   kickoff: true,
   periodChange: false,
   finalResult: true,
+  news: true,
 });
 
 export const DEFAULT_PROMPT_PREFERENCES = Object.freeze({
@@ -67,6 +68,7 @@ const alertPreferencesSchema = z
     kickoff: z.boolean().default(DEFAULT_ALERT_PREFERENCES.kickoff),
     periodChange: z.boolean().default(DEFAULT_ALERT_PREFERENCES.periodChange),
     finalResult: z.boolean().default(DEFAULT_ALERT_PREFERENCES.finalResult),
+    news: z.boolean().default(DEFAULT_ALERT_PREFERENCES.news),
   })
   .default(DEFAULT_ALERT_PREFERENCES);
 
@@ -149,6 +151,7 @@ export function normalizeAlertPreferenceProfile(value) {
     kickoff: Boolean(parsed.kickoff),
     periodChange: Boolean(parsed.periodChange),
     finalResult: Boolean(parsed.finalResult),
+    news: Boolean(parsed.news),
   };
 }
 
@@ -258,6 +261,11 @@ export function mergeProfilePreferences(localValue, remoteValue, options = {}) {
           local.alertPreferences.finalResult,
           remote.alertPreferences.finalResult,
           DEFAULT_ALERT_PREFERENCES.finalResult
+        ),
+        news: pickExplicitValue(
+          local.alertPreferences.news,
+          remote.alertPreferences.news,
+          DEFAULT_ALERT_PREFERENCES.news
         ),
       },
       promptPreferences: {

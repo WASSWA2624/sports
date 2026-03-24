@@ -22,6 +22,10 @@ function getAlertLabel(type, dictionary) {
     return dictionary.profileAlertPeriodChange;
   }
 
+  if (type === "NEWS") {
+    return dictionary.profileAlertNews;
+  }
+
   return dictionary.profileAlertFinalResult;
 }
 

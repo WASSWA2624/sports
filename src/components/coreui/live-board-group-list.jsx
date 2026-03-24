@@ -35,6 +35,82 @@ function movementLabel(movement) {
   return "=";
 }
 
+function buildPreferenceWeightMap(itemIds = []) {
+  const size = itemIds.length;
+
+  return itemIds.reduce((accumulator, itemId, index) => {
+    accumulator.set(itemId, Math.max(1, size - index));
+    return accumulator;
+  }, new Map());
+}
+
+function getFixturePriorityScore(fixture, favoriteItems, recentWeights) {
+  const fixtureId = fixture?.id ? `fixture:${fixture.id}` : null;
+  const homeTeamId = fixture?.homeTeamId || fixture?.homeTeam?.id;
+  const awayTeamId = fixture?.awayTeamId || fixture?.awayTeam?.id;
+  const competitionId = fixture?.league?.code ? `competition:${fixture.league.code}` : null;
+  let score = 0;
+
+  if (fixtureId && favoriteItems.has(fixtureId)) {
+    score += 900;
+  }
+
+  if (homeTeamId && favoriteItems.has(`team:${homeTeamId}`)) {
+    score += 360;
+  }
+
+  if (awayTeamId && favoriteItems.has(`team:${awayTeamId}`)) {
+    score += 360;
+  }
+
+  if (competitionId && favoriteItems.has(competitionId)) {
+    score += 700;
+  }
+
+  if (fixtureId) {
+    score += (recentWeights.get(fixtureId) || 0) * 90;
+  }
+
+  if (homeTeamId) {
+    score += (recentWeights.get(`team:${homeTeamId}`) || 0) * 50;
+  }
+
+  if (awayTeamId) {
+    score += (recentWeights.get(`team:${awayTeamId}`) || 0) * 50;
+  }
+
+  if (competitionId) {
+    score += (recentWeights.get(competitionId) || 0) * 75;
+  }
+
+  if (fixture?.status === "LIVE") {
+    score += 40;
+  }
+
+  return score;
+}
+
+function getGroupPriorityScore(group, favoriteItems, recentWeights) {
+  const competitionId = group?.leagueCode ? `competition:${group.leagueCode}` : null;
+  const fixtureScores = (group?.fixtures || []).map((fixture) =>
+    getFixturePriorityScore(fixture, favoriteItems, recentWeights)
+  );
+  let score = fixtureScores.reduce((highest, value) => Math.max(highest, value), 0);
+
+  if (competitionId && favoriteItems.has(competitionId)) {
+    score += 1000;
+  }
+
+  if (competitionId) {
+    score += (recentWeights.get(competitionId) || 0) * 90;
+  }
+
+  score += (group?.summary?.LIVE || 0) * 18;
+  score += (group?.summary?.total || 0) * 4;
+
+  return score;
+}
+
 function InlineAffiliateCard({ locale, dictionary, monetization, surface }) {
   if (!monetization?.affiliate?.href) {
     return null;
@@ -147,19 +223,21 @@ export function LiveBoardGroupList({
   surface = "live-board",
   emptyLabel,
 }) {
-  const { isWatched } = usePreferences();
+  const { isWatched, recentViews, watchlist } = usePreferences();
   const [collapsedGroupKeys, setCollapsedGroupKeys] = useState([]);
+  const favoriteItems = new Set(watchlist || []);
+  const recentWeights = buildPreferenceWeightMap(recentViews || []);
 
   if (!groups.length) {
     return <div className={sharedStyles.emptyState}>{emptyLabel || dictionary.noData}</div>;
   }
 
   const orderedGroups = [...groups].sort((left, right) => {
-    const leftPinned = left.leagueCode ? isWatched(`competition:${left.leagueCode}`) : false;
-    const rightPinned = right.leagueCode ? isWatched(`competition:${right.leagueCode}`) : false;
+    const leftScore = getGroupPriorityScore(left, favoriteItems, recentWeights);
+    const rightScore = getGroupPriorityScore(right, favoriteItems, recentWeights);
 
-    if (leftPinned !== rightPinned) {
-      return leftPinned ? -1 : 1;
+    if (rightScore !== leftScore) {
+      return rightScore - leftScore;
     }
 
     if ((right.summary?.LIVE || 0) !== (left.summary?.LIVE || 0)) {
@@ -287,7 +365,29 @@ export function LiveBoardGroupList({
                 {isOpen ? (
                   <>
                     <div className={boardStyles.fixtureRows}>
-                      {group.fixtures.map((fixture) => (
+                      {[...(group.fixtures || [])]
+                        .sort((leftFixture, rightFixture) => {
+                          const rightScore = getFixturePriorityScore(
+                            rightFixture,
+                            favoriteItems,
+                            recentWeights
+                          );
+                          const leftScore = getFixturePriorityScore(
+                            leftFixture,
+                            favoriteItems,
+                            recentWeights
+                          );
+
+                          if (rightScore !== leftScore) {
+                            return rightScore - leftScore;
+                          }
+
+                          return (
+                            new Date(leftFixture.startsAt).getTime() -
+                            new Date(rightFixture.startsAt).getTime()
+                          );
+                        })
+                        .map((fixture) => (
                         <LiveBoardFixtureRow
                           key={fixture.id}
                           fixture={fixture}
