@@ -47,12 +47,24 @@ async function ensureSourceProvider(tx) {
       name: "SportsMonks",
       kind: "football-feed",
       isActive: true,
+      metadata: {
+        role: "primary",
+        tier: "live",
+        sports: ["football"],
+        stage: "live",
+      },
     },
     create: {
       code: PROVIDER_CODE,
       name: "SportsMonks",
       kind: "football-feed",
       isActive: true,
+      metadata: {
+        role: "primary",
+        tier: "live",
+        sports: ["football"],
+        stage: "live",
+      },
     },
   });
 }

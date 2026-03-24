@@ -71,6 +71,11 @@ export default async function NewsArticlePage({ params }) {
   }
 
   const { article, relatedArticles } = detail;
+  const heroStyle = article.heroImageUrl
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(7, 16, 28, 0.08), rgba(7, 16, 28, 0.72)), url(${article.heroImageUrl})`,
+      }
+    : undefined;
   const structuredData = [
     buildBreadcrumbStructuredData([
       { name: dictionary.home, path: `/${locale}` },
@@ -106,7 +111,7 @@ export default async function NewsArticlePage({ params }) {
 
       <div className={styles.storyLayout}>
         <article className={`${sharedStyles.panel} ${styles.storyPanel}`}>
-          <div className={styles.heroVisual}>
+          <div className={styles.heroVisual} style={heroStyle}>
             <span className={sharedStyles.badge}>{article.topicLabel}</span>
             <strong className={styles.heroTitle}>
               {article.primaryCompetition?.shortName ||

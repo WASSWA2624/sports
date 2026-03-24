@@ -1,3 +1,4 @@
+import { buildAssetUrl } from "../assets";
 import { getDictionary } from "./dictionaries";
 import { buildAbsoluteUrl } from "./site";
 
@@ -27,9 +28,12 @@ export function buildPageMetadata(locale, title, description, path = "", options
   const dictionary = getDictionary(locale);
   const normalizedPath = normalizePath(path);
   const canonicalPath = `/${locale}${normalizedPath}`;
-  const imagePath = options.image || "/favicon.ico";
+  const imagePath = buildAssetUrl(options.image || "/favicon.ico", {
+    type: "article-image",
+    width: 1200,
+  });
   const absoluteCanonical = buildAbsoluteUrl(canonicalPath);
-  const absoluteImage = buildAbsoluteUrl(imagePath);
+  const absoluteImage = imagePath.startsWith("http") ? imagePath : buildAbsoluteUrl(imagePath);
   const pageKeywords = cleanKeywords([
     dictionary.brand,
     dictionary.scores,
@@ -229,6 +233,10 @@ export function buildNewsArticleStructuredData({
   image,
   section,
 }) {
+  const normalizedImage = image
+    ? buildAssetUrl(image, { type: "article-image", width: 1200 })
+    : null;
+
   return {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -237,7 +245,9 @@ export function buildNewsArticleStructuredData({
     datePublished: publishedAt || undefined,
     dateModified: updatedAt || publishedAt || undefined,
     articleSection: section || undefined,
-    image: image ? [buildAbsoluteUrl(image)] : undefined,
+    image: normalizedImage
+      ? [normalizedImage.startsWith("http") ? normalizedImage : buildAbsoluteUrl(normalizedImage)]
+      : undefined,
     url: buildAbsoluteUrl(path),
   };
 }

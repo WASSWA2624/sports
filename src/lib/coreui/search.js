@@ -80,7 +80,7 @@ function compareSearchItems(left, right) {
   return compareResultTitles(left, right);
 }
 
-function buildEmptySearchResult(query = "") {
+export function buildEmptySearchResult(query = "") {
   return {
     query,
     topResults: [],
@@ -89,6 +89,13 @@ function buildEmptySearchResult(query = "") {
       total: 0,
       counts: Object.fromEntries(SEARCH_SECTION_KEYS.map((key) => [key, 0])),
     },
+  };
+}
+
+export function buildDegradedSearchResult(query = "") {
+  return {
+    ...buildEmptySearchResult(query),
+    degraded: true,
   };
 }
 

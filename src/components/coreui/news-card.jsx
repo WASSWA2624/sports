@@ -25,11 +25,16 @@ export function NewsCard({
   const articleClassName = compact
     ? `${sharedStyles.panel} ${styles.card} ${styles.cardCompact}`
     : `${sharedStyles.panel} ${styles.card}`;
+  const visualStyle = article.heroImageUrl
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(7, 16, 28, 0.08), rgba(7, 16, 28, 0.7)), url(${article.heroImageUrl})`,
+      }
+    : undefined;
 
   return (
     <article className={articleClassName} data-priority={priority ? "true" : "false"}>
       <Link href={href} className={styles.cardLink} data-news-article-id={article.id}>
-        <div className={compact ? styles.visualCompact : styles.visual}>
+        <div className={compact ? styles.visualCompact : styles.visual} style={visualStyle}>
           <span className={sharedStyles.badge}>{article.topicLabel}</span>
           <strong className={styles.visualTitle}>
             {article.primaryCompetition?.shortName ||

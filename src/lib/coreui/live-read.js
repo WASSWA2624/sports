@@ -1,4 +1,5 @@
 import { db } from "../db";
+import { observeOperation } from "../operations";
 import { getPublicSurfaceFlags } from "./feature-flags";
 import {
   buildFixtureBroadcastModule,
@@ -188,128 +189,202 @@ function buildSurfaceState(fixtures, degraded) {
 }
 
 export async function getLiveMatchdayFeed({ locale = "en", status, leagueCode, date } = {}) {
-  const selectedDate = normalizeBoardDate(date);
-  let degraded = false;
-  let fixtures = [];
-
-  try {
-    fixtures = await db.fixture.findMany({
-      where: {
-        startsAt: {
-          gte: startOfDay(selectedDate),
-          lte: endOfDay(selectedDate),
-        },
+  return observeOperation(
+    {
+      metric: "live_surface",
+      subject: "matchday_feed",
+      route: "/live",
+      category: "route_latency",
+      statusFromResult(result) {
+        return result?.surfaceState?.degraded ? "degraded" : "ok";
       },
-      orderBy: [{ startsAt: "asc" }],
-      take: 120,
-      include: buildFixtureInclude(),
-    });
-  } catch (error) {
-    degraded = true;
-  }
+      metadata(result) {
+        return {
+          locale,
+          selectedStatus: result?.selectedStatus || null,
+          selectedLeague: result?.selectedLeague || null,
+          fixtureCount: result?.fixtures?.length || 0,
+          staleCount: result?.surfaceState?.staleCount || 0,
+        };
+      },
+      eventOptions: {
+        force: true,
+      },
+    },
+    async () => {
+      const selectedDate = normalizeBoardDate(date);
+      let degraded = false;
+      let fixtures = [];
 
-  const selectedStatus = normalizeFilter(status, LIVE_STATUS_FILTERS, "ALL");
-  const statusFiltered =
-    selectedStatus === "ALL"
-      ? fixtures
-      : fixtures.filter((fixture) => fixture.status === selectedStatus);
+      try {
+        fixtures = await db.fixture.findMany({
+          where: {
+            startsAt: {
+              gte: startOfDay(selectedDate),
+              lte: endOfDay(selectedDate),
+            },
+          },
+          orderBy: [{ startsAt: "asc" }],
+          take: 120,
+          include: buildFixtureInclude(),
+        });
+      } catch (error) {
+        degraded = true;
+      }
 
-  const leaguePivots = buildLeaguePivots(statusFiltered);
-  const selectedLeague = normalizeLeagueFilter(leagueCode, leaguePivots);
-  const leagueFiltered =
-    selectedLeague === "all"
-      ? statusFiltered
-      : statusFiltered.filter((fixture) => fixture.league?.code === selectedLeague);
-  const sortedFixtures = sortFixturesForLiveFeed(leagueFiltered);
+      const selectedStatus = normalizeFilter(status, LIVE_STATUS_FILTERS, "ALL");
+      const statusFiltered =
+        selectedStatus === "ALL"
+          ? fixtures
+          : fixtures.filter((fixture) => fixture.status === selectedStatus);
 
-  return {
-    fixtures: sortedFixtures,
-    groups: buildBoardGroups(sortedFixtures),
-    selectedStatus,
-    selectedLeague,
-    selectedDate: selectedDate.toISOString().slice(0, 10),
-    statusOptions: LIVE_STATUS_FILTERS.map((entry) => ({
-      value: entry,
-      count: entry === "ALL" ? fixtures.length : fixtures.filter((fixture) => fixture.status === entry).length,
-    })),
-    leaguePivots,
-    summary: buildFixtureWindowSummary(fixtures),
-    refresh: buildFeedRefreshProfile(sortedFixtures, locale),
-    surfaceState: buildSurfaceState(fixtures, degraded),
-  };
+      const leaguePivots = buildLeaguePivots(statusFiltered);
+      const selectedLeague = normalizeLeagueFilter(leagueCode, leaguePivots);
+      const leagueFiltered =
+        selectedLeague === "all"
+          ? statusFiltered
+          : statusFiltered.filter((fixture) => fixture.league?.code === selectedLeague);
+      const sortedFixtures = sortFixturesForLiveFeed(leagueFiltered);
+
+      return {
+        fixtures: sortedFixtures,
+        groups: buildBoardGroups(sortedFixtures),
+        selectedStatus,
+        selectedLeague,
+        selectedDate: selectedDate.toISOString().slice(0, 10),
+        statusOptions: LIVE_STATUS_FILTERS.map((entry) => ({
+          value: entry,
+          count:
+            entry === "ALL"
+              ? fixtures.length
+              : fixtures.filter((fixture) => fixture.status === entry).length,
+        })),
+        leaguePivots,
+        summary: buildFixtureWindowSummary(fixtures),
+        refresh: buildFeedRefreshProfile(sortedFixtures, locale),
+        surfaceState: buildSurfaceState(fixtures, degraded),
+      };
+    }
+  );
 }
 
 export async function getResultsFeed({ locale = "en", status, leagueCode } = {}) {
   void locale;
-  const fixtures = await safely(
-    () =>
-      db.fixture.findMany({
-        where: {
-          status: { in: TERMINAL_STATUSES },
-          startsAt: { gte: addDays(new Date(), -RESULTS_WINDOW_DAYS) },
-        },
-        orderBy: [{ startsAt: "desc" }],
-        take: 60,
-        include: buildFixtureInclude(),
-      }),
-    []
+  return observeOperation(
+    {
+      metric: "results_surface",
+      subject: "results_feed",
+      route: "/results",
+      statusFromResult() {
+        return "ok";
+      },
+      metadata(result) {
+        return {
+          fixtureCount: result?.fixtures?.length || 0,
+          selectedStatus: result?.selectedStatus || null,
+          selectedLeague: result?.selectedLeague || null,
+        };
+      },
+      eventOptions: {
+        force: true,
+      },
+    },
+    async () => {
+      const fixtures = await safely(
+        () =>
+          db.fixture.findMany({
+            where: {
+              status: { in: TERMINAL_STATUSES },
+              startsAt: { gte: addDays(new Date(), -RESULTS_WINDOW_DAYS) },
+            },
+            orderBy: [{ startsAt: "desc" }],
+            take: 60,
+            include: buildFixtureInclude(),
+          }),
+        []
+      );
+
+      const selectedStatus = normalizeFilter(status, RESULT_STATUS_FILTERS, "ALL");
+      const statusFiltered =
+        selectedStatus === "ALL"
+          ? fixtures
+          : fixtures.filter((fixture) => fixture.status === selectedStatus);
+
+      const leaguePivots = buildLeaguePivots(statusFiltered);
+      const selectedLeague = normalizeLeagueFilter(leagueCode, leaguePivots);
+      const leagueFiltered =
+        selectedLeague === "all"
+          ? statusFiltered
+          : statusFiltered.filter((fixture) => fixture.league?.code === selectedLeague);
+
+      return {
+        fixtures: leagueFiltered,
+        selectedStatus,
+        selectedLeague,
+        statusOptions: RESULT_STATUS_FILTERS.map((entry) => ({
+          value: entry,
+          count:
+            entry === "ALL"
+              ? fixtures.length
+              : fixtures.filter((fixture) => fixture.status === entry).length,
+        })),
+        leaguePivots,
+        summary: buildFixtureWindowSummary(fixtures),
+      };
+    }
   );
-
-  const selectedStatus = normalizeFilter(status, RESULT_STATUS_FILTERS, "ALL");
-  const statusFiltered =
-    selectedStatus === "ALL"
-      ? fixtures
-      : fixtures.filter((fixture) => fixture.status === selectedStatus);
-
-  const leaguePivots = buildLeaguePivots(statusFiltered);
-  const selectedLeague = normalizeLeagueFilter(leagueCode, leaguePivots);
-  const leagueFiltered =
-    selectedLeague === "all"
-      ? statusFiltered
-      : statusFiltered.filter((fixture) => fixture.league?.code === selectedLeague);
-
-  return {
-    fixtures: leagueFiltered,
-    selectedStatus,
-    selectedLeague,
-    statusOptions: RESULT_STATUS_FILTERS.map((entry) => ({
-      value: entry,
-      count: entry === "ALL" ? fixtures.length : fixtures.filter((fixture) => fixture.status === entry).length,
-    })),
-    leaguePivots,
-    summary: buildFixtureWindowSummary(fixtures),
-  };
 }
 
 export async function getLiveMatchDetail(reference, locale = "en", viewerTerritory) {
-  return safely(async () => {
-    const fixture = await db.fixture.findFirst({
-      where: {
-        OR: [{ id: reference }, { externalRef: reference }],
+  return observeOperation(
+    {
+      metric: "live_surface",
+      subject: "live_match_detail",
+      route: `/match/${reference || ""}`,
+      statusFromResult(result) {
+        return result ? "ok" : "empty";
       },
-      include: buildFixtureDetailInclude(),
-    });
+      metadata(result) {
+        return {
+          fixture: result?.id || reference || null,
+          status: result?.status || null,
+          locale,
+        };
+      },
+      eventOptions: {
+        force: true,
+      },
+    },
+    () =>
+      safely(async () => {
+        const fixture = await db.fixture.findFirst({
+          where: {
+            OR: [{ id: reference }, { externalRef: reference }],
+          },
+          include: buildFixtureDetailInclude(),
+        });
 
-    if (!fixture) {
-      return null;
-    }
+        if (!fixture) {
+          return null;
+        }
 
-    const detail = buildFixtureDetailModules(fixture, locale);
-    const flags = await getPublicSurfaceFlags();
+        const detail = buildFixtureDetailModules(fixture, locale);
+        const flags = await getPublicSurfaceFlags();
 
-    return {
-      ...fixture,
-      detail,
-      odds: buildFixtureOddsModule(fixture, {
-        locale,
-        viewerTerritory,
-        enabled: flags.fixtureOdds,
-      }),
-      broadcast: buildFixtureBroadcastModule(fixture, {
-        locale,
-        viewerTerritory,
-        enabled: flags.fixtureBroadcast,
-      }),
-    };
-  }, null);
+        return {
+          ...fixture,
+          detail,
+          odds: buildFixtureOddsModule(fixture, {
+            locale,
+            viewerTerritory,
+            enabled: flags.fixtureOdds,
+          }),
+          broadcast: buildFixtureBroadcastModule(fixture, {
+            locale,
+            viewerTerritory,
+            enabled: flags.fixtureBroadcast,
+          }),
+        };
+      }, null)
+  );
 }

@@ -1,7 +1,8 @@
 import { getSportsSyncConfig } from "../sports/config";
 import { ensureProviderIsActive } from "../control-plane";
 import { db } from "../db";
-import { createSportsProvider } from "../sports/provider";
+import { recordSyncPressureEvent } from "../operations";
+import { createSportsProvider, getProviderChain } from "../sports/provider";
 import {
   persistFixtureBatch,
   persistOddsBatch,
@@ -9,6 +10,7 @@ import {
   persistTeamBatch,
   replaceBroadcastChannels,
 } from "../sports/repository";
+import { buildLiveWindowBackpressurePlan } from "./backpressure";
 import {
   completeSyncJob,
   failSyncJob,
@@ -47,6 +49,43 @@ function addHours(date, amount) {
   const next = new Date(date);
   next.setUTCHours(next.getUTCHours() + amount);
   return next;
+}
+
+async function getHighFrequencyFixturePlan(config) {
+  const now = new Date();
+  const fixtures = await db.fixture.findMany({
+    where: {
+      externalRef: { not: null },
+      OR: [
+        { status: "LIVE" },
+        {
+          startsAt: {
+            gte: addHours(now, -6),
+            lte: addHours(now, 3),
+          },
+        },
+      ],
+    },
+    orderBy: [{ startsAt: "asc" }],
+    take: 80,
+    select: {
+      id: true,
+      externalRef: true,
+      status: true,
+      startsAt: true,
+      lastSyncedAt: true,
+    },
+  });
+  const plan = buildLiveWindowBackpressurePlan(fixtures, config);
+
+  await recordSyncPressureEvent({
+    subject: "high-frequency",
+    status: plan.underPressure ? "throttled" : "nominal",
+    value: plan.summary.liveFixtures,
+    metadata: plan.summary,
+  });
+
+  return plan;
 }
 
 async function runTrackedSeasonJobs(provider, seasonRefs, syncJobId, config) {
@@ -115,27 +154,9 @@ async function runLivescores(provider, syncJobId, config) {
   return recordsProcessed;
 }
 
-async function runActiveFixtureDetails(provider, syncJobId, config) {
+async function runActiveFixtureDetails(provider, syncJobId, config, fixturePlan) {
   const now = new Date();
-  const fixtureRefs = (
-    await db.fixture.findMany({
-      where: {
-        externalRef: { not: null },
-        OR: [
-          { status: "LIVE" },
-          {
-            startsAt: {
-              gte: addHours(now, -6),
-              lte: addHours(now, 2),
-            },
-          },
-        ],
-      },
-      orderBy: { startsAt: "asc" },
-      take: 20,
-      select: { externalRef: true },
-    })
-  )
+  const fixtureRefs = (fixturePlan?.detailFixtures || [])
     .map((fixture) => fixture.externalRef)
     .filter(Boolean);
 
@@ -158,6 +179,8 @@ async function runActiveFixtureDetails(provider, syncJobId, config) {
     payload: {
       fixtures: fixtureRefs.length,
       hydrated: recordsProcessed,
+      pressureMode: fixturePlan?.mode || "nominal",
+      budget: fixturePlan?.summary?.detailBudget || fixtureRefs.length,
     },
     success: true,
   });
@@ -165,26 +188,14 @@ async function runActiveFixtureDetails(provider, syncJobId, config) {
   return recordsProcessed;
 }
 
-async function runOdds(provider, syncJobId, config) {
+async function runOdds(provider, syncJobId, config, fixturePlan) {
   if (!config.oddsEnabled) {
     return 0;
   }
 
   const fixtureRefs = config.trackedFixtureRefs.length
     ? config.trackedFixtureRefs
-    : (
-        await db.fixture.findMany({
-          where: {
-            OR: [
-              { status: "LIVE" },
-              { startsAt: { gte: new Date() } },
-            ],
-          },
-          orderBy: { startsAt: "asc" },
-          take: 20,
-          select: { externalRef: true },
-        })
-      )
+    : (fixturePlan?.oddsFixtures || [])
         .map((fixture) => fixture.externalRef)
         .filter(Boolean);
 
@@ -210,22 +221,12 @@ async function runOdds(provider, syncJobId, config) {
   return recordsProcessed;
 }
 
-async function runBroadcasts(provider, syncJobId, config) {
+async function runBroadcasts(provider, syncJobId, config, fixturePlan) {
   if (!config.broadcastEnabled) {
     return 0;
   }
 
-  const fixtureRefs = (
-    await db.fixture.findMany({
-      where: {
-        externalRef: { not: null },
-        OR: [{ status: "LIVE" }, { startsAt: { gte: new Date() } }],
-      },
-      orderBy: { startsAt: "asc" },
-      take: 20,
-      select: { externalRef: true },
-    })
-  )
+  const fixtureRefs = (fixturePlan?.broadcastFixtures || [])
     .map((fixture) => fixture.externalRef)
     .filter(Boolean);
 
@@ -274,11 +275,12 @@ export const syncJobRegistry = {
   "high-frequency": {
     bucket: "high-frequency",
     async run(provider, syncJobId, config) {
+      const fixturePlan = await getHighFrequencyFixturePlan(config);
       let recordsProcessed = 0;
       recordsProcessed += await runLivescores(provider, syncJobId, config);
-      recordsProcessed += await runActiveFixtureDetails(provider, syncJobId, config);
-      recordsProcessed += await runOdds(provider, syncJobId, config);
-      recordsProcessed += await runBroadcasts(provider, syncJobId, config);
+      recordsProcessed += await runActiveFixtureDetails(provider, syncJobId, config, fixturePlan);
+      recordsProcessed += await runOdds(provider, syncJobId, config, fixturePlan);
+      recordsProcessed += await runBroadcasts(provider, syncJobId, config, fixturePlan);
       return recordsProcessed;
     },
   },
@@ -307,6 +309,7 @@ export async function runSyncJob(jobName) {
       resultSummary: {
         job: jobName,
         completedAt: new Date().toISOString(),
+        providerChain: getProviderChain(config.provider, config.fallbackProviders),
       },
     };
     await completeSyncJob(job.id, summary);

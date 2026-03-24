@@ -39,6 +39,28 @@ Configure SportsMonks credentials and tracked IDs in `.env`, then trigger the ad
 
 Admin-triggered sync endpoint: `POST /api/admin/sync/[job]`
 
+High-frequency sync now applies live-window backpressure budgets for:
+
+- active fixture detail hydration
+- odds pulls
+- broadcast pulls
+
+Tune the related caps with:
+
+- `SPORTS_SYNC_MAX_ACTIVE_FIXTURE_DETAILS`
+- `SPORTS_SYNC_MAX_ODDS_FIXTURES`
+- `SPORTS_SYNC_MAX_BROADCAST_FIXTURES`
+- `SPORTS_SYNC_BACKPRESSURE_LIVE_THRESHOLD`
+- `SPORTS_SYNC_STALE_LIVE_GRACE_MINUTES`
+
+Prepared provider expansion slots:
+
+- `SPORTSMONKS_BASKETBALL`
+- `SPORTSMONKS_TENNIS`
+- `SCOREBOARD_BACKUP`
+
+The admin control room surfaces provider chain readiness, latency/cache/search observability, failure drills, and asset/CDN coverage.
+
 ## Database (Prisma + MySQL)
 
 ```bash
@@ -47,3 +69,15 @@ npm run db:migrate
 ```
 
 Set `DATABASE_URL` in `.env` before running DB commands.
+
+## Operational Health
+
+Public health endpoint: `GET /api/health`
+
+The health response now includes:
+
+- provider chain readiness
+- live-data stale rate
+- cache hit-rate summary
+- search latency summary
+- asset coverage and CDN readiness

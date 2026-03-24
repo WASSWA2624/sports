@@ -1,3 +1,5 @@
+import { buildAssetUrl } from "../assets";
+
 const WORDS_PER_MINUTE = 220;
 
 function pickString(...values) {
@@ -194,6 +196,10 @@ export function decorateNewsArticle(article) {
     excerpt: buildArticleExcerpt(article),
     bodyBlocks: splitArticleBody(article?.body),
     readingTimeMinutes: estimateReadingTimeMinutes(article?.body),
+    heroImageUrl: buildAssetUrl(article?.imageUrl, {
+      type: "article-image",
+      width: 1200,
+    }),
     topicLabel: metadata.topicLabel || article?.category?.name || "Top story",
     topicSlug: metadata.topicSlug || article?.category?.slug || "top-story",
     hero: metadata.hero,

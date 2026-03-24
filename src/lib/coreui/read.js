@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { db } from "../db";
 import { getShellChromeContent } from "../control-plane";
+import { markCacheFill, observeCachedOperation, observeOperation } from "../operations";
 import { buildStandingTable } from "./competition-standings";
 import { getPublicSurfaceFlags } from "./feature-flags";
 import {
@@ -200,7 +201,7 @@ function buildLinkedCompetitions(team) {
   return [...linked.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
-export const getHomeSnapshot = unstable_cache(
+const getHomeSnapshotCached = unstable_cache(
   async () =>
     safely(async () => {
       const now = new Date();
@@ -245,65 +246,108 @@ export const getHomeSnapshot = unstable_cache(
         }),
       ]);
 
-      return { liveFixtures, upcomingFixtures, recentResults, leagues };
+      const snapshot = { liveFixtures, upcomingFixtures, recentResults, leagues };
+      markCacheFill("coreui:home", { surface: "home" });
+      return snapshot;
     }, { liveFixtures: [], upcomingFixtures: [], recentResults: [], leagues: [] }),
   ["coreui:home"],
   { revalidate: 120, tags: ["coreui:home"] }
 );
 
-export const getLiveFixtures = unstable_cache(
+export async function getHomeSnapshot() {
+  return observeCachedOperation("coreui:home", () => getHomeSnapshotCached(), {
+    route: "/",
+    revalidateSeconds: 120,
+    surface: "home",
+  });
+}
+
+const getLiveFixturesCached = unstable_cache(
   async () =>
     safely(
-      () =>
-        db.fixture.findMany({
+      async () => {
+        const fixtures = await db.fixture.findMany({
           where: { status: "LIVE" },
           orderBy: [{ startsAt: "asc" }],
           take: 24,
           include: fixtureInclude(),
-        }),
+        });
+        markCacheFill("coreui:live", { surface: "live" });
+        return fixtures;
+      },
       []
     ),
   ["coreui:live"],
   { revalidate: 30, tags: ["coreui:live"] }
 );
 
-export const getUpcomingFixtures = unstable_cache(
+export async function getLiveFixtures() {
+  return observeCachedOperation("coreui:live", () => getLiveFixturesCached(), {
+    route: "/live",
+    revalidateSeconds: 30,
+    surface: "live",
+  });
+}
+
+const getUpcomingFixturesCached = unstable_cache(
   async () =>
     safely(
-      () =>
-        db.fixture.findMany({
+      async () => {
+        const fixtures = await db.fixture.findMany({
           where: { status: "SCHEDULED", startsAt: { gte: new Date() } },
           orderBy: [{ startsAt: "asc" }],
           take: 36,
           include: fixtureInclude(),
-        }),
+        });
+        markCacheFill("coreui:fixtures", { surface: "fixtures" });
+        return fixtures;
+      },
       []
     ),
   ["coreui:fixtures"],
   { revalidate: 120, tags: ["coreui:fixtures"] }
 );
 
-export const getRecentResults = unstable_cache(
+export async function getUpcomingFixtures() {
+  return observeCachedOperation("coreui:fixtures", () => getUpcomingFixturesCached(), {
+    route: "/fixtures",
+    revalidateSeconds: 120,
+    surface: "fixtures",
+  });
+}
+
+const getRecentResultsCached = unstable_cache(
   async () =>
     safely(
-      () =>
-        db.fixture.findMany({
+      async () => {
+        const fixtures = await db.fixture.findMany({
           where: { status: { in: ["FINISHED", "POSTPONED", "CANCELLED"] } },
           orderBy: [{ startsAt: "desc" }],
           take: 36,
           include: fixtureInclude(),
-        }),
+        });
+        markCacheFill("coreui:results", { surface: "results" });
+        return fixtures;
+      },
       []
     ),
   ["coreui:results"],
   { revalidate: 180, tags: ["coreui:results"] }
 );
 
-export const getTablesOverview = unstable_cache(
+export async function getRecentResults() {
+  return observeCachedOperation("coreui:results", () => getRecentResultsCached(), {
+    route: "/results",
+    revalidateSeconds: 180,
+    surface: "results",
+  });
+}
+
+const getTablesOverviewCached = unstable_cache(
   async () =>
     safely(
-      () =>
-        db.league.findMany({
+      async () => {
+        const tables = await db.league.findMany({
           where: { isActive: true },
           orderBy: { name: "asc" },
           take: 16,
@@ -321,18 +365,29 @@ export const getTablesOverview = unstable_cache(
               },
             },
           },
-        }),
+        });
+        markCacheFill("coreui:tables", { surface: "tables" });
+        return tables;
+      },
       []
     ),
   ["coreui:tables"],
   { revalidate: 300, tags: ["coreui:tables"] }
 );
 
-export const getLeagueDirectory = unstable_cache(
+export async function getTablesOverview() {
+  return observeCachedOperation("coreui:tables", () => getTablesOverviewCached(), {
+    route: "/tables",
+    revalidateSeconds: 300,
+    surface: "tables",
+  });
+}
+
+const getLeagueDirectoryCached = unstable_cache(
   async () =>
     safely(
-      () =>
-        db.league.findMany({
+      async () => {
+        const leagues = await db.league.findMany({
           where: { isActive: true },
           orderBy: [{ country: "asc" }, { name: "asc" }],
           take: 60,
@@ -345,14 +400,25 @@ export const getLeagueDirectory = unstable_cache(
               select: { id: true, startsAt: true, status: true },
             },
           },
-        }),
+        });
+        markCacheFill("coreui:leagues", { surface: "leagues" });
+        return leagues;
+      },
       []
     ),
   ["coreui:leagues"],
   { revalidate: 300, tags: ["coreui:leagues"] }
 );
 
-export const getShellSnapshot = unstable_cache(
+export async function getLeagueDirectory() {
+  return observeCachedOperation("coreui:leagues", () => getLeagueDirectoryCached(), {
+    route: "/leagues",
+    revalidateSeconds: 300,
+    surface: "leagues",
+  });
+}
+
+const getShellSnapshotCached = unstable_cache(
   async (locale = "en") =>
     safely(async () => {
       const now = new Date();
@@ -529,7 +595,7 @@ export const getShellSnapshot = unstable_cache(
         status: fixture.status,
       }));
 
-      return {
+      const snapshot = {
         availableSports: sports,
         featuredCompetitions,
         countryGroups,
@@ -538,6 +604,8 @@ export const getShellSnapshot = unstable_cache(
         searchShortcuts,
         chrome: shellChrome,
       };
+      markCacheFill("coreui:shell", { surface: "shell", locale });
+      return snapshot;
     }, {
       availableSports: [],
       featuredCompetitions: [],
@@ -555,409 +623,492 @@ export const getShellSnapshot = unstable_cache(
   { revalidate: 300, tags: ["coreui:shell"] }
 );
 
+export async function getShellSnapshot(locale = "en") {
+  return observeCachedOperation("coreui:shell", () => getShellSnapshotCached(locale), {
+    route: "/shell",
+    revalidateSeconds: 300,
+    surface: "shell",
+    locale,
+  });
+}
+
 export async function getSportHub(reference) {
-  return safely(async () => {
-    const sportReference = normalizeReference(reference);
-    const sport = await db.sport.findFirst({
-      where: {
-        isEnabled: true,
-        OR: [{ id: sportReference }, { code: sportReference }, { slug: sportReference }],
+  const sportReference = normalizeReference(reference);
+
+  return observeOperation(
+    {
+      metric: "page_read",
+      subject: "sport_hub",
+      route: `/sports/${sportReference || ""}`,
+      statusFromResult(result) {
+        return result ? "ok" : "empty";
       },
-      select: {
-        id: true,
-        code: true,
-        slug: true,
-        name: true,
+      metadata(result) {
+        return {
+          sport: result?.sport?.code || sportReference || null,
+        };
       },
-    });
-
-    if (!sport) {
-      return null;
-    }
-
-    const recentWindow = new Date();
-    recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
-
-    const [leagues, fixtures] = await Promise.all([
-      db.league.findMany({
-        where: {
-          sportId: sport.id,
-          isActive: true,
-        },
-        orderBy: [{ country: "asc" }, { name: "asc" }],
-        include: {
-          countryRecord: true,
-          competition: true,
-          teams: { select: { id: true } },
-          seasons: {
-            where: { isCurrent: true },
-            take: 1,
-            select: {
-              name: true,
-            },
+      eventOptions: {
+        force: true,
+      },
+    },
+    () =>
+      safely(async () => {
+        const sport = await db.sport.findFirst({
+          where: {
+            isEnabled: true,
+            OR: [{ id: sportReference }, { code: sportReference }, { slug: sportReference }],
           },
-          fixtures: {
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+          },
+        });
+
+        if (!sport) {
+          return null;
+        }
+
+        const recentWindow = new Date();
+        recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+
+        const [leagues, fixtures] = await Promise.all([
+          db.league.findMany({
             where: {
+              sportId: sport.id,
+              isActive: true,
+            },
+            orderBy: [{ country: "asc" }, { name: "asc" }],
+            include: {
+              countryRecord: true,
+              competition: true,
+              teams: { select: { id: true } },
+              seasons: {
+                where: { isCurrent: true },
+                take: 1,
+                select: {
+                  name: true,
+                },
+              },
+              fixtures: {
+                where: {
+                  OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
+                },
+                orderBy: [{ startsAt: "asc" }],
+                take: 3,
+                include: fixtureInclude({ includeOdds: false }),
+              },
+            },
+          }),
+          db.fixture.findMany({
+            where: {
+              sportId: sport.id,
               OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
             },
             orderBy: [{ startsAt: "asc" }],
-            take: 3,
+            take: 10,
             include: fixtureInclude({ includeOdds: false }),
-          },
-        },
-      }),
-      db.fixture.findMany({
-        where: {
-          sportId: sport.id,
-          OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
-        },
-        orderBy: [{ startsAt: "asc" }],
-        take: 10,
-        include: fixtureInclude({ includeOdds: false }),
-      }),
-    ]);
+          }),
+        ]);
 
-    const competitions = leagues.map((league) => ({
-      id: league.id,
-      code: league.code,
-      name: league.competition?.name || league.name,
-      leagueName: league.name,
-      country: league.countryRecord?.name || league.country || null,
-      competitionId: league.competitionId,
-      currentSeason: league.seasons[0]?.name || null,
-      teamCount: league.teams.length,
-      fixtureSummary: summarizeFixtureStates(league.fixtures),
-      fixtures: league.fixtures,
-    }));
+        const competitions = leagues.map((league) => ({
+          id: league.id,
+          code: league.code,
+          name: league.competition?.name || league.name,
+          leagueName: league.name,
+          country: league.countryRecord?.name || league.country || null,
+          competitionId: league.competitionId,
+          currentSeason: league.seasons[0]?.name || null,
+          teamCount: league.teams.length,
+          fixtureSummary: summarizeFixtureStates(league.fixtures),
+          fixtures: league.fixtures,
+        }));
 
-    const countries = [...leagues.reduce((accumulator, league) => {
-      const key = league.countryRecord?.slug || league.countryRecord?.code || league.country || "country";
+        const countries = [...leagues.reduce((accumulator, league) => {
+          const key =
+            league.countryRecord?.slug || league.countryRecord?.code || league.country || "country";
 
-      if (!accumulator.has(key)) {
-        accumulator.set(key, {
-          id: league.countryRecord?.id || key,
-          code: league.countryRecord?.code || null,
-          slug: league.countryRecord?.slug || null,
-          name: league.countryRecord?.name || league.country || "Country",
-          competitionCount: 0,
-          teamCount: 0,
-          liveCount: 0,
-          scheduledCount: 0,
-          featuredLeagueCode: league.code,
+          if (!accumulator.has(key)) {
+            accumulator.set(key, {
+              id: league.countryRecord?.id || key,
+              code: league.countryRecord?.code || null,
+              slug: league.countryRecord?.slug || null,
+              name: league.countryRecord?.name || league.country || "Country",
+              competitionCount: 0,
+              teamCount: 0,
+              liveCount: 0,
+              scheduledCount: 0,
+              featuredLeagueCode: league.code,
+            });
+          }
+
+          const group = accumulator.get(key);
+          group.competitionCount += 1;
+          group.teamCount += league.teams.length;
+          group.liveCount += league.fixtures.filter((fixture) => fixture.status === "LIVE").length;
+          group.scheduledCount += league.fixtures.filter(
+            (fixture) => fixture.status === "SCHEDULED"
+          ).length;
+          return accumulator;
+        }, new Map()).values()].sort((left, right) => {
+          if (right.competitionCount !== left.competitionCount) {
+            return right.competitionCount - left.competitionCount;
+          }
+
+          return left.name.localeCompare(right.name);
         });
-      }
 
-      const group = accumulator.get(key);
-      group.competitionCount += 1;
-      group.teamCount += league.teams.length;
-      group.liveCount += league.fixtures.filter((fixture) => fixture.status === "LIVE").length;
-      group.scheduledCount += league.fixtures.filter((fixture) => fixture.status === "SCHEDULED").length;
-      return accumulator;
-    }, new Map()).values()].sort((left, right) => {
-      if (right.competitionCount !== left.competitionCount) {
-        return right.competitionCount - left.competitionCount;
-      }
-
-      return left.name.localeCompare(right.name);
-    });
-
-    return {
-      sport,
-      countries,
-      competitions,
-      fixtures,
-      fixtureSummary: summarizeFixtureStates(fixtures),
-    };
-  }, null);
+        return {
+          sport,
+          countries,
+          competitions,
+          fixtures,
+          fixtureSummary: summarizeFixtureStates(fixtures),
+        };
+      }, null)
+  );
 }
 
 export async function getCountryDetail(countryReference, { sportReference = "football" } = {}) {
-  return safely(async () => {
-    const normalizedCountryReference = normalizeReference(countryReference);
-    const normalizedSportReference = normalizeReference(sportReference) || "football";
-    const sport = await db.sport.findFirst({
-      where: {
-        isEnabled: true,
-        OR: [
-          { id: normalizedSportReference },
-          { code: normalizedSportReference },
-          { slug: normalizedSportReference },
-        ],
+  const normalizedCountryReference = normalizeReference(countryReference);
+  const normalizedSportReference = normalizeReference(sportReference) || "football";
+
+  return observeOperation(
+    {
+      metric: "page_read",
+      subject: "country_detail",
+      route: `/sports/${normalizedSportReference}/countries/${normalizedCountryReference || ""}`,
+      statusFromResult(result) {
+        return result ? "ok" : "empty";
       },
-      select: {
-        id: true,
-        code: true,
-        slug: true,
-        name: true,
+      metadata(result) {
+        return {
+          sport: result?.sport?.code || normalizedSportReference,
+          country: result?.country?.code || normalizedCountryReference || null,
+        };
       },
-    });
-
-    if (!sport) {
-      return null;
-    }
-
-    const country = await db.country.findFirst({
-      where: {
-        OR: [
-          { id: normalizedCountryReference },
-          { slug: normalizedCountryReference },
-          { code: String(normalizedCountryReference || "").toUpperCase() },
-          { name: normalizedCountryReference },
-        ],
+      eventOptions: {
+        force: true,
       },
-      select: {
-        id: true,
-        code: true,
-        slug: true,
-        name: true,
-      },
-    });
+    },
+    () =>
+      safely(async () => {
+        const sport = await db.sport.findFirst({
+          where: {
+            isEnabled: true,
+            OR: [
+              { id: normalizedSportReference },
+              { code: normalizedSportReference },
+              { slug: normalizedSportReference },
+            ],
+          },
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+          },
+        });
 
-    if (!country) {
-      return null;
-    }
+        if (!sport) {
+          return null;
+        }
 
-    const recentWindow = new Date();
-    recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+        const country = await db.country.findFirst({
+          where: {
+            OR: [
+              { id: normalizedCountryReference },
+              { slug: normalizedCountryReference },
+              { code: String(normalizedCountryReference || "").toUpperCase() },
+              { name: normalizedCountryReference },
+            ],
+          },
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            name: true,
+          },
+        });
 
-    const [leagues, fixtures] = await Promise.all([
-      db.league.findMany({
-        where: {
-          sportId: sport.id,
-          isActive: true,
-          OR: [
-            { countryId: country.id },
-            {
-              countryRecord: {
-                id: country.id,
-              },
+        if (!country) {
+          return null;
+        }
+
+        const recentWindow = new Date();
+        recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+
+        const [leagues, fixtures] = await Promise.all([
+          db.league.findMany({
+            where: {
+              sportId: sport.id,
+              isActive: true,
+              OR: [
+                { countryId: country.id },
+                {
+                  countryRecord: {
+                    id: country.id,
+                  },
+                },
+                { country: country.name },
+              ],
             },
-            { country: country.name },
-          ],
-        },
-        orderBy: [{ name: "asc" }],
-        include: {
-          competition: true,
-          teams: { select: { id: true } },
-          seasons: {
-            orderBy: [{ isCurrent: "desc" }, { startDate: "desc" }],
-            take: 3,
-            select: {
-              id: true,
-              name: true,
-              isCurrent: true,
-              startDate: true,
-              endDate: true,
-              _count: {
+            orderBy: [{ name: "asc" }],
+            include: {
+              competition: true,
+              teams: { select: { id: true } },
+              seasons: {
+                orderBy: [{ isCurrent: "desc" }, { startDate: "desc" }],
+                take: 3,
                 select: {
-                  fixtures: true,
-                  standings: true,
+                  id: true,
+                  name: true,
+                  isCurrent: true,
+                  startDate: true,
+                  endDate: true,
+                  _count: {
+                    select: {
+                      fixtures: true,
+                      standings: true,
+                    },
+                  },
                 },
               },
+              fixtures: {
+                where: {
+                  OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
+                },
+                orderBy: [{ startsAt: "asc" }],
+                take: 4,
+                include: fixtureInclude({ includeOdds: false }),
+              },
             },
-          },
-          fixtures: {
+          }),
+          db.fixture.findMany({
             where: {
+              sportId: sport.id,
+              countryId: country.id,
               OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
             },
             orderBy: [{ startsAt: "asc" }],
-            take: 4,
+            take: 10,
             include: fixtureInclude({ includeOdds: false }),
-          },
-        },
-      }),
-      db.fixture.findMany({
-        where: {
-          sportId: sport.id,
-          countryId: country.id,
-          OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
-        },
-        orderBy: [{ startsAt: "asc" }],
-        take: 10,
-        include: fixtureInclude({ includeOdds: false }),
-      }),
-    ]);
+          }),
+        ]);
 
-    return {
-      sport,
-      country,
-      competitions: leagues.map((league) => ({
-        id: league.id,
-        code: league.code,
-        name: league.competition?.name || league.name,
-        leagueName: league.name,
-        competitionId: league.competitionId,
-        currentSeason: league.seasons.find((season) => season.isCurrent)?.name || league.seasons[0]?.name || null,
-        seasons: league.seasons.map(toSeasonSummary),
-        teamCount: league.teams.length,
-        fixtures: league.fixtures,
-        fixtureSummary: summarizeFixtureStates(league.fixtures),
-      })),
-      fixtures,
-      fixtureSummary: summarizeFixtureStates(fixtures),
-    };
-  }, null);
+        return {
+          sport,
+          country,
+          competitions: leagues.map((league) => ({
+            id: league.id,
+            code: league.code,
+            name: league.competition?.name || league.name,
+            leagueName: league.name,
+            competitionId: league.competitionId,
+            currentSeason:
+              league.seasons.find((season) => season.isCurrent)?.name ||
+              league.seasons[0]?.name ||
+              null,
+            seasons: league.seasons.map(toSeasonSummary),
+            teamCount: league.teams.length,
+            fixtures: league.fixtures,
+            fixtureSummary: summarizeFixtureStates(league.fixtures),
+          })),
+          fixtures,
+          fixtureSummary: summarizeFixtureStates(fixtures),
+        };
+      }, null)
+  );
 }
 
 export async function getLeagueDetail(
   reference,
   { locale = "en", viewerTerritory, seasonRef, standingsView = "overall" } = {}
 ) {
-  const league = await safely(
+  return observeOperation(
+    {
+      metric: "page_read",
+      subject: "league_detail",
+      route: `/leagues/${reference || ""}`,
+      statusFromResult(result) {
+        return result ? "ok" : "empty";
+      },
+      metadata(result) {
+        return {
+          league: result?.code || reference || null,
+          season: result?.selectedSeason?.name || seasonRef || null,
+        };
+      },
+      eventOptions: {
+        force: true,
+      },
+    },
     async () => {
-      const recentWindow = new Date();
-      recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
+      const league = await safely(
+        async () => {
+          const recentWindow = new Date();
+          recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
 
-      const baseLeague = await db.league.findFirst({
-        where: {
-          OR: [{ id: reference }, { code: reference }],
-        },
-        include: {
-          sport: true,
-          countryRecord: true,
-          competition: {
+          const baseLeague = await db.league.findFirst({
+            where: {
+              OR: [{ id: reference }, { code: reference }],
+            },
             include: {
               sport: true,
-              country: true,
-            },
-          },
-          teams: {
-            orderBy: { name: "asc" },
-            take: 24,
-          },
-          seasons: {
-            orderBy: [{ isCurrent: "desc" }, { startDate: "desc" }],
-            take: 8,
-            select: {
-              id: true,
-              name: true,
-              externalRef: true,
-              startDate: true,
-              endDate: true,
-              isCurrent: true,
-              _count: {
-                select: {
-                  fixtures: true,
-                  standings: true,
+              countryRecord: true,
+              competition: {
+                include: {
+                  sport: true,
+                  country: true,
                 },
               },
-            },
-          },
-        }
-      });
-
-      if (!baseLeague) {
-        return null;
-      }
-
-      const selectedSeasonSummary = pickSelectedSeason(baseLeague.seasons, seasonRef);
-      const [selectedSeasonRecord, seasonFixtures, oddsFixtures] = await Promise.all([
-        selectedSeasonSummary
-          ? db.season.findUnique({
-              where: {
-                id: selectedSeasonSummary.id,
+              teams: {
+                orderBy: { name: "asc" },
+                take: 24,
               },
-              include: {
-                standings: {
-                  orderBy: { position: "asc" },
-                  include: {
-                    team: true,
-                    competition: {
-                      include: {
-                        country: true,
-                      },
+              seasons: {
+                orderBy: [{ isCurrent: "desc" }, { startDate: "desc" }],
+                take: 8,
+                select: {
+                  id: true,
+                  name: true,
+                  externalRef: true,
+                  startDate: true,
+                  endDate: true,
+                  isCurrent: true,
+                  _count: {
+                    select: {
+                      fixtures: true,
+                      standings: true,
                     },
                   },
                 },
               },
-            })
-          : Promise.resolve(null),
-        selectedSeasonSummary
-          ? db.fixture.findMany({
+            },
+          });
+
+          if (!baseLeague) {
+            return null;
+          }
+
+          const selectedSeasonSummary = pickSelectedSeason(baseLeague.seasons, seasonRef);
+          const [selectedSeasonRecord, seasonFixtures, oddsFixtures] = await Promise.all([
+            selectedSeasonSummary
+              ? db.season.findUnique({
+                  where: {
+                    id: selectedSeasonSummary.id,
+                  },
+                  include: {
+                    standings: {
+                      orderBy: { position: "asc" },
+                      include: {
+                        team: true,
+                        competition: {
+                          include: {
+                            country: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                })
+              : Promise.resolve(null),
+            selectedSeasonSummary
+              ? db.fixture.findMany({
+                  where: {
+                    seasonId: selectedSeasonSummary.id,
+                  },
+                  orderBy: [{ startsAt: "asc" }],
+                  take: 160,
+                  include: fixtureInclude({ includeOdds: false }),
+                })
+              : Promise.resolve([]),
+            db.fixture.findMany({
               where: {
-                seasonId: selectedSeasonSummary.id,
+                leagueId: baseLeague.id,
+                OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
               },
               orderBy: [{ startsAt: "asc" }],
-              take: 160,
-              include: fixtureInclude({ includeOdds: false }),
-            })
-          : Promise.resolve([]),
-        db.fixture.findMany({
-          where: {
-            leagueId: baseLeague.id,
-            OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
-          },
-          orderBy: [{ startsAt: "asc" }],
-          take: 12,
-          include: fixtureInclude({
-            includeOdds: true,
-            oddsTake: 12,
-            includeBroadcast: true,
-          }),
-        }),
-      ]);
+              take: 12,
+              include: fixtureInclude({
+                includeOdds: true,
+                oddsTake: 12,
+                includeBroadcast: true,
+              }),
+            }),
+          ]);
+
+          return {
+            ...baseLeague,
+            selectedSeasonRecord,
+            seasonFixtures,
+            oddsFixtures,
+          };
+        },
+        null
+      );
+
+      if (!league) {
+        return null;
+      }
+
+      const flags = await getPublicSurfaceFlags();
+      const seasonFixtures = sortFixturesAsc(league.seasonFixtures || []);
+      const seasonSummary = league.selectedSeasonRecord
+        ? {
+            ...toSeasonSummary(league.selectedSeasonRecord),
+            standings: league.selectedSeasonRecord.standings || [],
+          }
+        : null;
+      const standingsTable = buildStandingTable({
+        teams: league.teams,
+        standings: seasonSummary?.standings || [],
+        fixtures: seasonFixtures,
+        view: standingsView,
+      });
+      const liveAndUpcomingFixtures = seasonFixtures.filter((fixture) =>
+        ["LIVE", "SCHEDULED"].includes(fixture.status)
+      );
+      const recentResults = sortFixturesDesc(
+        seasonFixtures.filter((fixture) =>
+          ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status)
+        )
+      );
+      const archiveSeasons = league.seasons.map(toSeasonSummary);
 
       return {
-        ...baseLeague,
-        selectedSeasonRecord,
+        ...league,
+        country:
+          league.countryRecord?.name || league.country || league.competition?.country?.name || null,
+        seasons: archiveSeasons,
+        selectedSeason: seasonSummary,
+        archiveSeasons,
         seasonFixtures,
-        oddsFixtures,
+        fixtures: liveAndUpcomingFixtures.slice(0, 12),
+        upcomingFixtures: liveAndUpcomingFixtures.slice(0, 12),
+        recentResults: recentResults.slice(0, 12),
+        fixtureSummary: summarizeFixtureStates(seasonFixtures),
+        standingsTable,
+        competitionOdds: buildCompetitionOddsModule(
+          { ...league, fixtures: league.oddsFixtures },
+          {
+            locale,
+            viewerTerritory,
+            enabled: flags.competitionOdds,
+          }
+        ),
       };
-    },
-    null
+    }
   );
-
-  if (!league) {
-    return null;
-  }
-
-  const flags = await getPublicSurfaceFlags();
-  const seasonFixtures = sortFixturesAsc(league.seasonFixtures || []);
-  const seasonSummary = league.selectedSeasonRecord
-    ? {
-        ...toSeasonSummary(league.selectedSeasonRecord),
-        standings: league.selectedSeasonRecord.standings || [],
-      }
-    : null;
-  const standingsTable = buildStandingTable({
-    teams: league.teams,
-    standings: seasonSummary?.standings || [],
-    fixtures: seasonFixtures,
-    view: standingsView,
-  });
-  const liveAndUpcomingFixtures = seasonFixtures.filter((fixture) =>
-    ["LIVE", "SCHEDULED"].includes(fixture.status)
-  );
-  const recentResults = sortFixturesDesc(
-    seasonFixtures.filter((fixture) => ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status))
-  );
-  const archiveSeasons = league.seasons.map(toSeasonSummary);
-
-  return {
-    ...league,
-    country: league.countryRecord?.name || league.country || league.competition?.country?.name || null,
-    seasons: archiveSeasons,
-    selectedSeason: seasonSummary,
-    archiveSeasons,
-    seasonFixtures,
-    fixtures: liveAndUpcomingFixtures.slice(0, 12),
-    upcomingFixtures: liveAndUpcomingFixtures.slice(0, 12),
-    recentResults: recentResults.slice(0, 12),
-    fixtureSummary: summarizeFixtureStates(seasonFixtures),
-    standingsTable,
-    competitionOdds: buildCompetitionOddsModule({ ...league, fixtures: league.oddsFixtures }, {
-      locale,
-      viewerTerritory,
-      enabled: flags.competitionOdds,
-    }),
-  };
 }
 
-export const getTeamDirectory = unstable_cache(
+const getTeamDirectoryCached = unstable_cache(
   async () =>
     safely(
-      () =>
-        db.team.findMany({
+      async () => {
+        const teams = await db.team.findMany({
           orderBy: [{ name: "asc" }],
           take: 100,
           include: {
@@ -968,120 +1119,154 @@ export const getTeamDirectory = unstable_cache(
               select: { id: true, startsAt: true, status: true },
             },
           },
-        }),
+        });
+        markCacheFill("coreui:teams", { surface: "teams" });
+        return teams;
+      },
       []
     ),
   ["coreui:teams"],
   { revalidate: 300, tags: ["coreui:teams"] }
 );
 
+export async function getTeamDirectory() {
+  return observeCachedOperation("coreui:teams", () => getTeamDirectoryCached(), {
+    route: "/teams",
+    revalidateSeconds: 300,
+    surface: "teams",
+  });
+}
+
 export async function getTeamDetail(reference) {
-  return safely(
-    async () => {
-      const team = await db.team.findFirst({
-        where: {
-          OR: [{ id: reference }, { code: reference }],
-        },
-        include: {
-          league: {
-            include: {
-              sport: true,
-              countryRecord: true,
-              competition: true,
+  return observeOperation(
+    {
+      metric: "page_read",
+      subject: "team_detail",
+      route: `/teams/${reference || ""}`,
+      statusFromResult(result) {
+        return result ? "ok" : "empty";
+      },
+      metadata(result) {
+        return {
+          team: result?.id || reference || null,
+          fixtureCount: result?.fixtureSummary?.total || 0,
+        };
+      },
+      eventOptions: {
+        force: true,
+      },
+    },
+    () =>
+      safely(
+        async () => {
+          const team = await db.team.findFirst({
+            where: {
+              OR: [{ id: reference }, { code: reference }],
             },
-          },
-          competition: {
             include: {
-              country: true,
-              sport: true,
-            },
-          },
-          standings: {
-            orderBy: [{ updatedAt: "desc" }, { position: "asc" }],
-            include: {
+              league: {
+                include: {
+                  sport: true,
+                  countryRecord: true,
+                  competition: true,
+                },
+              },
               competition: {
                 include: {
                   country: true,
+                  sport: true,
                 },
               },
-              season: {
+              standings: {
+                orderBy: [{ updatedAt: "desc" }, { position: "asc" }],
                 include: {
                   competition: {
                     include: {
                       country: true,
                     },
                   },
-                  league: {
+                  season: {
                     include: {
-                      countryRecord: true,
+                      competition: {
+                        include: {
+                          country: true,
+                        },
+                      },
+                      league: {
+                        include: {
+                          countryRecord: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              homeFor: {
+                orderBy: { startsAt: "desc" },
+                take: 12,
+                include: fixtureInclude({ includeOdds: false }),
+              },
+              awayFor: {
+                orderBy: { startsAt: "desc" },
+                take: 12,
+                include: fixtureInclude({ includeOdds: false }),
+              },
+              lineupEntries: {
+                orderBy: { updatedAt: "desc" },
+                take: 80,
+                include: {
+                  player: true,
+                  fixture: {
+                    select: {
+                      startsAt: true,
+                    },
+                  },
+                },
+              },
+              fixtureParticipants: {
+                orderBy: { updatedAt: "desc" },
+                take: 80,
+                include: {
+                  player: true,
+                  fixture: {
+                    select: {
+                      startsAt: true,
                     },
                   },
                 },
               },
             },
-          },
-          homeFor: {
-            orderBy: { startsAt: "desc" },
-            take: 12,
-            include: fixtureInclude({ includeOdds: false }),
-          },
-          awayFor: {
-            orderBy: { startsAt: "desc" },
-            take: 12,
-            include: fixtureInclude({ includeOdds: false }),
-          },
-          lineupEntries: {
-            orderBy: { updatedAt: "desc" },
-            take: 80,
-            include: {
-              player: true,
-              fixture: {
-                select: {
-                  startsAt: true,
-                },
-              },
-            },
-          },
-          fixtureParticipants: {
-            orderBy: { updatedAt: "desc" },
-            take: 80,
-            include: {
-              player: true,
-              fixture: {
-                select: {
-                  startsAt: true,
-                },
-              },
-            },
-          },
+          });
+
+          if (!team) {
+            return null;
+          }
+
+          const allFixtures = dedupeFixtures([...team.homeFor, ...team.awayFor]);
+          const sortedFixtures = sortFixturesDesc(allFixtures);
+
+          return {
+            ...team,
+            sport: team.league?.sport || team.competition?.sport || null,
+            country:
+              team.league?.countryRecord?.name ||
+              team.competition?.country?.name ||
+              team.league?.country ||
+              null,
+            fixtures: sortedFixtures.slice(0, 12),
+            upcomingFixtures: sortFixturesAsc(
+              allFixtures.filter((fixture) => ["LIVE", "SCHEDULED"].includes(fixture.status))
+            ).slice(0, 8),
+            recentResults: sortedFixtures
+              .filter((fixture) => ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status))
+              .slice(0, 8),
+            fixtureSummary: summarizeFixtureStates(allFixtures),
+            roster: buildRoster(team.lineupEntries, team.fixtureParticipants),
+            linkedCompetitions: buildLinkedCompetitions(team),
+          };
         },
-      });
-
-      if (!team) {
-        return null;
-      }
-
-      const allFixtures = dedupeFixtures([...team.homeFor, ...team.awayFor]);
-      const sortedFixtures = sortFixturesDesc(allFixtures);
-
-      return {
-        ...team,
-        sport: team.league?.sport || team.competition?.sport || null,
-        country:
-          team.league?.countryRecord?.name || team.competition?.country?.name || team.league?.country || null,
-        fixtures: sortedFixtures.slice(0, 12),
-        upcomingFixtures: sortFixturesAsc(
-          allFixtures.filter((fixture) => ["LIVE", "SCHEDULED"].includes(fixture.status))
-        ).slice(0, 8),
-        recentResults: sortedFixtures
-          .filter((fixture) => ["FINISHED", "POSTPONED", "CANCELLED"].includes(fixture.status))
-          .slice(0, 8),
-        fixtureSummary: summarizeFixtureStates(allFixtures),
-        roster: buildRoster(team.lineupEntries, team.fixtureParticipants),
-        linkedCompetitions: buildLinkedCompetitions(team),
-      };
-    },
-    null
+        null
+      )
   );
 }
 
@@ -1089,48 +1274,69 @@ export async function getFixtureDetail(
   reference,
   { locale = "en", viewerTerritory } = {}
 ) {
-  const fixture = await safely(
-    () => {
-      return db.fixture.findFirst({
-        where: {
-          OR: [{ id: reference }, { externalRef: reference }],
-        },
-        include: {
-          league: true,
-          season: true,
-          homeTeam: true,
-          awayTeam: true,
-          resultSnapshot: true,
-          oddsMarkets: {
-            include: { selections: true },
-            orderBy: [{ marketType: "asc" }, { bookmaker: "asc" }],
-          },
-          broadcastChannels: {
-            orderBy: [{ territory: "asc" }, { name: "asc" }],
-          },
-        },
-      });
+  return observeOperation(
+    {
+      metric: "page_read",
+      subject: "fixture_detail",
+      route: `/match/${reference || ""}`,
+      statusFromResult(result) {
+        return result ? "ok" : "empty";
+      },
+      metadata(result) {
+        return {
+          fixture: result?.id || reference || null,
+          status: result?.status || null,
+        };
+      },
+      eventOptions: {
+        force: true,
+      },
     },
-    null
+    async () => {
+      const fixture = await safely(
+        () => {
+          return db.fixture.findFirst({
+            where: {
+              OR: [{ id: reference }, { externalRef: reference }],
+            },
+            include: {
+              league: true,
+              season: true,
+              homeTeam: true,
+              awayTeam: true,
+              resultSnapshot: true,
+              oddsMarkets: {
+                include: { selections: true },
+                orderBy: [{ marketType: "asc" }, { bookmaker: "asc" }],
+              },
+              broadcastChannels: {
+                orderBy: [{ territory: "asc" }, { name: "asc" }],
+              },
+            },
+          });
+        },
+        null
+      );
+
+      if (!fixture) {
+        return null;
+      }
+
+      const flags = await getPublicSurfaceFlags();
+
+      return {
+        ...fixture,
+        odds: buildFixtureOddsModule(fixture, {
+          locale,
+          viewerTerritory,
+          enabled: flags.fixtureOdds,
+        }),
+        broadcast: buildFixtureBroadcastModule(fixture, {
+          locale,
+          viewerTerritory,
+          enabled: flags.fixtureBroadcast,
+        }),
+      };
+    }
   );
-
-  if (!fixture) {
-    return null;
-  }
-
-  const flags = await getPublicSurfaceFlags();
-
-  return {
-    ...fixture,
-    odds: buildFixtureOddsModule(fixture, {
-      locale,
-      viewerTerritory,
-      enabled: flags.fixtureOdds,
-    }),
-    broadcast: buildFixtureBroadcastModule(fixture, {
-      locale,
-      viewerTerritory,
-      enabled: flags.fixtureBroadcast,
-    }),
-  };
 }

@@ -270,6 +270,12 @@ export function ShellSearch({ dictionary, locale, shortcuts, shellData }) {
             <div className={searchStyles.overlayBody}>
               {query.trim().length >= 2 ? (
                 <div className={searchStyles.overlaySections}>
+                  {searchResults?.degraded ? (
+                    <div className={searchStyles.emptyState}>
+                      Search is temporarily running in degraded mode.
+                    </div>
+                  ) : null}
+
                   {searchResults?.topResults?.length ? (
                     <SearchResultsSection
                       title={dictionary.searchTopResults}

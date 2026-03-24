@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { searchGlobal } from "../../../lib/coreui/search";
+import {
+  buildDegradedSearchResult,
+  normalizeSearchQuery,
+  searchGlobal,
+} from "../../../lib/coreui/search";
+import { observeOperation, recordOperationalEvent } from "../../../lib/operations";
 
 export async function GET(request) {
   const query = request.nextUrl.searchParams.get("q") || "";
@@ -10,16 +15,62 @@ export async function GET(request) {
     : 6;
 
   try {
-    const results = await searchGlobal(query, {
-      locale,
-      limitPerSection,
-    });
+    const results = await observeOperation(
+      {
+        category: "search_health",
+        metric: "global_search",
+        subject: locale,
+        route: "/api/search",
+        statusFromResult(result) {
+          return result?.degraded ? "degraded" : "ok";
+        },
+        metadata(result) {
+          return {
+            queryLength: normalizeSearchQuery(query).length,
+            limitPerSection,
+            totalResults: result?.summary?.total || 0,
+            degraded: Boolean(result?.degraded),
+          };
+        },
+        eventOptions: {
+          force: true,
+        },
+      },
+      () =>
+        searchGlobal(query, {
+          locale,
+          limitPerSection,
+        })
+    );
 
     return NextResponse.json(results);
   } catch (error) {
-    return NextResponse.json(
-      { error: error.message || "Search failed." },
-      { status: 500 }
+    const fallback = buildDegradedSearchResult(normalizeSearchQuery(query));
+
+    void recordOperationalEvent(
+      {
+        category: "search_health",
+        metric: "global_search",
+        subject: locale,
+        route: "/api/search",
+        status: "degraded",
+        metadata: {
+          queryLength: fallback.query.length,
+          limitPerSection,
+          totalResults: 0,
+          degraded: true,
+          error: error instanceof Error ? error.message : "Search failed.",
+        },
+      },
+      {
+        force: true,
+      }
     );
+
+    return NextResponse.json(fallback, {
+      headers: {
+        "x-search-mode": "degraded",
+      },
+    });
   }
 }

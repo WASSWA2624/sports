@@ -5,6 +5,25 @@ import sharedStyles from "../../../components/coreui/styles.module.css";
 import styles from "./admin-console.module.css";
 import { KNOWN_CACHE_TAGS } from "../../../lib/cache-tags";
 
+const FAILURE_DRILL_SCENARIOS = [
+  {
+    key: "provider_outage",
+    label: "Provider outage",
+  },
+  {
+    key: "delayed_live_feed",
+    label: "Delayed live feed",
+  },
+  {
+    key: "search_degradation",
+    label: "Search degradation",
+  },
+  {
+    key: "cache_invalidation_issue",
+    label: "Cache invalidation",
+  },
+];
+
 function formatDateTime(value, locale) {
   if (!value) {
     return "Never";
@@ -14,6 +33,22 @@ function formatDateTime(value, locale) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatPercent(value) {
+  if (!Number.isFinite(value)) {
+    return "-";
+  }
+
+  return `${Math.round(value * 1000) / 10}%`;
+}
+
+function formatMetric(value, suffix = "") {
+  if (!Number.isFinite(value)) {
+    return "-";
+  }
+
+  return `${Math.round(value)}${suffix}`;
 }
 
 function buildDraftState(workspace) {
@@ -87,11 +122,11 @@ function buildDraftState(workspace) {
 }
 
 function statusClass(value) {
-  if (["healthy", "available", "OPEN", "INVESTIGATING", "SUCCESS"].includes(value)) {
+  if (["healthy", "available", "OPEN", "INVESTIGATING", "SUCCESS", "ready", "pass"].includes(value)) {
     return styles.statusGood;
   }
 
-  if (["warning", "attention", "PENDING", "RUNNING", "MEDIUM"].includes(value)) {
+  if (["warning", "attention", "PENDING", "RUNNING", "MEDIUM", "degraded", "throttled"].includes(value)) {
     return styles.statusWarn;
   }
 
@@ -133,6 +168,26 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
   const operatorOptions = workspace.users.filter((user) =>
     user.roleNames.some((role) => ["ADMIN", "EDITOR"].includes(role))
   );
+  const observability = workspace.ops?.observability || {
+    latency: {},
+    cache: {},
+    search: {},
+    pressure: {},
+    drills: { recent: [], statusCounts: {} },
+    slos: [],
+    liveData: {},
+    providers: [],
+    summary: {},
+  };
+  const assetDelivery = workspace.assets || {
+    strategy: [],
+    coverage: {
+      competitions: {},
+      teams: {},
+      articles: {},
+    },
+  };
+  const providerChain = workspace.providerChain || [];
 
   async function refreshWorkspace() {
     const nextWorkspace = await requestJson("/api/admin/control-plane");
@@ -209,6 +264,9 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
           <span className={sharedStyles.badge}>
             Cache attention {workspace.summary.cacheAttentionCount}
           </span>
+          <span className={sharedStyles.badge}>
+            Drills 24h {workspace.summary.drillRunsLast24Hours}
+          </span>
         </div>
       </header>
 
@@ -225,12 +283,20 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                 <strong>{workspace.ops.staleData.liveFixtures}</strong>
               </div>
               <div className={styles.metricCard}>
-                <span>Route errors 1h</span>
-                <strong>{workspace.ops.routeErrors.summary.lastHourCount}</strong>
+                <span>Live read p95</span>
+                <strong>{formatMetric(observability.latency?.p95Ms, "ms")}</strong>
               </div>
               <div className={styles.metricCard}>
-                <span>Cache attention</span>
-                <strong>{workspace.summary.cacheAttentionCount}</strong>
+                <span>Cache hit rate</span>
+                <strong>{formatPercent(observability.cache?.hitRate)}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>Search p95</span>
+                <strong>{formatMetric(observability.search?.p95Ms, "ms")}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>Route errors 1h</span>
+                <strong>{workspace.summary.routeErrorsLastHour}</strong>
               </div>
             </div>
 
@@ -265,6 +331,24 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                   <p className={sharedStyles.eyebrow}>Operations</p>
                   <h2 className={sharedStyles.sectionTitle}>Sync and cache</h2>
                 </div>
+              </div>
+
+              <div className={styles.cardGrid}>
+                {providerChain.map((provider) => (
+                  <div key={provider.code} className={styles.row}>
+                    <div className={styles.rowTop}>
+                      <strong className={styles.code}>{provider.code}</strong>
+                      <span className={statusClass(provider.role === "backup" ? "attention" : "healthy")}>
+                        {provider.role}
+                      </span>
+                    </div>
+                    <div className={styles.rowMeta}>
+                      <span>{provider.name}</span>
+                      <span>{provider.tier}</span>
+                      <span>{provider.sports.join(", ")}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className={styles.actionRow}>
@@ -472,8 +556,23 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
               <div className={sharedStyles.sectionHeader}>
                 <div>
                   <p className={sharedStyles.eyebrow}>Health</p>
-                  <h2 className={sharedStyles.sectionTitle}>Cache and route pressure</h2>
+                  <h2 className={sharedStyles.sectionTitle}>Latency, cache, and SLOs</h2>
                 </div>
+              </div>
+
+              <div className={styles.cardGrid}>
+                {(observability.slos || []).map((slo) => (
+                  <div key={slo.key} className={styles.row}>
+                    <div className={styles.rowTop}>
+                      <strong>{slo.label}</strong>
+                      <span className={statusClass(slo.status)}>{slo.status}</span>
+                    </div>
+                    <div className={styles.rowMeta}>
+                      <span>Target {slo.target}</span>
+                      <span>Current {slo.currentValue ?? "-"}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className={styles.timelineList}>
@@ -491,6 +590,29 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                 ))}
               </div>
 
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Route</th>
+                      <th>Samples</th>
+                      <th>Avg</th>
+                      <th>P95</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(observability.latency?.topRoutes || []).map((route) => (
+                      <tr key={route.route}>
+                        <td className={styles.code}>{route.route}</td>
+                        <td>{route.count}</td>
+                        <td>{formatMetric(route.averageMs, "ms")}</td>
+                        <td>{formatMetric(route.p95Ms, "ms")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
               <div className={styles.routeList}>
                 {workspace.ops.routeErrors.summary.topRoutes.map((route) => (
                   <div key={route.route} className={styles.row}>
@@ -501,6 +623,103 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                     <p className={styles.smallText}>
                       Last seen {formatDateTime(route.lastSeenAt, locale)}
                     </p>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className={sharedStyles.panel}>
+              <div className={sharedStyles.sectionHeader}>
+                <div>
+                  <p className={sharedStyles.eyebrow}>Readiness</p>
+                  <h2 className={sharedStyles.sectionTitle}>Failure drills and asset delivery</h2>
+                </div>
+              </div>
+
+              <div className={styles.actionRow}>
+                {FAILURE_DRILL_SCENARIOS.map((scenario) => (
+                  <button
+                    key={scenario.key}
+                    type="button"
+                    className={styles.secondaryButton}
+                    disabled={workingKey === `drill:${scenario.key}`}
+                    onClick={() =>
+                      runAction(
+                        `drill:${scenario.key}`,
+                        () => requestJson(`/api/admin/drills/${scenario.key}`, { method: "POST" }),
+                        `${scenario.label} drill completed.`
+                      )
+                    }
+                  >
+                    {workingKey === `drill:${scenario.key}` ? "Running..." : scenario.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.cardGrid}>
+                {assetDelivery.strategy.map((item) => (
+                  <div key={item.assetType} className={styles.row}>
+                    <div className={styles.rowTop}>
+                      <strong>{item.assetType}</strong>
+                      <span className={styles.statusNeutral}>{item.cachePolicy}</span>
+                    </div>
+                    <p className={styles.smallText}>{item.delivery}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className={styles.cardGrid}>
+                <div className={styles.row}>
+                  <div className={styles.rowTop}>
+                    <strong>Competition logos</strong>
+                    <span className={styles.statusNeutral}>
+                      {assetDelivery.coverage.competitions.coverageRate ?? "-"}%
+                    </span>
+                  </div>
+                  <div className={styles.rowMeta}>
+                    <span>Covered {assetDelivery.coverage.competitions.covered}</span>
+                    <span>Missing {assetDelivery.coverage.competitions.missing}</span>
+                  </div>
+                </div>
+                <div className={styles.row}>
+                  <div className={styles.rowTop}>
+                    <strong>Team logos</strong>
+                    <span className={styles.statusNeutral}>
+                      {assetDelivery.coverage.teams.coverageRate ?? "-"}%
+                    </span>
+                  </div>
+                  <div className={styles.rowMeta}>
+                    <span>Covered {assetDelivery.coverage.teams.covered}</span>
+                    <span>Missing {assetDelivery.coverage.teams.missing}</span>
+                  </div>
+                </div>
+                <div className={styles.row}>
+                  <div className={styles.rowTop}>
+                    <strong>Article media</strong>
+                    <span className={styles.statusNeutral}>
+                      {assetDelivery.coverage.articles.coverageRate ?? "-"}%
+                    </span>
+                  </div>
+                  <div className={styles.rowMeta}>
+                    <span>Covered {assetDelivery.coverage.articles.covered}</span>
+                    <span>Missing {assetDelivery.coverage.articles.missing}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.timelineList}>
+                {(observability.drills?.recent || []).map((event) => (
+                  <div key={event.id} className={styles.row}>
+                    <div className={styles.rowTop}>
+                      <strong className={styles.code}>{event.metric}</strong>
+                      <span className={statusClass(event.status)}>{event.status}</span>
+                    </div>
+                    <p className={styles.smallText}>
+                      {event.metadata?.summary || "Drill completed."}
+                    </p>
+                    <div className={styles.rowMeta}>
+                      <span>{formatDateTime(event.createdAt, locale)}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -605,6 +824,11 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                         <span className={statusClass(provider.isActive ? "healthy" : "critical")}>
                           {provider.isActive ? "enabled" : "disabled"}
                         </span>
+                      </div>
+                      <div className={styles.rowMeta}>
+                        <span>{provider.registry?.tier || provider.metadata?.tier || "custom"}</span>
+                        <span>{provider.registry?.sports?.join(", ") || "unspecified sport"}</span>
+                        <span>{provider.registry?.role || provider.metadata?.role || "unassigned"}</span>
                       </div>
                       <label className={styles.checkboxRow}>
                         <input

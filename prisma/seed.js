@@ -238,13 +238,39 @@ async function seed() {
 
     await connection.query(
       `
-      INSERT INTO SourceProvider (id, code, name, kind, isActive, createdAt, updatedAt)
+      INSERT INTO SourceProvider (id, code, name, kind, isActive, metadata, createdAt, updatedAt)
       VALUES
-        (UUID(), 'SPORTSMONKS', 'SportsMonks', 'football-feed', true, NOW(), NOW())
+        (
+          UUID(), 'SPORTSMONKS', 'SportsMonks Football', 'football-feed', true,
+          JSON_OBJECT('role', 'primary', 'tier', 'live', 'stage', 'live', 'sports', JSON_ARRAY('football')),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'SPORTSMONKS_BASKETBALL', 'SportsMonks Basketball', 'basketball-feed', false,
+          JSON_OBJECT('role', 'expansion', 'tier', 'planned', 'stage', 'planned', 'sports', JSON_ARRAY('basketball')),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'SPORTSMONKS_TENNIS', 'SportsMonks Tennis', 'tennis-feed', false,
+          JSON_OBJECT('role', 'expansion', 'tier', 'planned', 'stage', 'planned', 'sports', JSON_ARRAY('tennis')),
+          NOW(), NOW()
+        ),
+        (
+          UUID(), 'SCOREBOARD_BACKUP', 'Scoreboard Backup Feed', 'backup-feed', false,
+          JSON_OBJECT(
+            'role', 'backup',
+            'tier', 'prepared',
+            'stage', 'prepared',
+            'sports', JSON_ARRAY('football', 'basketball', 'tennis'),
+            'fallbackFor', JSON_ARRAY('SPORTSMONKS')
+          ),
+          NOW(), NOW()
+        )
       ON DUPLICATE KEY UPDATE
         name = VALUES(name),
         kind = VALUES(kind),
         isActive = VALUES(isActive),
+        metadata = VALUES(metadata),
         updatedAt = NOW()
       `
     );

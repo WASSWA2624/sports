@@ -16,7 +16,11 @@ import {
   getRecentItemsModule,
   getTopCompetitionsModule,
 } from "../../../lib/coreui/discovery";
-import { normalizeSearchQuery, searchGlobal } from "../../../lib/coreui/search";
+import {
+  buildDegradedSearchResult,
+  normalizeSearchQuery,
+  searchGlobal,
+} from "../../../lib/coreui/search";
 import {
   getPersonalizationSnapshot,
 } from "../../../lib/personalization";
@@ -48,7 +52,11 @@ export default async function SearchPage({ params, searchParams }) {
   const query = normalizeSearchQuery(queryParams?.q || "");
   const personalization = await getPersonalizationSnapshot();
   const [results, topCompetitions, recentItems] = await Promise.all([
-    query.length >= 2 ? searchGlobal(query, { locale, limitPerSection: 8 }) : Promise.resolve(null),
+    query.length >= 2
+      ? searchGlobal(query, { locale, limitPerSection: 8 }).catch(() =>
+          buildDegradedSearchResult(query)
+        )
+      : Promise.resolve(null),
     getTopCompetitionsModule(),
     getRecentItemsModule(personalization, { locale }),
   ]);
@@ -108,6 +116,12 @@ export default async function SearchPage({ params, searchParams }) {
           </p>
         </div>
       </header>
+
+      {results?.degraded ? (
+        <div className={styles.emptyState}>
+          Search is temporarily running in degraded mode while the platform recovers.
+        </div>
+      ) : null}
 
       {query.length >= 2 ? (
         <>

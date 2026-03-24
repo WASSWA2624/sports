@@ -818,6 +818,24 @@ model RouteErrorEvent {
   @@index([createdAt])
 }
 
+model OperationalEvent {
+  id         String   @id @default(cuid())
+  category   String
+  metric     String
+  subject    String?
+  route      String?
+  status     String?
+  durationMs Int?
+  value      Float?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([category, metric, createdAt])
+  @@index([subject, createdAt])
+  @@index([route, createdAt])
+  @@index([status, createdAt])
+}
+
 model OpsIssue {
   id                String           @id @default(cuid())
   issueType         OpsIssueType

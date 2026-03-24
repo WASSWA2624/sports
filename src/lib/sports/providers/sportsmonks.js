@@ -5,7 +5,7 @@ import {
   normalizeSportsMonksStandings,
   normalizeSportsMonksTeams,
 } from "../normalize";
-import { requireSportsApiKey } from "../config";
+import { getSportsSyncConfig, requireSportsApiKey } from "../config";
 
 const FIXTURE_LIST_INCLUDES = "league;season;participants;state;scores;venue;round";
 const FIXTURE_DETAIL_INCLUDES =
@@ -37,8 +37,17 @@ function toDateString(date) {
 }
 
 export class SportsMonksProvider {
-  constructor() {
-    this.config = requireSportsApiKey();
+  constructor(config = null) {
+    const baseConfig = getSportsSyncConfig();
+    const resolvedConfig =
+      config && config.apiKey && config.baseUrl
+        ? {
+            ...baseConfig,
+            ...config,
+          }
+        : requireSportsApiKey();
+
+    this.config = resolvedConfig;
   }
 
   async request(path, params = {}) {

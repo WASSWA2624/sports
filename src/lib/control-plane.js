@@ -5,8 +5,12 @@ import {
   KNOWN_CACHE_TAGS,
   revalidateTagsWithAudit,
 } from "./cache";
+import { getAssetDeliverySnapshot } from "./assets";
 import { db } from "./db";
 import { logAuditEvent } from "./audit";
+import { getOperationalDashboardSnapshot } from "./operations";
+import { getSportsSyncConfig } from "./sports/config";
+import { getProviderChain, getRegisteredSportsProviders } from "./sports/provider";
 
 const ROLE_NAMES = ["USER", "EDITOR", "ADMIN"];
 const ISSUE_TYPES = ["DATA_DISPUTE", "WRONG_SCORE", "BROKEN_ARTICLE_CONTENT"];
@@ -449,6 +453,9 @@ export async function getPublicControlState() {
 
 export async function getControlPlaneWorkspace() {
   const oneDayAgo = new Date(Date.now() - 1000 * 60 * 60 * 24);
+  const syncConfig = getSportsSyncConfig();
+  const providerRegistry = getRegisteredSportsProviders();
+  const providerChain = getProviderChain(syncConfig.provider, syncConfig.fallbackProviders);
 
   const [
     roles,
@@ -472,6 +479,8 @@ export async function getControlPlaneWorkspace() {
     latestNewsUpdate,
     latestFeatureUpdate,
     latestShellUpdate,
+    observability,
+    assetDelivery,
   ] = await Promise.all([
     db.role.findMany({
       orderBy: { name: "asc" },
@@ -662,6 +671,8 @@ export async function getControlPlaneWorkspace() {
         updatedAt: true,
       },
     }),
+    getOperationalDashboardSnapshot(),
+    getAssetDeliverySnapshot(),
   ]);
 
   const checkpointHealth = recentCheckpoints.map((checkpoint) => ({
@@ -684,7 +695,16 @@ export async function getControlPlaneWorkspace() {
   return {
     roles: roles.map((entry) => entry.name),
     users: users.map(serializeUser),
-    providers,
+    providers: providers.map((provider) => {
+      const descriptor = providerRegistry.find((entry) => entry.code === provider.code);
+
+      return {
+        ...provider,
+        registry: descriptor || null,
+      };
+    }),
+    providerRegistry,
+    providerChain,
     featureFlags,
     shellModules: shellModules.map(serializeShellModule),
     adSlots,
@@ -716,7 +736,9 @@ export async function getControlPlaneWorkspace() {
         events: recentRouteErrors,
         summary: buildRouteErrorSummary(recentRouteErrors),
       },
+      observability,
     },
+    assets: assetDelivery,
     auditTrail: recentAudits.map(serializeAuditLog),
     summary: {
       adminUsers: users.filter((user) =>
@@ -725,6 +747,8 @@ export async function getControlPlaneWorkspace() {
       activeProviders: providers.filter((provider) => provider.isActive).length,
       openIssues: openIssues.length,
       cacheAttentionCount: cacheHealth.filter((entry) => entry.state === "attention").length,
+      drillRunsLast24Hours: observability.summary.drillRunsLast24Hours,
+      routeErrorsLastHour: observability.summary.routeErrorsLastHour,
     },
   };
 }
