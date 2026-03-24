@@ -4025,6 +4025,112 @@
   line-height: 1.45;
 }
 
+/* Shell theme normalization */
+.header {
+  background: var(--background-accent);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.headerBrand,
+.headerStack,
+.headerControls {
+  background: transparent;
+  border-color: var(--shell-bar-border);
+}
+
+.brandTag,
+.railMuted {
+  color: var(--text-muted);
+}
+
+.railCard {
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.railSectionTitle {
+  color: var(--text);
+}
+
+.railCountryRow {
+  border-top-color: var(--border);
+}
+
+.inlineControl,
+.preferenceBlock,
+.watchPill,
+.sectionAction,
+.mobileMenuButton {
+  border-color: var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.watchPill,
+.selectControl,
+.segment,
+.segmentActive {
+  color: var(--text);
+}
+
+.segmentedControl,
+.sportsCount {
+  background: var(--surface-muted);
+}
+
+.sportsCount {
+  color: var(--text);
+}
+
+.segmentActive {
+  background: var(--shell-chip-bg);
+  box-shadow: none;
+}
+
+.topModeNav,
+.mobileModeNav,
+.mobileSportPill {
+  border-color: var(--shell-bar-border);
+  background: var(--shell-bar-bg);
+}
+
+.topModeLink,
+.mobileModeLink,
+.navLink,
+.sportsChip,
+.sportsMoreSummary {
+  color: var(--text);
+}
+
+.topModeLinkActive,
+.topModeLink:hover,
+.mobileModeLinkActive,
+.mobileModeLink:hover,
+.navLinkActive,
+.navLink:hover,
+.sportsChipActive,
+.sportsMoreSummary:hover,
+.sportsMoreMenu[open] .sportsMoreSummary,
+.railLink:hover,
+.railLinkActive,
+.mobileSportPill:hover {
+  background: var(--shell-chip-bg);
+  color: var(--text);
+}
+
+.sportsChipDisabled,
+.sportsMoreItemMuted {
+  color: var(--text-soft);
+}
+
+.mobileMenuSectionTitle,
+.mobileMenuButton,
+.mobileMenuButton:hover {
+  color: var(--text);
+}
+
 @media (min-width: 640px) {
   .mobileMenuPanel {
     width: min(32rem, calc(100vw - 1rem));
