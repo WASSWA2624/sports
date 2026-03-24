@@ -10,6 +10,7 @@ import { NewsModule } from "../../../../components/coreui/news-module";
 import { OddsPredictionWidgets } from "../../../../components/coreui/odds-prediction-widgets";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
+import { StandingsTable } from "../../../../components/coreui/standings-table";
 import { StructuredData } from "../../../../components/coreui/structured-data";
 import styles from "../../../../components/coreui/styles.module.css";
 import {
@@ -86,80 +87,6 @@ function surfaceTone(state) {
   }
 
   return styles.surfaceStateUnavailable;
-}
-
-function formTone(result) {
-  if (result === "W") {
-    return styles.formBadgeWin;
-  }
-
-  if (result === "L") {
-    return styles.formBadgeLoss;
-  }
-
-  return styles.formBadgeDraw;
-}
-
-function renderStandingsTable(rows, dictionary, locale) {
-  if (!rows.length) {
-    return <div className={styles.emptyState}>{dictionary.noData}</div>;
-  }
-
-  return (
-    <div className={styles.standingsTableWrap}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>{dictionary.tablePosition}</th>
-            <th>{dictionary.tableTeam}</th>
-            <th>{dictionary.tablePlayed}</th>
-            <th>{dictionary.tableWon}</th>
-            <th>{dictionary.tableDrawn}</th>
-            <th>{dictionary.tableLost}</th>
-            <th>{dictionary.tableGoalsFor}</th>
-            <th>{dictionary.tableGoalsAgainst}</th>
-            <th>{dictionary.tableGoalDifference}</th>
-            <th>{dictionary.tablePoints}</th>
-            <th>{dictionary.tableForm}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.team.id}>
-              <td>{row.position}</td>
-              <td>
-                <Link href={buildTeamHref(locale, row.team)}>{row.team.name}</Link>
-              </td>
-              <td>{row.played}</td>
-              <td>{row.won}</td>
-              <td>{row.drawn}</td>
-              <td>{row.lost}</td>
-              <td>{row.goalsFor}</td>
-              <td>{row.goalsAgainst}</td>
-              <td>{row.goalDifference}</td>
-              <td>{row.points}</td>
-              <td>
-                <div className={styles.formStrip}>
-                  {row.form.length ? (
-                    row.form.map((result, index) => (
-                      <span
-                        key={`${row.team.id}-${result}-${index}`}
-                        className={`${styles.formBadge} ${formTone(result)}`}
-                      >
-                        {result}
-                      </span>
-                    ))
-                  ) : (
-                    <span className={styles.muted}>-</span>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
 }
 
 export async function generateMetadata({ params }) {
@@ -464,7 +391,11 @@ export default async function LeagueDetailPage({ params, searchParams }) {
                   {getStandingViewLabel(league.standingsTable.selectedView, dictionary)}
                 </span>
               </div>
-              {renderStandingsTable(league.standingsTable.rows.slice(0, 8), dictionary, locale)}
+              <StandingsTable
+                rows={league.standingsTable.rows.slice(0, 8)}
+                dictionary={dictionary}
+                locale={locale}
+              />
             </article>
 
             <article className={styles.detailCard}>
@@ -737,7 +668,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             ))}
           </div>
 
-          {renderStandingsTable(league.standingsTable.rows, dictionary, locale)}
+          <StandingsTable rows={league.standingsTable.rows} dictionary={dictionary} locale={locale} />
         </section>
       ) : null}
 

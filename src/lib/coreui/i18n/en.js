@@ -445,6 +445,18 @@ const en = {
     "Top-level sports news mode with room for global, team, and competition coverage.",
   matchLead:
     "Match centre with live pulse, team stats, event timeline, lineups, and the stored result snapshot.",
+  matchHeadToHead: "H2H",
+  matchHeadToHeadLead:
+    "Recent meetings and the stored rivalry snapshot stay one tap away from the live match centre.",
+  matchHeadToHeadStored: "Stored snapshot",
+  matchHeadToHeadEmpty: "No stored head-to-head meetings are available for this matchup yet.",
+  matchHeadToHeadNext: "Next meetings",
+  matchVideo: "Video",
+  matchVideoLead:
+    "Watch routes, venue context, referee notes, and quick price checks stay grouped in one viewing tab.",
+  matchTopPrices: "Top prices",
+  venue: "Venue",
+  referee: "Referee",
   snapshotFrozenLabel: "Snapshot frozen {time}",
   competitionSection: "Competition",
   profileTitle: "Profile",

@@ -694,6 +694,18 @@ const sw = {
   relatedNewsTitle: "Habari zinazohusiana",
   relatedNewsLead:
     "Fuatilia muktadha wa uhariri unaozunguka mechi hii bila kuondoka kwenye kituo cha mechi.",
+  matchHeadToHead: "H2H",
+  matchHeadToHeadLead:
+    "Mikutano ya karibuni na picha iliyohifadhiwa ya ushindani hubaki hatua moja kutoka kituo cha mechi.",
+  matchHeadToHeadStored: "Picha iliyohifadhiwa",
+  matchHeadToHeadEmpty: "Hakuna mikutano ya H2H iliyohifadhiwa kwa mechi hii bado.",
+  matchHeadToHeadNext: "Mikutano ijayo",
+  matchVideo: "Video",
+  matchVideoLead:
+    "Njia za kutazama, taarifa za uwanja, mwamuzi, na ukaguzi wa haraka wa odds hukaa pamoja kwenye tab moja.",
+  matchTopPrices: "Bei bora",
+  venue: "Uwanja",
+  referee: "Mwamuzi",
 };
 
 export default sw;

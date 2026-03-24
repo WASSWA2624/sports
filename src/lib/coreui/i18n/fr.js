@@ -692,6 +692,18 @@ const fr = {
   relatedNewsTitle: "Actualités liées",
   relatedNewsLead:
     "Suivez le contexte éditorial autour de ce match sans quitter le centre du match.",
+  matchHeadToHead: "Face Ã face",
+  matchHeadToHeadLead:
+    "Les derniers duels et l'instantanÃ© rivalitÃ© enregistrÃ© restent accessibles en un geste depuis le centre du match.",
+  matchHeadToHeadStored: "InstantanÃ© stockÃ©",
+  matchHeadToHeadEmpty: "Aucun duel enregistrÃ© n'est encore disponible pour cette affiche.",
+  matchHeadToHeadNext: "Prochains duels",
+  matchVideo: "VidÃ©o",
+  matchVideoLead:
+    "Les options pour regarder, le contexte du stade, l'arbitre et les meilleurs prix rapides restent groupÃ©s dans un seul onglet.",
+  matchTopPrices: "Meilleurs prix",
+  venue: "Stade",
+  referee: "Arbitre",
 };
 
 export default fr;

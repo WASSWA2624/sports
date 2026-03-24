@@ -201,7 +201,7 @@ export function OddsPredictionWidgets({
   const bestBet = showBestBet ? insights?.bestBet : null;
   const affiliateActionLabel = dictionary.betNow;
   const primaryLead =
-    surface === "league-detail" ? dictionary.competitionInsightsLead : dictionary.matchInsightsLead;
+    surface === "match-detail" ? dictionary.matchInsightsLead : dictionary.competitionInsightsLead;
   const hasContent =
     bestBet ||
     broadcastQuickActions?.primary ||

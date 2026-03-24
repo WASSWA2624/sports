@@ -281,6 +281,159 @@ function buildStandingsBySeasonId(standings = []) {
   }, new Map());
 }
 
+function hasStoredScore(fixture) {
+  return Number.isFinite(fixture?.resultSnapshot?.homeScore) && Number.isFinite(fixture?.resultSnapshot?.awayScore);
+}
+
+function sortFixturesNewest(fixtures = []) {
+  return [...fixtures].sort(
+    (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+  );
+}
+
+function sortFixturesOldest(fixtures = []) {
+  return [...fixtures].sort(
+    (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+  );
+}
+
+function orientMatchupScore(fixture, homeTeamId, awayTeamId) {
+  if (!hasStoredScore(fixture)) {
+    return null;
+  }
+
+  if (fixture.homeTeamId === homeTeamId && fixture.awayTeamId === awayTeamId) {
+    return {
+      homeScore: fixture.resultSnapshot.homeScore,
+      awayScore: fixture.resultSnapshot.awayScore,
+    };
+  }
+
+  if (fixture.homeTeamId === awayTeamId && fixture.awayTeamId === homeTeamId) {
+    return {
+      homeScore: fixture.resultSnapshot.awayScore,
+      awayScore: fixture.resultSnapshot.homeScore,
+    };
+  }
+
+  return null;
+}
+
+function getOfficialPriority(entry) {
+  const role = String(entry?.role || entry?.official?.role || "").toLowerCase();
+
+  if (role.includes("referee") && !role.includes("assistant")) {
+    return 0;
+  }
+
+  if (role.includes("assistant")) {
+    return 2;
+  }
+
+  if (role.includes("fourth")) {
+    return 3;
+  }
+
+  return 1;
+}
+
+export function buildFixtureRefereeSummary(participants = []) {
+  const officials = (participants || [])
+    .filter((entry) => entry?.official)
+    .sort((left, right) => getOfficialPriority(left) - getOfficialPriority(right));
+  const primary = officials[0];
+
+  if (!primary?.official) {
+    return null;
+  }
+
+  return {
+    name: primary.official.name,
+    role: primary.role || primary.official.role || null,
+    countryName: primary.official.countryName || null,
+  };
+}
+
+export function buildFixtureVenueSummary(fixture) {
+  const venue = fixture?.venueRecord;
+  const name = venue?.name || fixture?.venue || null;
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    name,
+    city: venue?.city || null,
+    countryName: venue?.countryName || fixture?.league?.countryRecord?.name || fixture?.league?.country || null,
+    capacity: venue?.capacity || null,
+  };
+}
+
+export function buildHeadToHeadSummary(
+  fixtures = [],
+  { homeTeamId, awayTeamId, snapshots = [] } = {}
+) {
+  const completedMatches = sortFixturesNewest(
+    fixtures.filter(
+      (fixture) => TERMINAL_STATUSES.includes(fixture?.status) && orientMatchupScore(fixture, homeTeamId, awayTeamId)
+    )
+  );
+  const upcomingMatches = sortFixturesOldest(
+    fixtures.filter((fixture) => ["LIVE", "SCHEDULED"].includes(fixture?.status))
+  );
+  const summary = completedMatches.reduce(
+    (accumulator, fixture) => {
+      const score = orientMatchupScore(fixture, homeTeamId, awayTeamId);
+      if (!score) {
+        return accumulator;
+      }
+
+      accumulator.totalCompleted += 1;
+
+      if (score.homeScore > score.awayScore) {
+        accumulator.homeWins += 1;
+      } else if (score.homeScore < score.awayScore) {
+        accumulator.awayWins += 1;
+      } else {
+        accumulator.draws += 1;
+      }
+
+      return accumulator;
+    },
+    { totalCompleted: 0, homeWins: 0, awayWins: 0, draws: 0 }
+  );
+
+  return {
+    ...summary,
+    completedMatches: completedMatches.slice(0, 6),
+    upcomingMatches: upcomingMatches.slice(0, 3),
+    latestSnapshotAt: snapshots[0]?.capturedAt || null,
+  };
+}
+
+function buildMatchCentre(fixture, { seasonFixtures = [], standings = [], standingsView = "overall", headToHeadFixtures = [] } = {}) {
+  const standingsTable = buildStandingTable({
+    teams: [fixture.homeTeam, fixture.awayTeam],
+    standings,
+    fixtures: seasonFixtures,
+    view: standingsView,
+  });
+  const focusTeamIds = [fixture.homeTeamId, fixture.awayTeamId].filter(Boolean);
+
+  return {
+    standingsTable,
+    focusedRows: standingsTable.rows.filter((row) => focusTeamIds.includes(row.team.id)),
+    h2h: buildHeadToHeadSummary(headToHeadFixtures, {
+      homeTeamId: fixture.homeTeamId,
+      awayTeamId: fixture.awayTeamId,
+      snapshots: fixture.h2hSnapshots,
+    }),
+    venue: buildFixtureVenueSummary(fixture),
+    referee: buildFixtureRefereeSummary(fixture.participants),
+  };
+}
+
 function rankAffiliateLink(link, targetGeo) {
   let score = 0;
   const linkGeo = normalizeGeo(link?.territory, DEFAULT_MARKET_GEO);
@@ -651,7 +804,12 @@ export async function getResultsFeed({ locale = "en", status, leagueCode } = {})
   );
 }
 
-export async function getLiveMatchDetail(reference, locale = "en", viewerTerritory) {
+export async function getLiveMatchDetail(
+  reference,
+  locale = "en",
+  viewerTerritory,
+  { standingsView = "overall", includeMatchCentre = false, includeExperience = true } = {}
+) {
   return observeOperation(
     {
       metric: "live_surface",
@@ -685,17 +843,71 @@ export async function getLiveMatchDetail(reference, locale = "en", viewerTerrito
         }
 
         const detail = buildFixtureDetailModules(fixture, locale);
-        const flags = await getPublicSurfaceFlags();
-        const bettingExperience = await buildFixtureBettingExperience(fixture, {
-          locale,
-          viewerTerritory,
-          flags,
-        });
+        const flags = includeExperience ? await getPublicSurfaceFlags() : null;
+        const [seasonFixtures, standings, headToHeadFixtures, bettingExperience] = await Promise.all([
+          includeMatchCentre
+            ? db.fixture.findMany({
+                where: {
+                  seasonId: fixture.seasonId,
+                },
+                orderBy: [{ startsAt: "asc" }],
+                take: 200,
+                include: buildFixtureInclude(),
+              })
+            : Promise.resolve([]),
+          includeMatchCentre
+            ? db.standing.findMany({
+                where: {
+                  seasonId: fixture.seasonId,
+                  scope: "OVERALL",
+                },
+                orderBy: [{ position: "asc" }],
+                include: {
+                  team: true,
+                },
+              })
+            : Promise.resolve([]),
+          includeMatchCentre
+            ? db.fixture.findMany({
+                where: {
+                  id: { not: fixture.id },
+                  OR: [
+                    {
+                      homeTeamId: fixture.homeTeamId,
+                      awayTeamId: fixture.awayTeamId,
+                    },
+                    {
+                      homeTeamId: fixture.awayTeamId,
+                      awayTeamId: fixture.homeTeamId,
+                    },
+                  ],
+                },
+                orderBy: [{ startsAt: "desc" }],
+                take: 12,
+                include: buildFixtureInclude(),
+              })
+            : Promise.resolve([]),
+          includeExperience
+            ? buildFixtureBettingExperience(fixture, {
+                locale,
+                viewerTerritory,
+                flags,
+              })
+            : Promise.resolve({}),
+        ]);
 
         return {
           ...fixture,
           detail,
           ...bettingExperience,
+          matchCentre: includeMatchCentre
+            ? buildMatchCentre(fixture, {
+                seasonFixtures,
+                standings,
+                standingsView,
+                headToHeadFixtures,
+              })
+            : null,
         };
       }, null)
   );

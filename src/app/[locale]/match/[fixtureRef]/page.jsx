@@ -9,11 +9,16 @@ import { NewsModule } from "../../../../components/coreui/news-module";
 import { OddsPredictionWidgets } from "../../../../components/coreui/odds-prediction-widgets";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
+import { StandingsTable } from "../../../../components/coreui/standings-table";
 import { StructuredData } from "../../../../components/coreui/structured-data";
 import { TrackedActionLink } from "../../../../components/coreui/tracked-action-link";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import styles from "../../../../components/coreui/styles.module.css";
-import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
+import {
+  formatDictionaryText,
+  getDictionary,
+  getStandingViewLabel,
+} from "../../../../lib/coreui/dictionaries";
 import { getRelatedMatchesModule } from "../../../../lib/coreui/discovery";
 import { getPublicSurfaceFlags } from "../../../../lib/coreui/feature-flags";
 import {
@@ -31,6 +36,8 @@ import { getFixtureNewsModule } from "../../../../lib/coreui/news-read";
 import { getNewsModuleExperience } from "../../../../lib/coreui/news-experience";
 import { resolveViewerTerritory } from "../../../../lib/coreui/odds-broadcast";
 import { getPersonalizationSnapshot, sortFixturesByPersonalization } from "../../../../lib/personalization";
+
+const VALID_TABS = ["match", "h2h", "standings", "video"];
 
 function coverageTone(state) {
   if (state === "available") {
@@ -76,9 +83,39 @@ function getSideLabel(side, dictionary) {
   return dictionary.matchSide;
 }
 
+function normalizeTab(value) {
+  if (!value) {
+    return "match";
+  }
+
+  return VALID_TABS.includes(value) ? value : "match";
+}
+
+function buildMatchPageHref(locale, fixtureReference, { tab, standing, territory } = {}) {
+  const params = new URLSearchParams();
+
+  if (tab && tab !== "match") {
+    params.set("tab", tab);
+  }
+
+  if (standing && standing !== "overall") {
+    params.set("standing", standing);
+  }
+
+  if (territory) {
+    params.set("territory", territory);
+  }
+
+  const query = params.toString();
+  return `/${locale}/match/${fixtureReference}${query ? `?${query}` : ""}`;
+}
+
 export async function generateMetadata({ params }) {
   const { locale, fixtureRef } = await params;
-  const fixture = await getLiveMatchDetail(fixtureRef, locale);
+  const fixture = await getLiveMatchDetail(fixtureRef, locale, undefined, {
+    includeMatchCentre: false,
+    includeExperience: false,
+  });
   const dictionary = getDictionary(locale);
 
   return buildPageMetadata(
@@ -105,12 +142,17 @@ export default async function MatchDetailPage({ params, searchParams }) {
   const { locale, fixtureRef } = await params;
   const filters = await searchParams;
   const dictionary = getDictionary(locale);
+  const activeTab = normalizeTab(filters?.tab);
+  const selectedStandingView = filters?.standing || "overall";
   const viewerTerritory = resolveViewerTerritory({
     territory: filters?.territory,
     headers: await headers(),
   });
   const [fixture, flags, personalization] = await Promise.all([
-    getLiveMatchDetail(fixtureRef, locale, viewerTerritory),
+    getLiveMatchDetail(fixtureRef, locale, viewerTerritory, {
+      standingsView: selectedStandingView,
+      includeMatchCentre: true,
+    }),
     getPublicSurfaceFlags(),
     getPersonalizationSnapshot(),
   ]);
@@ -147,6 +189,7 @@ export default async function MatchDetailPage({ params, searchParams }) {
   );
 
   const detail = fixture.detail;
+  const matchCentre = fixture.matchCentre;
   const odds = fixture.odds;
   const broadcast = fixture.broadcast;
   const relatedNewsExperience = flags.news
@@ -216,6 +259,12 @@ export default async function MatchDetailPage({ params, searchParams }) {
       broadcast.quickActions?.primary ||
       broadcast.quickActions?.message
   );
+  const fixtureReference = fixture.externalRef || fixture.id;
+  const topOdds = odds.insights?.bestOdds?.slice(0, 3) || [];
+  const headToHead = matchCentre?.h2h || null;
+  const standingRows = matchCentre?.standingsTable?.rows || [];
+  const standingViews = matchCentre?.standingsTable?.availableViews || [];
+  const focusRows = matchCentre?.focusedRows || [];
 
   const oddsContent = (
     <div className={styles.surfaceStack}>
@@ -401,6 +450,29 @@ export default async function MatchDetailPage({ params, searchParams }) {
         </div>
       </header>
 
+      <div className={styles.filterStack}>
+        <div className={styles.filterRow}>
+          {[
+            { key: "match", label: dictionary.match },
+            { key: "h2h", label: dictionary.matchHeadToHead },
+            { key: "standings", label: dictionary.standings },
+            { key: "video", label: dictionary.matchVideo },
+          ].map((item) => (
+            <Link
+              key={item.key}
+              href={buildMatchPageHref(locale, fixtureReference, {
+                tab: item.key,
+                standing: matchCentre?.standingsTable?.selectedView,
+                territory: filters?.territory,
+              })}
+              className={item.key === activeTab ? styles.filterChipActive : styles.filterChip}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <div className={styles.detailGrid}>
         <article className={styles.detailCard}>
           <div className={styles.cardHeader}>
@@ -498,10 +570,35 @@ export default async function MatchDetailPage({ params, searchParams }) {
               </div>
             ))}
           </div>
+
+          {matchCentre?.venue || matchCentre?.referee || headToHead ? (
+            <div className={styles.coverageGrid}>
+              {matchCentre?.venue ? (
+                <div className={styles.coverageItem}>
+                  <span>{dictionary.venue}</span>
+                  <strong>{matchCentre.venue.name}</strong>
+                </div>
+              ) : null}
+              {matchCentre?.referee ? (
+                <div className={styles.coverageItem}>
+                  <span>{dictionary.referee}</span>
+                  <strong>{matchCentre.referee.name}</strong>
+                </div>
+              ) : null}
+              {headToHead ? (
+                <div className={styles.coverageItem}>
+                  <span>{dictionary.matchHeadToHead}</span>
+                  <strong>
+                    {headToHead.homeWins}-{headToHead.awayWins}-{headToHead.draws}
+                  </strong>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </article>
       </div>
 
-      {hasMatchInsights ? (
+      {activeTab === "match" && hasMatchInsights ? (
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <div>
@@ -526,28 +623,30 @@ export default async function MatchDetailPage({ params, searchParams }) {
         </section>
       ) : null}
 
-      <section id="match-odds" className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <p className={styles.eyebrow}>{dictionary.match}</p>
-            <h2 className={styles.sectionTitle}>{dictionary.relatedMatchesTitle}</h2>
-            <p className={styles.sectionLead}>{dictionary.relatedMatchesLead}</p>
+      {activeTab === "match" ? (
+        <section id="match-odds" className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>{dictionary.match}</p>
+              <h2 className={styles.sectionTitle}>{dictionary.relatedMatchesTitle}</h2>
+              <p className={styles.sectionLead}>{dictionary.relatedMatchesLead}</p>
+            </div>
+            <span className={styles.badge}>{relatedMatches.length}</span>
           </div>
-          <span className={styles.badge}>{relatedMatches.length}</span>
-        </div>
 
-        {relatedMatches.length ? (
-          <div className={styles.fixtureGrid}>
-            {relatedMatches.map((relatedFixture) => (
-              <FixtureCard key={relatedFixture.id} fixture={relatedFixture} locale={locale} />
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>{dictionary.noData}</div>
-        )}
-      </section>
+          {relatedMatches.length ? (
+            <div className={styles.fixtureGrid}>
+              {relatedMatches.map((relatedFixture) => (
+                <FixtureCard key={relatedFixture.id} fixture={relatedFixture} locale={locale} />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>{dictionary.noData}</div>
+          )}
+        </section>
+      ) : null}
 
-      {flags.news ? (
+      {activeTab === "match" && flags.news ? (
         <NewsModule
           locale={locale}
           dictionary={dictionary}
@@ -563,50 +662,53 @@ export default async function MatchDetailPage({ params, searchParams }) {
         />
       ) : null}
 
-      <section id="match-broadcast" className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <p className={styles.eyebrow}>{dictionary.highlights}</p>
-            <h2 className={styles.sectionTitle}>{dictionary.keyEvents}</h2>
+      {activeTab === "match" ? (
+        <section id="match-broadcast" className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>{dictionary.highlights}</p>
+              <h2 className={styles.sectionTitle}>{dictionary.keyEvents}</h2>
+            </div>
+            <span className={styles.badge}>{detail.keyEvents.length}</span>
           </div>
-          <span className={styles.badge}>{detail.keyEvents.length}</span>
-        </div>
 
-        {detail.keyEvents.length ? (
-          <div className={styles.eventGrid}>
-            {detail.keyEvents.map((event) => (
-              <article key={event.id} className={styles.panel}>
-                <div className={styles.cardHeader}>
-                  <span
-                    className={
-                      event.side === "home"
-                        ? styles.homeMarker
-                        : event.side === "away"
-                          ? styles.awayMarker
-                          : styles.badge
-                    }
-                  >
-                    {getSideLabel(event.side, dictionary)}
-                  </span>
-                  {event.minuteLabel ? <span className={styles.badge}>{event.minuteLabel}</span> : null}
-                </div>
-                <h3 className={styles.cardTitle}>{event.title}</h3>
-                {event.actor ? <p className={styles.muted}>{event.actor}</p> : null}
-                {event.secondaryActor ? (
-                  <p className={styles.muted}>
-                    {formatDictionaryText(dictionary.eventWith, { name: event.secondaryActor })}
-                  </p>
-                ) : null}
-                <p className={styles.fixtureSummary}>{event.description}</p>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>{dictionary.eventCoveragePending}</div>
-        )}
-      </section>
+          {detail.keyEvents.length ? (
+            <div className={styles.eventGrid}>
+              {detail.keyEvents.map((event) => (
+                <article key={event.id} className={styles.panel}>
+                  <div className={styles.cardHeader}>
+                    <span
+                      className={
+                        event.side === "home"
+                          ? styles.homeMarker
+                          : event.side === "away"
+                            ? styles.awayMarker
+                            : styles.badge
+                      }
+                    >
+                      {getSideLabel(event.side, dictionary)}
+                    </span>
+                    {event.minuteLabel ? <span className={styles.badge}>{event.minuteLabel}</span> : null}
+                  </div>
+                  <h3 className={styles.cardTitle}>{event.title}</h3>
+                  {event.actor ? <p className={styles.muted}>{event.actor}</p> : null}
+                  {event.secondaryActor ? (
+                    <p className={styles.muted}>
+                      {formatDictionaryText(dictionary.eventWith, { name: event.secondaryActor })}
+                    </p>
+                  ) : null}
+                  <p className={styles.fixtureSummary}>{event.description}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>{dictionary.eventCoveragePending}</div>
+          )}
+        </section>
+      ) : null}
 
-      <div className={styles.analysisGrid}>
+      {activeTab === "match" ? (
+        <div className={styles.analysisGrid}>
         <article className={styles.detailCard}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>{dictionary.timeline}</h2>
@@ -681,9 +783,11 @@ export default async function MatchDetailPage({ params, searchParams }) {
             <div className={styles.emptyState}>{dictionary.statisticsPending}</div>
           )}
         </article>
-      </div>
+        </div>
+      ) : null}
 
-      <section className={styles.section}>
+      {activeTab === "match" ? (
+        <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>{dictionary.squads}</p>
@@ -765,9 +869,11 @@ export default async function MatchDetailPage({ params, searchParams }) {
         ) : (
           <div className={styles.emptyState}>{dictionary.lineupsPending}</div>
         )}
-      </section>
+        </section>
+      ) : null}
 
-      <section className={styles.section}>
+      {activeTab === "match" ? (
+        <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>{dictionary.markets}</p>
@@ -801,10 +907,185 @@ export default async function MatchDetailPage({ params, searchParams }) {
             oddsContent
           )}
         </ModuleEngagementTracker>
-      </section>
+        </section>
+      ) : null}
 
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
+      {activeTab === "h2h" ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>{dictionary.matchHeadToHead}</p>
+              <h2 className={styles.sectionTitle}>{dictionary.matchHeadToHead}</h2>
+              <p className={styles.sectionLead}>{dictionary.matchHeadToHeadLead}</p>
+            </div>
+            <span className={styles.badge}>{headToHead?.totalCompleted || 0}</span>
+          </div>
+
+          <div className={styles.coverageGrid}>
+            <div className={styles.coverageItem}>
+              <span>{fixture.homeTeam.name}</span>
+              <strong>{headToHead?.homeWins || 0}</strong>
+            </div>
+            <div className={styles.coverageItem}>
+              <span>{fixture.awayTeam.name}</span>
+              <strong>{headToHead?.awayWins || 0}</strong>
+            </div>
+            <div className={styles.coverageItem}>
+              <span>{dictionary.tableDrawn}</span>
+              <strong>{headToHead?.draws || 0}</strong>
+            </div>
+            <div className={styles.coverageItem}>
+              <span>{dictionary.matchHeadToHeadStored}</span>
+              <strong>
+                {headToHead?.latestSnapshotAt
+                  ? formatSnapshotTime(headToHead.latestSnapshotAt, locale)
+                  : dictionary.noData}
+              </strong>
+            </div>
+          </div>
+
+          {headToHead?.completedMatches?.length ? (
+            <div className={styles.fixtureGrid}>
+              {headToHead.completedMatches.map((historyFixture) => (
+                <FixtureCard key={historyFixture.id} fixture={historyFixture} locale={locale} surface="match-detail" />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>{dictionary.matchHeadToHeadEmpty}</div>
+          )}
+
+          {headToHead?.upcomingMatches?.length ? (
+            <div className={styles.surfaceStack}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <p className={styles.eyebrow}>{dictionary.fixtures}</p>
+                  <h3 className={styles.cardTitle}>{dictionary.matchHeadToHeadNext}</h3>
+                </div>
+                <span className={styles.badge}>{headToHead.upcomingMatches.length}</span>
+              </div>
+              <div className={styles.fixtureGrid}>
+                {headToHead.upcomingMatches.map((historyFixture) => (
+                  <FixtureCard key={historyFixture.id} fixture={historyFixture} locale={locale} surface="match-detail" />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {activeTab === "standings" ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>{dictionary.standings}</p>
+              <h2 className={styles.sectionTitle}>{dictionary.standings}</h2>
+            </div>
+            <span className={styles.badge}>{standingRows.length}</span>
+          </div>
+
+          <div className={styles.filterRow}>
+            {standingViews.map((view) => (
+              <Link
+                key={view}
+                href={buildMatchPageHref(locale, fixtureReference, {
+                  tab: "standings",
+                  standing: view,
+                  territory: filters?.territory,
+                })}
+                className={
+                  view === matchCentre?.standingsTable?.selectedView ? styles.filterChipActive : styles.filterChip
+                }
+              >
+                {getStandingViewLabel(view, dictionary)}
+              </Link>
+            ))}
+          </div>
+
+          {focusRows.length ? (
+            <div className={styles.coverageGrid}>
+              {focusRows.map((row) => (
+                <div key={row.team.id} className={styles.coverageItem}>
+                  <span>{row.team.name}</span>
+                  <strong>
+                    {row.position}. {row.points} {dictionary.tablePoints}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <StandingsTable
+            rows={standingRows}
+            dictionary={dictionary}
+            locale={locale}
+            highlightTeamIds={[fixture.homeTeam.id, fixture.awayTeam.id]}
+          />
+        </section>
+      ) : null}
+
+      {activeTab === "video" ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>{dictionary.matchVideo}</p>
+              <h2 className={styles.sectionTitle}>{dictionary.watchOptions}</h2>
+              <p className={styles.sectionLead}>{dictionary.matchVideoLead}</p>
+            </div>
+            <span className={styles.badge}>{broadcast.summary.channelCount}</span>
+          </div>
+
+          <div className={styles.coverageGrid}>
+            <div className={styles.coverageItem}>
+              <span>{dictionary.venue}</span>
+              <strong>{matchCentre?.venue?.name || fixture.venue || dictionary.noData}</strong>
+            </div>
+            <div className={styles.coverageItem}>
+              <span>{dictionary.referee}</span>
+              <strong>{matchCentre?.referee?.name || dictionary.noData}</strong>
+            </div>
+            <div className={styles.coverageItem}>
+              <span>{dictionary.broadcastStreaming}</span>
+              <strong>{broadcast.summary.streamingCount}</strong>
+            </div>
+            <div className={styles.coverageItem}>
+              <span>{dictionary.broadcastTelevision}</span>
+              <strong>{broadcast.summary.televisionCount}</strong>
+            </div>
+          </div>
+
+          {topOdds.length ? (
+            <div className={styles.surfaceStack}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <p className={styles.eyebrow}>{dictionary.fixtureOdds}</p>
+                  <h3 className={styles.cardTitle}>{dictionary.matchTopPrices}</h3>
+                </div>
+                <span className={styles.badge}>{topOdds.length}</span>
+              </div>
+              <div className={styles.eventGrid}>
+                {topOdds.map((entry) => (
+                  <article key={entry.key} className={styles.panel}>
+                    <div className={styles.cardHeader}>
+                      <strong>{entry.bookmaker || dictionary.fixtureOdds}</strong>
+                      {entry.marketType ? <span className={styles.badge}>{entry.marketType}</span> : null}
+                    </div>
+                    <h3 className={styles.cardTitle}>{entry.selectionLabel || entry.fixtureLabel}</h3>
+                    {entry.fixtureLabel ? <p className={styles.muted}>{entry.fixtureLabel}</p> : null}
+                    <div className={styles.insightSplit}>
+                      <span className={styles.insightMetric}>{dictionary.bestPrice}</span>
+                      <strong className={styles.insightPrice}>{entry.priceLabel || "-"}</strong>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {activeTab === "video" ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>{dictionary.broadcastGuide}</p>
             <h2 className={styles.sectionTitle}>{dictionary.broadcastGuide}</h2>
@@ -901,7 +1182,8 @@ export default async function MatchDetailPage({ params, searchParams }) {
             ) : null}
           </div>
         </ModuleEngagementTracker>
-      </section>
+        </section>
+      ) : null}
     </section>
   );
 }
