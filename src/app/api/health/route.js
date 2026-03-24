@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAssetDeliverySnapshot } from "../../../lib/assets-server";
 import { withDataAccessTimeout } from "../../../lib/data-access";
 import { getOperationalDashboardSnapshot } from "../../../lib/operations";
+import { getPlatformHealthSnapshot } from "../../../lib/platform/env";
 import { getReleaseInfo } from "../../../lib/release";
 import { getSportsSyncConfig } from "../../../lib/sports/config";
 import { getProviderChain } from "../../../lib/sports/provider";
@@ -23,6 +24,7 @@ export async function GET() {
       service: "sports",
       timestamp: new Date().toISOString(),
       release: getReleaseInfo(),
+      platform: getPlatformHealthSnapshot(),
       providerChain: getProviderChain(syncConfig.provider, syncConfig.fallbackProviders),
       liveData: operations.liveData,
       slos: operations.slos,
@@ -45,6 +47,7 @@ export async function GET() {
         service: "sports",
         timestamp: new Date().toISOString(),
         release: getReleaseInfo(),
+        platform: getPlatformHealthSnapshot(),
         error: error instanceof Error ? error.message : "Health snapshot failed.",
       },
       { status: 503 }

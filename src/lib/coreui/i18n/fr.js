@@ -385,6 +385,80 @@ const fr = {
   metaFavoritesTitle: "Favoris",
   metaFavoritesDescription:
     "Vos competitions, equipes, matchs sauvegardes et raccourcis d'alerte dans un hub personnalise.",
+  funnelRailTitle: "Funnels",
+  funnelRailBody:
+    "Les CTA Telegram et WhatsApp restent pilotes par l'environnement afin que les handoffs puissent changer sans modifier le code.",
+  funnelUnavailable: "Aucun funnel de messagerie n'est actif pour ce marche pour le moment.",
+  affiliatePartnerLabel: "Partenaire affiliate",
+  openTelegram: "Ouvrir Telegram",
+  openWhatsApp: "Ouvrir WhatsApp",
+  currentMarket: "Marche actuel",
+  metaPredictionsTitle: "Predictions",
+  metaPredictionsDescription:
+    "Espace de predictions avec routage geo-aware et base de readiness fournisseur.",
+  metaAffiliatesTitle: "Affiliates",
+  metaAffiliatesDescription:
+    "Base partenaire affiliate et couverture bookmaker par geo pour les surfaces monetisees.",
+  metaFunnelsTitle: "Funnels",
+  metaFunnelsDescription:
+    "Routage des entrees Telegram et WhatsApp avec visibilite dependante du marche.",
+  metaSettingsTitle: "Parametres",
+  metaSettingsDescription:
+    "Fondations de langue, theme, profil et marche pour le shell sportif.",
+  predictionsEyebrow: "Base predictions",
+  predictionsTitle: "Espace predictions",
+  predictionsLead:
+    "Cette route verrouille la base geo-aware des predictions avant l'arrivee des picks, niveaux de confiance et classements des prochaines phases.",
+  predictionsCoverageTitle: "Couverture marche",
+  predictionsProviderTitle: "Etat du fournisseur",
+  predictionsProviderReady: "Fournisseur predictions configure :",
+  predictionsProviderPending:
+    "La cle du fournisseur predictions n'est pas encore definie, la surface reste donc en mode pret a connecter.",
+  predictionsSurfaceTitle: "Handoff de surface",
+  predictionsSurfaceBody:
+    "Les routes competition et match sont deja pretes a recevoir des modules predictions sans changer le shell ni le modele de route.",
+  openLeagueDirectory: "Ouvrir le repertoire des ligues",
+  affiliatesEyebrow: "Base affiliate",
+  affiliatesTitle: "Espace affiliate",
+  affiliatesLead:
+    "Cette route suit la couverture des partenaires et bookmakers par marche afin que les futurs CTA restent geo-safe et pilotes par l'environnement.",
+  affiliatesPartnerTitle: "Carte partenaires",
+  affiliatesPartnerPending:
+    "Aucun partenaire affiliate n'est encore assigne a ce marche.",
+  affiliatesBookmakerTitle: "Couverture bookmaker",
+  affiliatesBookmakerReady: "Couverture bookmaker mappee pour ce marche :",
+  affiliatesBookmakerPending:
+    "La couverture bookmaker attend encore son mapping geo-specifique.",
+  affiliatesOpsTitle: "Passage ops",
+  affiliatesOpsBody:
+    "Les controles admin restent la maison operationnelle des modules shell, ad slots, consent et futures regles CTA.",
+  openAdminControlRoom: "Ouvrir la salle de controle admin",
+  funnelsEyebrow: "Base funnels",
+  funnelsTitle: "Funnels de messagerie",
+  funnelsLead:
+    "Les points d'entree Telegram et WhatsApp sont maintenant sensibles au marche, pilotes par l'environnement et reutilisables sur live, match et news.",
+  funnelsRoutingTitle: "Contexte de route",
+  funnelsTelegramTitle: "Funnel Telegram",
+  funnelsTelegramBody:
+    "Utilisez ce point d'entree pour les invites d'abonnement au canal et les parcours de conversion legers.",
+  funnelsWhatsAppTitle: "Funnel WhatsApp",
+  funnelsWhatsAppBody:
+    "Utilisez ce point d'entree pour la distribution regionale en messagerie et les invites de suivi.",
+  funnelsUnavailableTitle: "Disponibilite funnel",
+  settingsEyebrow: "Base parametres",
+  settingsTitle: "Espace parametres",
+  settingsLead:
+    "La langue, le theme, le profil et le routage marche disposent maintenant d'une route stable avant l'extension des preferences.",
+  settingsProfileTitle: "Parametres profil",
+  settingsProfileBody:
+    "Utilisez la surface profil authentifiee pour les preferences de langue, theme, alertes et sports favoris.",
+  openProfileSettings: "Ouvrir les parametres profil",
+  settingsMarketTitle: "Routage marche",
+  settingsMarketAction: "Ouvrir les parametres geo-aware",
+  settingsFunnelTitle: "Funnels et canaux",
+  settingsFunnelBody:
+    "Le routage funnel reste separe de l'etat du profil afin que les CTA sensibles au marche evoluent sans casser les preferences compte.",
+  openFunnelsWorkspace: "Ouvrir l'espace funnels",
 };
 
 export default fr;

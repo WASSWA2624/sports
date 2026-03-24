@@ -387,6 +387,80 @@ const sw = {
   metaFavoritesTitle: "Vipendwa",
   metaFavoritesDescription:
     "Mashindano, timu, mechi ulizohifadhi na njia za mkato za arifa ndani ya kituo kimoja cha binafsi.",
+  funnelRailTitle: "Funnels",
+  funnelRailBody:
+    "CTA za Telegram na WhatsApp sasa zinadhibitiwa na env ili njia za handoff zibadilike bila kuhariri msimbo.",
+  funnelUnavailable: "Hakuna funnel ya ujumbe iliyowashwa kwa soko hili kwa sasa.",
+  affiliatePartnerLabel: "Mshirika wa affiliate",
+  openTelegram: "Fungua Telegram",
+  openWhatsApp: "Fungua WhatsApp",
+  currentMarket: "Soko la sasa",
+  metaPredictionsTitle: "Predictions",
+  metaPredictionsDescription:
+    "Eneo la predictions lenye routing ya geo-aware na msingi wa utayari wa provider.",
+  metaAffiliatesTitle: "Affiliates",
+  metaAffiliatesDescription:
+    "Msingi wa washirika wa affiliate na ufunikaji wa bookmaker kwa geo kwenye sehemu za mapato.",
+  metaFunnelsTitle: "Funnels",
+  metaFunnelsDescription:
+    "Routing ya Telegram na WhatsApp yenye mwonekano unaotegemea soko.",
+  metaSettingsTitle: "Mipangilio",
+  metaSettingsDescription:
+    "Msingi wa lugha, mandhari, wasifu na routing ya soko kwa shell ya michezo.",
+  predictionsEyebrow: "Msingi wa predictions",
+  predictionsTitle: "Eneo la predictions",
+  predictionsLead:
+    "Njia hii inaweka msingi wa geo-aware predictions kabla ya picks, confidence bands na logic ya kupanga kuingia katika hatua zijazo.",
+  predictionsCoverageTitle: "Ufunikaji wa soko",
+  predictionsProviderTitle: "Utayari wa provider",
+  predictionsProviderReady: "Provider wa predictions amewekwa:",
+  predictionsProviderPending:
+    "Ufunguo wa provider wa predictions bado haujawekwa, hivyo sehemu hii inabaki katika hali ya ready-for-wiring.",
+  predictionsSurfaceTitle: "Makabidhiano ya surface",
+  predictionsSurfaceBody:
+    "Njia za competition na match tayari zinaweza kurithi moduli za predictions bila kubadili shell au muundo wa routes.",
+  openLeagueDirectory: "Fungua orodha ya ligi",
+  affiliatesEyebrow: "Msingi wa affiliate",
+  affiliatesTitle: "Eneo la affiliate",
+  affiliatesLead:
+    "Njia hii inafuatilia washirika na bookmakers kwa kila soko ili CTA zijazo zibaki geo-safe na env-driven.",
+  affiliatesPartnerTitle: "Ramani ya washirika",
+  affiliatesPartnerPending:
+    "Bado hakuna mshirika wa affiliate aliyepewa soko hili.",
+  affiliatesBookmakerTitle: "Ufunikaji wa bookmaker",
+  affiliatesBookmakerReady: "Ufunikaji wa bookmaker umewekwa kwa soko hili:",
+  affiliatesBookmakerPending:
+    "Ufunikaji wa bookmaker bado unasubiri mapping ya geo maalum.",
+  affiliatesOpsTitle: "Makabidhiano ya ops",
+  affiliatesOpsBody:
+    "Vidhibiti vya admin vinaendelea kuwa nyumbani kwa moduli za shell, ad slots, consent na usimamizi wa CTA wa baadaye.",
+  openAdminControlRoom: "Fungua chumba cha admin",
+  funnelsEyebrow: "Msingi wa funnels",
+  funnelsTitle: "Funnels za ujumbe",
+  funnelsLead:
+    "Sehemu za kuingilia za Telegram na WhatsApp sasa zinajua soko, zinadhibitiwa na env, na ziko tayari kutumiwa tena kwenye live, match na news.",
+  funnelsRoutingTitle: "Muktadha wa route",
+  funnelsTelegramTitle: "Funnel ya Telegram",
+  funnelsTelegramBody:
+    "Tumia sehemu hii kwa maombi ya kujiunga na channel na safari nyepesi za conversion.",
+  funnelsWhatsAppTitle: "Funnel ya WhatsApp",
+  funnelsWhatsAppBody:
+    "Tumia sehemu hii kwa usambazaji wa ujumbe wa kikanda na maombi ya follow-up.",
+  funnelsUnavailableTitle: "Upatikanaji wa funnel",
+  settingsEyebrow: "Msingi wa mipangilio",
+  settingsTitle: "Eneo la mipangilio",
+  settingsLead:
+    "Lugha, mandhari, wasifu na routing ya soko sasa vina msingi thabiti wa route kabla ya kupanuliwa kwa mapendeleo.",
+  settingsProfileTitle: "Mipangilio ya wasifu",
+  settingsProfileBody:
+    "Tumia eneo la wasifu lililothibitishwa kwa mapendeleo ya lugha, mandhari, arifa na michezo unayopenda.",
+  openProfileSettings: "Fungua mipangilio ya wasifu",
+  settingsMarketTitle: "Routing ya soko",
+  settingsMarketAction: "Fungua mipangilio ya geo-aware",
+  settingsFunnelTitle: "Funnels na channels",
+  settingsFunnelBody:
+    "Routing ya funnel imetenganishwa na hali ya wasifu ili tabia salama za CTA kwa kila soko zibadilike bila kuvunja mapendeleo ya akaunti.",
+  openFunnelsWorkspace: "Fungua eneo la funnels",
 };
 
 export default sw;

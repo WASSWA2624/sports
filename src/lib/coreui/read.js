@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { db } from "../db";
 import { safeDataRead } from "../data-access";
 import { getShellChromeContent } from "../control-plane";
+import { getPlatformPublicSnapshot } from "../platform/env";
 import { markCacheFill, observeCachedOperation, observeOperation } from "../operations";
 import { buildStandingTable } from "./competition-standings";
 import { getPublicSurfaceFlags } from "./feature-flags";
@@ -508,6 +509,7 @@ const getShellSnapshotCached = unstable_cache(
         }),
         getShellChromeContent(locale),
       ]);
+      const platform = getPlatformPublicSnapshot();
 
       const countryGroups = [...leagues.reduce((accumulator, league) => {
         const countryKey = league.countryRecord?.id || league.countryRecord?.slug || league.country || "";
@@ -596,6 +598,7 @@ const getShellSnapshotCached = unstable_cache(
         fixtureDirectory,
         searchShortcuts,
         chrome: shellChrome,
+        platform,
       };
       markCacheFill("coreui:shell", { surface: "shell", locale });
       return snapshot;
@@ -611,6 +614,7 @@ const getShellSnapshotCached = unstable_cache(
         consentText: null,
         shellModuleMap: {},
       },
+      platform: getPlatformPublicSnapshot(),
     }),
   ["coreui:shell"],
   { revalidate: 300, tags: ["coreui:shell"] }

@@ -67,6 +67,7 @@ describe("control-plane release defaults", () => {
     expect(moduleMap.shell_right_rail_ad_slot).toBe(false);
     expect(moduleMap.shell_right_rail_consent).toBe(false);
     expect(moduleMap.shell_right_rail_support).toBe(true);
+    expect(moduleMap.shell_right_rail_funnel_entry).toBe(true);
   });
 
   it("exposes a safe empty workspace for degraded admin reads", () => {

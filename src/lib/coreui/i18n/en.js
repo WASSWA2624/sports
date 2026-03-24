@@ -53,6 +53,14 @@ const en = {
   consent: "Consent",
   consentBody:
     "Consent, privacy, and regulated-content notices land in this rail without breaking the scores layout.",
+  funnelRailTitle: "Funnels",
+  funnelRailBody:
+    "Geo-aware messaging CTAs stay env-driven so Telegram and WhatsApp handoffs can change without code edits.",
+  funnelUnavailable: "No messaging funnel is enabled for the current market yet.",
+  affiliatePartnerLabel: "Affiliate partner",
+  openTelegram: "Open Telegram",
+  openWhatsApp: "Open WhatsApp",
+  currentMarket: "Current market",
   matchDetail: "Match detail",
   noData: "No data yet.",
   theme: "Theme",
@@ -423,6 +431,72 @@ const en = {
   metaFavoritesTitle: "Favorites",
   metaFavoritesDescription:
     "Your saved competitions, teams, matches, and alert shortcuts in one personalized hub.",
+  metaPredictionsTitle: "Predictions",
+  metaPredictionsDescription:
+    "Baseline predictions workspace with geo-aware routing and provider-readiness scaffolding.",
+  metaAffiliatesTitle: "Affiliates",
+  metaAffiliatesDescription:
+    "Affiliate partner and bookmaker geo coverage foundations for monetized sports surfaces.",
+  metaFunnelsTitle: "Funnels",
+  metaFunnelsDescription:
+    "Telegram and WhatsApp funnel entry routing with market-aware visibility rules.",
+  metaSettingsTitle: "Settings",
+  metaSettingsDescription:
+    "Locale, theme, profile, and market-routing foundations for the sports platform shell.",
+  predictionsEyebrow: "Predictions foundation",
+  predictionsTitle: "Predictions workspace",
+  predictionsLead:
+    "This baseline route locks in geo-aware prediction scaffolding before model picks, confidence bands, and ranking logic land in later phases.",
+  predictionsCoverageTitle: "Market coverage",
+  predictionsProviderTitle: "Provider readiness",
+  predictionsProviderReady: "Predictions provider configured:",
+  predictionsProviderPending:
+    "Predictions provider key is still unset, so this surface stays in ready-for-wiring mode.",
+  predictionsSurfaceTitle: "Surface handoff",
+  predictionsSurfaceBody:
+    "Competition and match routes are already prepared to inherit predictions modules without changing the shell or route model.",
+  openLeagueDirectory: "Open league directory",
+  affiliatesEyebrow: "Affiliate foundation",
+  affiliatesTitle: "Affiliate workspace",
+  affiliatesLead:
+    "This baseline route tracks partner and bookmaker coverage by market so later CTA modules can stay geo-safe and env-driven.",
+  affiliatesPartnerTitle: "Partner map",
+  affiliatesPartnerPending:
+    "No affiliate partner is assigned to the current market yet.",
+  affiliatesBookmakerTitle: "Bookmaker coverage",
+  affiliatesBookmakerReady: "Bookmaker coverage mapped for this market:",
+  affiliatesBookmakerPending:
+    "Bookmaker coverage is still waiting on geo-specific mapping.",
+  affiliatesOpsTitle: "Operations handoff",
+  affiliatesOpsBody:
+    "Admin controls remain the operational home for shell modules, ad slots, consent, and future CTA governance.",
+  openAdminControlRoom: "Open admin control room",
+  funnelsEyebrow: "Funnels foundation",
+  funnelsTitle: "Messaging funnels",
+  funnelsLead:
+    "Telegram and WhatsApp entry points are now market-aware, env-driven, and ready to be reused across live, match, and news surfaces.",
+  funnelsRoutingTitle: "Route context",
+  funnelsTelegramTitle: "Telegram funnel",
+  funnelsTelegramBody:
+    "Use this entry point for channel-join prompts and lightweight conversion journeys.",
+  funnelsWhatsAppTitle: "WhatsApp funnel",
+  funnelsWhatsAppBody:
+    "Use this entry point for regional message-channel distribution and follow-up prompts.",
+  funnelsUnavailableTitle: "Funnel availability",
+  settingsEyebrow: "Settings foundation",
+  settingsTitle: "Settings workspace",
+  settingsLead:
+    "Locale, theme, profile, and market-routing controls now have a stable route foundation for later preference expansion.",
+  settingsProfileTitle: "Profile settings",
+  settingsProfileBody:
+    "Use the authenticated profile surface for saved locale, theme, alert, and favorite-sports preferences.",
+  openProfileSettings: "Open profile settings",
+  settingsMarketTitle: "Market routing",
+  settingsMarketAction: "Open geo-aware settings",
+  settingsFunnelTitle: "Funnels and channels",
+  settingsFunnelBody:
+    "Funnel routing is separated from profile state so market-safe CTA behavior can evolve without breaking account preferences.",
+  openFunnelsWorkspace: "Open funnels workspace",
 };
 
 export default en;

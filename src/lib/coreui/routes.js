@@ -1,3 +1,5 @@
+import { appendRouteContext } from "./route-context";
+
 function normalizePathSegment(value, fallback) {
   const segment = String(value || fallback || "")
     .trim()
@@ -16,25 +18,31 @@ export function getCountrySegment(country) {
   return normalizePathSegment(country?.slug || country?.code, "country");
 }
 
-export function buildSportHref(locale, sport) {
-  return `/${locale}/sports/${getSportSegment(sport)}`;
+export function buildSportHref(locale, sport, options) {
+  return appendRouteContext(`/${locale}/sports/${getSportSegment(sport)}`, options);
 }
 
-export function buildCountryHref(locale, country, sport) {
-  return `${buildSportHref(locale, sport)}/countries/${getCountrySegment(country)}`;
+export function buildCountryHref(locale, country, sport, options) {
+  return appendRouteContext(
+    `${buildSportHref(locale, sport)}/countries/${getCountrySegment(country)}`,
+    options
+  );
 }
 
-export function buildCompetitionHref(locale, competition) {
+export function buildCompetitionHref(locale, competition, options) {
   const code = competition?.code || competition?.leagueCode || competition?.competitionCode;
-  return code ? `/${locale}/leagues/${code}` : `/${locale}/leagues`;
+  return appendRouteContext(code ? `/${locale}/leagues/${code}` : `/${locale}/leagues`, options);
 }
 
-export function buildTeamHref(locale, team) {
+export function buildTeamHref(locale, team, options) {
   const reference = team?.id || team?.code;
-  return reference ? `/${locale}/teams/${reference}` : `/${locale}/teams`;
+  return appendRouteContext(
+    reference ? `/${locale}/teams/${reference}` : `/${locale}/teams`,
+    options
+  );
 }
 
-export function buildMatchHref(locale, fixture) {
+export function buildMatchHref(locale, fixture, options) {
   const reference = fixture?.externalRef || fixture?.id;
-  return reference ? `/${locale}/match/${reference}` : `/${locale}`;
+  return appendRouteContext(reference ? `/${locale}/match/${reference}` : `/${locale}`, options);
 }

@@ -17,6 +17,7 @@ const DEFAULT_PUBLIC_SURFACE_FLAGS = {
   shellAdSlot: true,
   shellConsent: true,
   shellSupport: true,
+  shellFunnelEntry: true,
   moduleMap: {},
 };
 

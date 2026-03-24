@@ -160,6 +160,13 @@ async function seed() {
           true, false, NULL,
           JSON_OBJECT('surface', 'shell-right-rail'),
           NOW(), NOW()
+        ),
+        (
+          UUID(), 'shell_right_rail_funnel_entry', 'Right rail funnel entry', 'shell',
+          'Telegram and WhatsApp conversion entry points in the public shell.',
+          true, false, NULL,
+          JSON_OBJECT('surface', 'shell-right-rail'),
+          NOW(), NOW()
         )
       ON DUPLICATE KEY UPDATE
         name = VALUES(name),

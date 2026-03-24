@@ -10,17 +10,20 @@ That scope freezes the app as a Flashscore-style public web product with monetiz
 
 ## Quick Start
 
+Fastest fresh-clone path:
+```bash
+docker compose up --build
+```
+
+Node + local MySQL path:
+
 1. Install dependencies:
 ```bash
 npm ci
 ```
-2. Copy environment template and edit values:
+2. Bootstrap env, Prisma, seed data, and the dev server in one command:
 ```bash
-copy .env.example .env
-```
-3. Run development server:
-```bash
-npm run dev
+npm run dev:bootstrap
 ```
 
 Optional nodemon wrapper:
@@ -38,6 +41,15 @@ npm run lint
 npm run test
 npm run build
 ```
+
+`npm run dev:bootstrap` will:
+
+- create `.env` from `.env.example` if needed
+- wait for MySQL when `DATABASE_URL` is reachable
+- run Prisma generate, migrate deploy, and seed
+- start the Next.js dev server
+
+If MySQL is unavailable, the app still starts in degraded mode so shell, routing, theming, and static platform work remain testable.
 
 Release validation bundle:
 

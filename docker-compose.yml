@@ -1,0 +1,50 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: sports
+      MYSQL_USER: sports
+      MYSQL_PASSWORD: sports
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      SITE_URL: http://localhost:3000
+      DATABASE_URL: mysql://sports:sports@mysql:3306/sports
+      AUTH_SECRET: development_auth_secret_change_me
+      AUTH_URL: http://localhost:3000
+      SPORTS_DATA_PROVIDER: SPORTSMONKS
+      SPORTSMONKS_API_KEY: docker-dev-placeholder
+      AFFILIATE_PARTNER_CODES: PULSEBOOK,NORTHLINE
+      AFFILIATE_PRIMARY_PARTNER: PULSEBOOK
+      AFFILIATE_GEO_PARTNER_MAP: UG:PULSEBOOK;KE:NORTHLINE;NG:PULSEBOOK
+      BOOKMAKER_LAUNCH_GEOS: UG,KE,NG
+      DEFAULT_MARKET_GEO: UG
+      BOOKMAKER_GEO_MAP: UG:PULSEBOOK;KE:NORTHLINE;NG:PULSEBOOK
+      TELEGRAM_CTA_URL: https://t.me/sportspulse
+      TELEGRAM_CTA_ALLOWED_GEOS: UG,KE,NG
+      WHATSAPP_CTA_URL: https://wa.me/256700000000
+      WHATSAPP_CTA_ALLOWED_GEOS: UG,KE,NG
+      REQUEST_LOGGING_ENABLED: true
+      REQUEST_LOG_SAMPLE_RATE: 1
+    ports:
+      - "3000:3000"

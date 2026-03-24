@@ -48,6 +48,7 @@ export const PUBLIC_MODULE_DEFAULTS = {
   shell_right_rail_ad_slot: true,
   shell_right_rail_consent: true,
   shell_right_rail_support: true,
+  shell_right_rail_funnel_entry: true,
 };
 
 export const EMPTY_CONTROL_PLANE_WORKSPACE = {
@@ -490,6 +491,7 @@ export async function getShellChromeContent(locale = "en") {
             "shell_right_rail_ad_slot",
             "shell_right_rail_consent",
             "shell_right_rail_support",
+            "shell_right_rail_funnel_entry",
           ],
         },
       },
@@ -550,6 +552,7 @@ export async function getPublicControlState() {
     shellAdSlot: moduleMap.shell_right_rail_ad_slot,
     shellConsent: moduleMap.shell_right_rail_consent,
     shellSupport: moduleMap.shell_right_rail_support,
+    shellFunnelEntry: moduleMap.shell_right_rail_funnel_entry,
     moduleMap,
   };
 }

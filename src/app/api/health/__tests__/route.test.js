@@ -8,6 +8,14 @@ const getReleaseInfo = vi.fn(() => ({
   commitSha: "abc123",
   buildId: "BUILD_TEST",
 }));
+const getPlatformHealthSnapshot = vi.fn(() => ({
+  defaultGeo: "UG",
+  launchGeos: ["UG", "KE", "NG"],
+  requestLoggingEnabled: true,
+  readiness: {
+    funnelConfigured: true,
+  },
+}));
 const getSportsSyncConfig = vi.fn(() => ({
   provider: "SPORTSMONKS",
   fallbackProviders: ["SCOREBOARD_BACKUP"],
@@ -29,6 +37,10 @@ vi.mock("../../../../lib/operations", () => ({
 
 vi.mock("../../../../lib/release", () => ({
   getReleaseInfo,
+}));
+
+vi.mock("../../../../lib/platform/env", () => ({
+  getPlatformHealthSnapshot,
 }));
 
 vi.mock("../../../../lib/sports/config", () => ({
@@ -82,6 +94,9 @@ describe("GET /api/health", () => {
         version: "0.1.0-test",
         channel: "test",
       },
+      platform: {
+        defaultGeo: "UG",
+      },
       providerChain: [{ code: "SPORTSMONKS", role: "primary" }],
       cache: {
         hitRate: 0.82,
@@ -115,6 +130,9 @@ describe("GET /api/health", () => {
       service: "sports",
       release: {
         version: "0.1.0-test",
+      },
+      platform: {
+        defaultGeo: "UG",
       },
       error: "DB unavailable",
     });

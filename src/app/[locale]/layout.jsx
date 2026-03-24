@@ -7,6 +7,7 @@ import {
 } from "../../lib/coreui/preferences";
 import { getPreferenceSnapshot } from "../../lib/coreui/preferences-server";
 import { getShellSnapshot } from "../../lib/coreui/read";
+import { getViewerGeo } from "../../lib/platform/request-context";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -22,11 +23,15 @@ export default async function LocaleLayout({ children, params }) {
 
   const preferences = await getPreferenceSnapshot();
   const dictionary = getDictionary(locale);
-  const shellData = await getShellSnapshot(locale);
+  const [shellData, viewerGeo] = await Promise.all([
+    getShellSnapshot(locale),
+    getViewerGeo(),
+  ]);
 
   return (
     <PublicShell
       locale={locale}
+      viewerGeo={viewerGeo}
       dictionary={dictionary}
       initialTheme={preferences.theme}
       initialWatchlist={preferences.watchlist}

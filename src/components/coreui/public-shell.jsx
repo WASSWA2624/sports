@@ -11,8 +11,9 @@ import { ShellIcon } from "./shell-icons";
 import styles from "./styles.module.css";
 import { SCORES_NAV, SPORTS_STRIP, TOP_LEVEL_NAV } from "../../lib/coreui/config";
 import { getScoreViewLabel, getSportLabel } from "../../lib/coreui/dictionaries";
+import { getGeoLabel, isGeoAllowed } from "../../lib/coreui/route-context";
 
-function ShellFrame({ children, locale, dictionary, watchlistItems, shellData }) {
+function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, viewerGeo }) {
   const pathname = usePathname();
   const { sessionUser, watchlist, watchlistCount, recentViews } = usePreferences();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -21,14 +22,25 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
   const isFavoritesPage = pathname === `/${locale}/favorites` || pathname.startsWith(`/${locale}/favorites/`);
   const watchCount = watchlistCount || watchlistItems.length;
   const shellChrome = shellData?.chrome || {};
+  const platform = shellData?.platform || {};
   const shellModuleMap = shellChrome.shellModuleMap || {};
   const adSlotEnabled = shellModuleMap.shell_right_rail_ad_slot ?? true;
   const consentEnabled = shellModuleMap.shell_right_rail_consent ?? true;
   const supportEnabled = shellModuleMap.shell_right_rail_support ?? true;
+  const funnelEnabled = shellModuleMap.shell_right_rail_funnel_entry ?? true;
   const adSlotCopy =
     shellChrome.adSlot?.copy || shellChrome.adSlot?.name || dictionary.adSlotCopy;
   const consentTitle = shellChrome.consentText?.title || dictionary.consent;
   const consentBody = shellChrome.consentText?.body || dictionary.consentBody;
+  const currentGeo = viewerGeo || platform.defaultGeo || "INTL";
+  const currentGeoLabel = platform.geoLabels?.[currentGeo] || getGeoLabel(currentGeo);
+  const affiliatePartner =
+    platform.affiliate?.partnerByGeo?.[currentGeo]?.[0] ||
+    platform.affiliate?.primaryPartner ||
+    null;
+  const funnelActions = (platform.funnel?.actions || []).filter((action) =>
+    action.url && isGeoAllowed(currentGeo, action.enabledGeos)
+  );
   const allCompetitions = [
     ...(shellData?.featuredCompetitions || []),
     ...((shellData?.countryGroups || []).flatMap((group) =>
@@ -739,6 +751,42 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
                 </div>
               </section>
             ) : null}
+
+            {funnelEnabled ? (
+              <section className={styles.railCard}>
+                <div className={styles.railSection}>
+                  <div className={styles.inlineBadgeRow}>
+                    <h2 className={styles.railSectionTitle}>{dictionary.funnelRailTitle}</h2>
+                    <span className={styles.badge}>{currentGeoLabel}</span>
+                  </div>
+                  <p className={styles.railMuted}>{dictionary.funnelRailBody}</p>
+                  {affiliatePartner ? (
+                    <p className={styles.railMuted}>
+                      {dictionary.affiliatePartnerLabel}: {affiliatePartner}
+                    </p>
+                  ) : null}
+                  {funnelActions.length ? (
+                    <div className={styles.inlineBadgeRow}>
+                      {funnelActions.map((action) => (
+                        <a
+                          key={action.key}
+                          href={action.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={styles.sectionAction}
+                        >
+                          {action.key === "telegram"
+                            ? dictionary.openTelegram
+                            : dictionary.openWhatsApp}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.railMuted}>{dictionary.funnelUnavailable}</p>
+                  )}
+                </div>
+              </section>
+            ) : null}
           </aside>
         </div>
       </main>
@@ -755,6 +803,7 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData })
 export function PublicShell({
   children,
   locale,
+  viewerGeo,
   dictionary,
   initialTheme,
   initialWatchlist,
@@ -774,6 +823,7 @@ export function PublicShell({
     >
       <ShellFrame
         locale={locale}
+        viewerGeo={viewerGeo}
         dictionary={dictionary}
         watchlistItems={initialWatchlist}
         shellData={shellData}
