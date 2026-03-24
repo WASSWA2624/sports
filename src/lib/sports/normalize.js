@@ -37,6 +37,14 @@ function coerceDate(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function normalizeLabelValue(value, fallback = null) {
+  if (value == null || value === "") {
+    return fallback;
+  }
+
+  return String(value);
+}
+
 function mapFixtureStatus(stateValue, stateShortName) {
   const normalized = String(
     pickFirst(stateShortName, stateValue, "scheduled")
@@ -116,6 +124,77 @@ function normalizeTeam(rawTeam, fallbackLeague) {
   };
 }
 
+function normalizeStage(rawStage) {
+  if (!rawStage || typeof rawStage !== "object") {
+    return null;
+  }
+
+  return {
+    externalRef: pickId(rawStage.id),
+    name: pickFirst(rawStage.name, rawStage.short_name, rawStage.stage_name, "Stage"),
+    code: pickFirst(rawStage.code, rawStage.short_code, rawStage.id),
+    stageType: pickFirst(rawStage.type, rawStage.developer_name, rawStage.category),
+    status: pickFirst(rawStage.status, rawStage.state, null),
+    sortOrder: Number(pickFirst(rawStage.sort_order, rawStage.order, 0)),
+    metadata: rawStage,
+  };
+}
+
+function normalizeRound(rawRound) {
+  if (!rawRound) {
+    return null;
+  }
+
+  if (typeof rawRound !== "object") {
+    const name = normalizeLabelValue(rawRound, "Round");
+    return {
+      externalRef: pickId(rawRound),
+      name,
+      code: name,
+      roundType: null,
+      sequence: Number.isFinite(Number(rawRound)) ? Number(rawRound) : null,
+      startsAt: null,
+      endsAt: null,
+      isCurrent: false,
+      metadata: { value: rawRound },
+    };
+  }
+
+  return {
+    externalRef: pickId(rawRound.id),
+    name: pickFirst(rawRound.name, rawRound.round_name, rawRound.label, "Round"),
+    code: pickFirst(rawRound.code, rawRound.short_code, rawRound.id),
+    roundType: pickFirst(rawRound.type, rawRound.developer_name, rawRound.category),
+    sequence: Number(
+      pickFirst(rawRound.sequence, rawRound.sort_order, rawRound.order, rawRound.round_number)
+    ),
+    startsAt: coerceDate(pickFirst(rawRound.starting_at, rawRound.start_date)),
+    endsAt: coerceDate(pickFirst(rawRound.ending_at, rawRound.end_date)),
+    isCurrent: Boolean(pickFirst(rawRound.is_current, rawRound.current, false)),
+    metadata: rawRound,
+  };
+}
+
+function normalizeBookmaker(rawBookmaker) {
+  if (!rawBookmaker) {
+    return null;
+  }
+
+  const name = pickFirst(rawBookmaker.name, rawBookmaker.bookmaker_name, "SportsBook");
+
+  return {
+    externalRef: pickId(rawBookmaker.id),
+    code: pickFirst(rawBookmaker.code, rawBookmaker.slug, rawBookmaker.name),
+    slug: pickFirst(rawBookmaker.slug, rawBookmaker.name),
+    name,
+    shortName: pickFirst(rawBookmaker.short_name, rawBookmaker.abbreviation, null),
+    websiteUrl: pickFirst(rawBookmaker.url, rawBookmaker.website, rawBookmaker.link, null),
+    logoUrl: pickFirst(rawBookmaker.image_path, rawBookmaker.logo_path, null),
+    isActive: !Boolean(rawBookmaker.inactive),
+    metadata: rawBookmaker,
+  };
+}
+
 function extractParticipants(rawFixture) {
   const participants = asArray(
     pickFirst(rawFixture.participants, rawFixture.teams, rawFixture.lineup)
@@ -154,19 +233,27 @@ export function normalizeFixture(rawFixture) {
   const { home, away } = extractParticipants(rawFixture);
   const homeTeam = normalizeTeam(home, league);
   const awayTeam = normalizeTeam(away, league);
+  const stage = normalizeStage(rawFixture.stage);
+  const roundInfo = normalizeRound(
+    rawFixture.round && typeof rawFixture.round === "object"
+      ? rawFixture.round
+      : pickFirst(rawFixture.round, rawFixture.round_name, rawFixture.round_id)
+  );
   const state = rawFixture.state || {};
 
   return {
     externalRef: pickId(rawFixture.id),
     league,
     season,
+    stage,
+    roundInfo,
     homeTeam,
     awayTeam,
     startsAt: coerceDate(
       pickFirst(rawFixture.starting_at, rawFixture.start_time, rawFixture.start_date)
     ),
     venue: pickFirst(rawFixture.venue?.name, rawFixture.venue_name),
-    round: pickFirst(rawFixture.round?.name, rawFixture.round_name, rawFixture.round_id),
+    round: pickFirst(roundInfo?.name, rawFixture.round_name, rawFixture.round_id),
     stateReason: pickFirst(state.reason, rawFixture.note),
     status: mapFixtureStatus(
       pickFirst(state.developer_name, state.state, rawFixture.status),
@@ -187,6 +274,8 @@ export function normalizeStanding(rawStanding, seasonExternalRef) {
 
   return {
     seasonExternalRef: pickId(seasonExternalRef),
+    scope: pickFirst(rawStanding.scope, rawStanding.type, "OVERALL"),
+    groupName: pickFirst(rawStanding.group_name, rawStanding.group, rawStanding.stage_name, null),
     team,
     position: Number(pickFirst(rawStanding.position, 0)),
     played: Number(pickFirst(rawStanding.details?.matches_played, rawStanding.played, 0)),
@@ -209,11 +298,8 @@ export function normalizeOdds(rawOdds, fixtureExternalRef) {
     rawOdds.name,
     "Unknown Market"
   );
-  const bookmakerName = pickFirst(
-    rawOdds.bookmaker?.name,
-    rawOdds.bookmaker_name,
-    "SportsMonks"
-  );
+  const bookmakerInfo = normalizeBookmaker(rawOdds.bookmaker || rawOdds);
+  const bookmakerName = bookmakerInfo?.name || pickFirst(rawOdds.bookmaker_name, "SportsMonks");
   const normalizedValues = asArray(rawOdds.values || rawOdds.market?.values).map((value) => ({
     externalRef: pickId(value.id),
     label: String(pickFirst(value.label, value.value, value.name, "Selection")),
@@ -227,6 +313,7 @@ export function normalizeOdds(rawOdds, fixtureExternalRef) {
     externalRef: pickId(rawOdds.id),
     fixtureExternalRef: pickId(fixtureExternalRef),
     bookmaker: bookmakerName,
+    bookmakerInfo,
     marketType: marketName,
     suspended: Boolean(rawOdds.stopped || rawOdds.suspended),
     selections: normalizedValues,
@@ -239,6 +326,8 @@ export function normalizeBroadcastChannel(rawChannel, fixtureExternalRef) {
 
   return {
     fixtureExternalRef: pickId(fixtureExternalRef),
+    externalRef: pickId(rawChannel.id),
+    sourceCode: pickFirst(rawChannel.code, rawChannel.channel_code, rawChannel.name),
     name: String(pickFirst(rawChannel.name, rawChannel.channel_name, "Unknown Channel")),
     territory: pickFirst(
       countries[0]?.iso2,

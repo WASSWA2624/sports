@@ -41,6 +41,7 @@ export async function getLeagueReadModel(code) {
             where: { isCurrent: true },
             include: {
               standings: {
+                where: { scope: "OVERALL" },
                 orderBy: { position: "asc" },
                 include: { team: true },
               },

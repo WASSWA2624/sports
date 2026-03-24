@@ -2,8 +2,11 @@ import {
   DEFAULT_MARKET_GEO,
   GEO_LABELS,
   LAUNCH_MARKET_GEOS,
+  normalizeGeo,
   parseGeoCsv,
 } from "../coreui/route-context";
+import { safeDataRead } from "../data-access";
+import { db } from "../db";
 
 function parseCsv(value) {
   return [...new Set(
@@ -58,6 +61,44 @@ function parseGeoKeyValueMap(value) {
       map[geo] = values;
       return map;
     }, {});
+}
+
+function dedupeStrings(values) {
+  return [...new Set(
+    (values || [])
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .filter(Boolean)
+  )];
+}
+
+function normalizeGeoList(value, fallback = []) {
+  if (Array.isArray(value)) {
+    return dedupeStrings(value.map((entry) => normalizeGeo(entry, DEFAULT_MARKET_GEO)));
+  }
+
+  if (typeof value === "string") {
+    return parseGeoCsv(value, fallback);
+  }
+
+  return [...fallback];
+}
+
+function toChannelLabel(value, fallback = "Action") {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (normalized === "telegram") {
+    return "Telegram";
+  }
+
+  if (normalized === "whatsapp") {
+    return "WhatsApp";
+  }
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 export function getPlatformBootstrapConfig() {
@@ -179,6 +220,107 @@ export function getPlatformPublicSnapshot() {
       predictionsProviderKey: config.search.predictionsProviderKey,
     },
   };
+}
+
+export async function getPlatformPublicSnapshotData() {
+  const fallback = getPlatformPublicSnapshot();
+
+  return safeDataRead(
+    async () => {
+      const [affiliateLinks, funnelEntries] = await Promise.all([
+        db.affiliateLink.findMany({
+          where: {
+            isActive: true,
+            bookmaker: {
+              is: {
+                isActive: true,
+              },
+            },
+          },
+          orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+          include: {
+            bookmaker: true,
+          },
+        }),
+        db.funnelEntry.findMany({
+          where: {
+            isActive: true,
+          },
+          orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+        }),
+      ]);
+
+      const partnerCodes = [];
+      const partnerByGeo = {};
+      const bookmakerByGeo = {};
+
+      for (const link of affiliateLinks) {
+        const geo = normalizeGeo(link.territory, DEFAULT_MARKET_GEO);
+        const partnerCode = link.bookmaker?.code || link.code || link.bookmaker?.name || null;
+        const bookmakerLabel =
+          link.bookmaker?.shortName || link.bookmaker?.name || link.bookmaker?.code || null;
+
+        if (partnerCode) {
+          partnerCodes.push(partnerCode);
+          partnerByGeo[geo] = dedupeStrings([...(partnerByGeo[geo] || []), partnerCode]);
+        }
+
+        if (bookmakerLabel) {
+          bookmakerByGeo[geo] = dedupeStrings([
+            ...(bookmakerByGeo[geo] || []),
+            bookmakerLabel,
+          ]);
+        }
+      }
+
+      const actions = funnelEntries.map((entry) => ({
+        key: String(entry.channel || entry.key || entry.id).trim().toLowerCase(),
+        label: toChannelLabel(entry.channel, entry.title || "Action"),
+        url: entry.ctaUrl,
+        enabledGeos: normalizeGeoList(
+          entry.enabledGeos,
+          entry.territory ? [normalizeGeo(entry.territory, DEFAULT_MARKET_GEO)] : []
+        ),
+      }));
+
+      if (!partnerCodes.length && !actions.length) {
+        return fallback;
+      }
+
+      const launchGeos = dedupeStrings([
+        ...fallback.launchGeos,
+        ...Object.keys(partnerByGeo),
+        ...Object.keys(bookmakerByGeo),
+        ...actions.flatMap((action) => action.enabledGeos || []),
+      ]).filter((geo) => geo !== DEFAULT_MARKET_GEO);
+
+      return {
+        ...fallback,
+        launchGeos: launchGeos.length ? launchGeos : fallback.launchGeos,
+        affiliate: {
+          partnerCodes: dedupeStrings([...fallback.affiliate.partnerCodes, ...partnerCodes]),
+          primaryPartner:
+            partnerByGeo[fallback.defaultGeo]?.[0] ||
+            partnerByGeo[launchGeos[0]]?.[0] ||
+            dedupeStrings([...fallback.affiliate.partnerCodes, ...partnerCodes])[0] ||
+            fallback.affiliate.primaryPartner,
+          partnerByGeo: {
+            ...fallback.affiliate.partnerByGeo,
+            ...partnerByGeo,
+          },
+          bookmakerByGeo: {
+            ...fallback.affiliate.bookmakerByGeo,
+            ...bookmakerByGeo,
+          },
+        },
+        funnel: {
+          actions: actions.length ? actions : fallback.funnel.actions,
+        },
+      };
+    },
+    fallback,
+    { label: "Platform public snapshot" }
+  );
 }
 
 export function getPlatformHealthSnapshot() {

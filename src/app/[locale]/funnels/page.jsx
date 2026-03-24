@@ -2,7 +2,7 @@ import { PlatformFoundationPage } from "../../../components/coreui/platform-foun
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getViewerGeo } from "../../../lib/platform/request-context";
-import { getPlatformPublicSnapshot } from "../../../lib/platform/env";
+import { getPlatformPublicSnapshotData } from "../../../lib/platform/env";
 import { isGeoAllowed } from "../../../lib/coreui/route-context";
 
 export async function generateMetadata({ params }) {
@@ -22,7 +22,7 @@ export default async function FunnelsPage({ params }) {
   const dictionary = getDictionary(locale);
   const [viewerGeo, platform] = await Promise.all([
     getViewerGeo(),
-    Promise.resolve(getPlatformPublicSnapshot()),
+    getPlatformPublicSnapshotData(),
   ]);
   const geoLabel = platform.geoLabels?.[viewerGeo] || viewerGeo;
   const actions = platform.funnel.actions.filter((action) =>

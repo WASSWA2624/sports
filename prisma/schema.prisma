@@ -83,15 +83,22 @@ enum OpsIssuePriority {
   CRITICAL
 }
 
+enum ConversionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SETTLED
+}
+
 model User {
-  id                        String                   @id @default(cuid())
-  email                     String                   @unique
-  username                  String                   @unique
+  id                        String                     @id @default(cuid())
+  email                     String                     @unique
+  username                  String                     @unique
   passwordHash              String
   displayName               String?
-  isActive                  Boolean                  @default(true)
-  createdAt                 DateTime                 @default(now())
-  updatedAt                 DateTime                 @updatedAt
+  isActive                  Boolean                    @default(true)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
   sessions                  Session[]
   accounts                  Account[]
   roles                     UserRole[]
@@ -100,36 +107,38 @@ model User {
   notificationSubscriptions NotificationSubscription[]
   recentViews               RecentView[]
   auditLogs                 AuditLog[]
-  reportedIssues            OpsIssue[]               @relation("ReportedIssues")
-  assignedIssues            OpsIssue[]               @relation("AssignedIssues")
+  reportedIssues            OpsIssue[]                 @relation("ReportedIssues")
+  assignedIssues            OpsIssue[]                 @relation("AssignedIssues")
+  clickEvents               ClickEvent[]
+  conversionEvents          ConversionEvent[]
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  tokenHash    String   @unique
-  ipAddress    String?
-  userAgent    String?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  lastSeenAt   DateTime?
-  revokedAt    DateTime?
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  ipAddress  String?
+  userAgent  String?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime?
+  revokedAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
 }
 
 model Account {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
   provider          String
   providerAccountId String
-  accessToken       String?  @db.Text
-  refreshToken      String?  @db.Text
+  accessToken       String?   @db.Text
+  refreshToken      String?   @db.Text
   expiresAt         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -175,54 +184,91 @@ model RolePermission {
 }
 
 model UserPreference {
-  id         String   @id @default(cuid())
-  userId     String
-  key        String
-  value      Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
 }
 
 model SourceProvider {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  kind        String?
-  isActive    Boolean  @default(true)
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String                     @id @default(cuid())
+  code               String                     @unique
+  name               String
+  kind               String?
+  family             String?
+  namespace          String?
+  role               String?
+  tier               String?
+  priority           Int                        @default(100)
+  fallbackProviderId String?
+  isActive           Boolean                    @default(true)
+  metadata           Json?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  fallbackProvider   SourceProvider?            @relation("SourceProviderFallback", fields: [fallbackProviderId], references: [id], onDelete: SetNull)
+  fallbackChildren   SourceProvider[]           @relation("SourceProviderFallback")
+  providerRefs       ProviderEntityRef[]
+  syncJobs           SyncJob[]
+  syncCheckpoints    SyncCheckpoint[]
+  bookmakers         Bookmaker[]
+  predictions        PredictionRecommendation[]
 
   @@index([isActive, code])
+  @@index([role, tier, priority])
+}
+
+model ProviderEntityRef {
+  id          String         @id @default(cuid())
+  providerId  String
+  entityType  String
+  entityId    String
+  externalRef String
+  sourceCode  String?
+  sourceName  String?
+  feedFamily  String?
+  role        String?
+  tier        String?
+  isPrimary   Boolean        @default(false)
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  provider    SourceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, entityType, externalRef])
+  @@index([entityType, entityId, isPrimary])
+  @@index([providerId, entityType, entityId])
+  @@index([providerId, sourceCode])
 }
 
 model Sport {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  slug        String   @unique
-  name        String
-  isEnabled   Boolean  @default(true)
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String        @id @default(cuid())
+  code         String        @unique
+  slug         String        @unique
+  name         String
+  isEnabled    Boolean       @default(true)
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   competitions Competition[]
-  leagues     League[]
-  fixtures    Fixture[]
+  leagues      League[]
+  fixtures     Fixture[]
 
   @@index([isEnabled, name])
 }
 
 model Country {
-  id           String   @id @default(cuid())
-  code         String   @unique
-  slug         String   @unique
+  id           String        @id @default(cuid())
+  code         String        @unique
+  slug         String        @unique
   name         String
   metadata     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   competitions Competition[]
   leagues      League[]
   fixtures     Fixture[]
@@ -231,25 +277,30 @@ model Country {
 }
 
 model Competition {
-  id          String   @id @default(cuid())
-  sportId     String
-  countryId   String?
-  name        String
-  shortName   String?
-  slug        String   @unique
-  code        String?  @unique
-  externalRef String?  @unique
-  logoUrl     String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  sport       Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
-  country     Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
-  leagues     League[]
-  seasons     Season[]
-  teams       Team[]
-  fixtures    Fixture[]
-  standings   Standing[]
+  id                        String                     @id @default(cuid())
+  sportId                   String
+  countryId                 String?
+  name                      String
+  shortName                 String?
+  slug                      String                     @unique
+  code                      String?                    @unique
+  externalRef               String?                    @unique
+  logoUrl                   String?
+  metadata                  Json?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  sport                     Sport                      @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  country                   Country?                   @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  leagues                   League[]
+  seasons                   Season[]
+  stages                    Stage[]
+  rounds                    Round[]
+  teams                     Team[]
+  fixtures                  Fixture[]
+  standings                 Standing[]
+  clickEvents               ClickEvent[]
+  conversionEvents          ConversionEvent[]
+  predictionRecommendations PredictionRecommendation[]
 
   @@index([sportId, countryId, name])
 }
@@ -339,135 +390,209 @@ model Season {
   updatedAt     DateTime     @updatedAt
   league        League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   competition   Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  stages        Stage[]
+  rounds        Round[]
   fixtures      Fixture[]
   standings     Standing[]
 
   @@unique([leagueId, name])
   @@index([leagueId, isCurrent])
+  @@index([competitionId, startDate])
+}
+
+model Stage {
+  id            String      @id @default(cuid())
+  competitionId String
+  seasonId      String?
+  parentStageId String?
+  name          String
+  slug          String
+  code          String?
+  externalRef   String?     @unique
+  stageType     String?
+  status        String?
+  sortOrder     Int         @default(0)
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  season        Season?     @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  parentStage   Stage?      @relation("StageHierarchy", fields: [parentStageId], references: [id], onDelete: SetNull)
+  childStages   Stage[]     @relation("StageHierarchy")
+  rounds        Round[]
+  fixtures      Fixture[]
+  standings     Standing[]
+
+  @@unique([competitionId, seasonId, slug])
+  @@index([competitionId, seasonId, sortOrder])
+}
+
+model Round {
+  id            String      @id @default(cuid())
+  competitionId String
+  seasonId      String?
+  stageId       String?
+  name          String
+  slug          String
+  code          String?
+  externalRef   String?     @unique
+  roundType     String?
+  sequence      Int?
+  startsAt      DateTime?
+  endsAt        DateTime?
+  isCurrent     Boolean     @default(false)
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  season        Season?     @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  stage         Stage?      @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  fixtures      Fixture[]
+  standings     Standing[]
+
+  @@unique([competitionId, seasonId, slug])
+  @@index([stageId, sequence])
+  @@index([competitionId, seasonId, sequence])
 }
 
 model Team {
-  id            String              @id @default(cuid())
-  leagueId      String?
-  competitionId String?
-  name          String
-  shortName     String?
-  code          String?
-  provider      String?
-  externalRef   String?             @unique
-  logoUrl       String?
-  metadata      Json?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  league        League?             @relation(fields: [leagueId], references: [id], onDelete: SetNull)
-  competition   Competition?        @relation(fields: [competitionId], references: [id], onDelete: SetNull)
-  homeFor       Fixture[]           @relation("HomeTeam")
-  awayFor       Fixture[]           @relation("AwayTeam")
-  fixtureParticipants FixtureParticipant[]
-  standings     Standing[]
-  lineupEntries Lineup[]
-  incidents     Incident[]
-  statistics    Statistic[]
+  id                        String                     @id @default(cuid())
+  leagueId                  String?
+  competitionId             String?
+  name                      String
+  shortName                 String?
+  code                      String?
+  provider                  String?
+  externalRef               String?                    @unique
+  logoUrl                   String?
+  metadata                  Json?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  league                    League?                    @relation(fields: [leagueId], references: [id], onDelete: SetNull)
+  competition               Competition?               @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  homeFor                   Fixture[]                  @relation("HomeTeam")
+  awayFor                   Fixture[]                  @relation("AwayTeam")
+  fixtureParticipants       FixtureParticipant[]
+  standings                 Standing[]
+  lineupEntries             Lineup[]
+  incidents                 Incident[]
+  statistics                Statistic[]
+  predictionRecommendations PredictionRecommendation[]
 
   @@unique([leagueId, name])
   @@index([name])
 }
 
 model Venue {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   city        String?
   countryName String?
   capacity    Int?
   metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   fixtures    Fixture[]
 
-  @@index([name, city])
   @@unique([name, city])
+  @@index([name, city])
 }
 
 model Player {
-  id           String   @id @default(cuid())
-  name         String
-  shortName    String?
-  externalRef  String?  @unique
-  countryName  String?
-  metadata     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  participants FixtureParticipant[]
-  lineupEntries Lineup[]
-  incidents    Incident[]
+  id                 String               @id @default(cuid())
+  name               String
+  shortName          String?
+  externalRef        String?              @unique
+  countryName        String?
+  metadata           Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  participants       FixtureParticipant[]
+  lineupEntries      Lineup[]
+  incidents          Incident[]
+  secondaryIncidents Incident[]           @relation("IncidentSecondaryPlayer")
 
   @@index([name])
 }
 
 model Official {
-  id           String   @id @default(cuid())
+  id           String               @id @default(cuid())
   name         String
   role         String?
-  externalRef  String?  @unique
+  externalRef  String?              @unique
   countryName  String?
   metadata     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
   participants FixtureParticipant[]
 
   @@index([name])
 }
 
 model Fixture {
-  id                String               @id @default(cuid())
-  sportId           String?
-  countryId         String?
-  competitionId     String?
-  leagueId          String
-  seasonId          String
-  venueId           String?
-  homeTeamId        String
-  awayTeamId        String
-  provider          String?
-  startsAt          DateTime
-  status            FixtureStatus        @default(SCHEDULED)
-  venue             String?
-  externalRef       String?              @unique
-  round             String?
-  stateReason       String?
-  lastSyncedAt      DateTime?
-  metadata          Json?
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  sport             Sport?               @relation(fields: [sportId], references: [id], onDelete: SetNull)
-  countryRecord     Country?             @relation(fields: [countryId], references: [id], onDelete: SetNull)
-  competition       Competition?         @relation(fields: [competitionId], references: [id], onDelete: SetNull)
-  league            League               @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  season            Season               @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  venueRecord       Venue?               @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  homeTeam          Team                 @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
-  awayTeam          Team                 @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
-  standings         Standing[]
-  participants      FixtureParticipant[]
-  incidents         Incident[]
-  lineups           Lineup[]
-  statistics        Statistic[]
-  h2hSnapshots      H2HSnapshot[]
-  broadcastChannels BroadcastChannel[]
-  oddsMarkets       OddsMarket[]
-  resultSnapshot    ResultSnapshot?
-  issues            OpsIssue[]
+  id                        String                     @id @default(cuid())
+  sportId                   String?
+  countryId                 String?
+  competitionId             String?
+  leagueId                  String
+  seasonId                  String
+  stageId                   String?
+  roundId                   String?
+  venueId                   String?
+  homeTeamId                String
+  awayTeamId                String
+  provider                  String?
+  startsAt                  DateTime
+  status                    FixtureStatus              @default(SCHEDULED)
+  venue                     String?
+  externalRef               String?                    @unique
+  round                     String?
+  stateReason               String?
+  lastSyncedAt              DateTime?
+  metadata                  Json?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  sport                     Sport?                     @relation(fields: [sportId], references: [id], onDelete: SetNull)
+  countryRecord             Country?                   @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  competition               Competition?               @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  league                    League                     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season                    Season                     @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  stage                     Stage?                     @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  roundRecord               Round?                     @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  venueRecord               Venue?                     @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  homeTeam                  Team                       @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam                  Team                       @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  standings                 Standing[]
+  participants              FixtureParticipant[]
+  incidents                 Incident[]
+  lineups                   Lineup[]
+  statistics                Statistic[]
+  h2hSnapshots              H2HSnapshot[]
+  broadcastChannels         BroadcastChannel[]
+  oddsMarkets               OddsMarket[]
+  resultSnapshot            ScoreSnapshot?
+  issues                    OpsIssue[]
+  clickEvents               ClickEvent[]
+  conversionEvents          ConversionEvent[]
+  predictionRecommendations PredictionRecommendation[]
 
   @@index([status, startsAt])
+  @@index([sportId, startsAt])
+  @@index([competitionId, startsAt])
   @@index([leagueId, seasonId, startsAt])
+  @@index([roundId, startsAt])
 }
 
 model Standing {
   id            String       @id @default(cuid())
   seasonId      String
   competitionId String?
+  stageId       String?
+  roundId       String?
   fixtureId     String?
   teamId        String
+  scope         String       @default("OVERALL")
+  groupName     String       @default("")
   position      Int
   played        Int          @default(0)
   won           Int          @default(0)
@@ -476,60 +601,103 @@ model Standing {
   goalsFor      Int          @default(0)
   goalsAgainst  Int          @default(0)
   points        Int          @default(0)
+  metadata      Json?
+  createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   season        Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   competition   Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  stage         Stage?       @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  roundRecord   Round?       @relation(fields: [roundId], references: [id], onDelete: SetNull)
   fixture       Fixture?     @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
   team          Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  @@unique([seasonId, teamId])
+  @@unique([seasonId, teamId, scope, groupName])
   @@index([seasonId, position])
+  @@index([competitionId, seasonId, scope, groupName, position])
+  @@index([stageId, scope, groupName, position])
+}
+
+model Bookmaker {
+  id                        String                     @id @default(cuid())
+  sourceProviderId          String?
+  code                      String                     @unique
+  slug                      String                     @unique
+  name                      String
+  shortName                 String?
+  websiteUrl                String?
+  logoUrl                   String?
+  affiliateBaseUrl          String?
+  isActive                  Boolean                    @default(true)
+  metadata                  Json?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  sourceProvider            SourceProvider?            @relation(fields: [sourceProviderId], references: [id], onDelete: SetNull)
+  oddsMarkets               OddsMarket[]
+  affiliateLinks            AffiliateLink[]
+  clickEvents               ClickEvent[]
+  conversionEvents          ConversionEvent[]
+  predictionRecommendations PredictionRecommendation[]
+  monetizationPlacements    MonetizationPlacement[]
+
+  @@index([isActive, name])
+  @@index([sourceProviderId, code])
 }
 
 model OddsMarket {
-  id            String          @id @default(cuid())
-  fixtureId      String
-  provider      String?
-  externalRef   String?         @unique
-  bookmaker      String
-  marketType     String
-  suspended      Boolean         @default(false)
-  lastSyncedAt   DateTime?
-  metadata      Json?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  fixture        Fixture         @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  selections     OddsSelection[]
+  id              String          @id @default(cuid())
+  fixtureId       String
+  bookmakerId     String?
+  provider        String?
+  externalRef     String?         @unique
+  bookmaker       String
+  marketType      String
+  suspended       Boolean         @default(false)
+  lastSyncedAt    DateTime?
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  fixture         Fixture         @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  bookmakerRecord Bookmaker?      @relation(fields: [bookmakerId], references: [id], onDelete: SetNull)
+  selections      OddsSelection[]
 
   @@index([fixtureId, bookmaker])
+  @@index([fixtureId, bookmakerId])
   @@index([bookmaker, marketType])
+  @@index([bookmakerId, marketType])
 }
 
 model OddsSelection {
-  id              String      @id @default(cuid())
-  oddsMarketId    String
-  externalRef     String?     @unique
-  label           String
-  line            Decimal?    @db.Decimal(10, 2)
-  priceDecimal    Decimal     @db.Decimal(10, 4)
-  isActive        Boolean     @default(true)
-  metadata        Json?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  oddsMarket      OddsMarket  @relation(fields: [oddsMarketId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  oddsMarketId String
+  externalRef  String?    @unique
+  label        String
+  line         Decimal?   @db.Decimal(10, 2)
+  priceDecimal Decimal    @db.Decimal(10, 4)
+  isActive     Boolean    @default(true)
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  oddsMarket   OddsMarket @relation(fields: [oddsMarketId], references: [id], onDelete: Cascade)
 
   @@index([oddsMarketId, isActive])
 }
 
-model ResultSnapshot {
-  id              String   @id @default(cuid())
-  fixtureId       String   @unique
-  homeScore       Int
-  awayScore       Int
-  statusText      String?
-  payload         Json?
-  capturedAt      DateTime @default(now())
-  fixture         Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+model ScoreSnapshot {
+  id               String       @id @default(cuid())
+  fixtureId        String       @unique
+  homeScore        Int
+  awayScore        Int
+  homePenaltyScore Int?
+  awayPenaltyScore Int?
+  phase            String?
+  winnerSide       FixtureSide?
+  statusText       String?
+  payload          Json?
+  capturedAt       DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  fixture          Fixture      @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+
+  @@map("ResultSnapshot")
 }
 
 model FixtureParticipant {
@@ -555,85 +723,96 @@ model FixtureParticipant {
 }
 
 model Incident {
-  id           String      @id @default(cuid())
-  fixtureId    String
-  participantId String?
-  teamId       String?
-  playerId     String?
-  minute       Int?
-  extraMinute  Int?
-  sortOrder    Int         @default(0)
-  side         FixtureSide?
-  type         String
-  title        String
-  description  String?     @db.Text
-  payload      Json?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  fixture      Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  participant  FixtureParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
-  team         Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  player       Player?     @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  id                String              @id @default(cuid())
+  fixtureId         String
+  participantId     String?
+  teamId            String?
+  playerId          String?
+  secondaryPlayerId String?
+  minute            Int?
+  extraMinute       Int?
+  sortOrder         Int                 @default(0)
+  side              FixtureSide?
+  incidentKey       String?
+  type              String
+  title             String
+  description       String?             @db.Text
+  secondaryLabel    String?
+  payload           Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  fixture           Fixture             @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  participant       FixtureParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  team              Team?               @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  player            Player?             @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  secondaryPlayer   Player?             @relation("IncidentSecondaryPlayer", fields: [secondaryPlayerId], references: [id], onDelete: SetNull)
 
   @@index([fixtureId, minute, sortOrder])
+  @@index([teamId, type])
 }
 
 model Lineup {
-  id            String      @id @default(cuid())
-  fixtureId      String
-  teamId         String
-  playerId       String?
-  side           FixtureSide?
-  entryType      String?
-  jerseyNumber   String?
-  formationSlot  String?
-  positionLabel  String?
-  isStarter      Boolean     @default(false)
-  sortOrder      Int         @default(0)
-  metadata       Json?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  fixture        Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  team           Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  player         Player?     @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  id            String       @id @default(cuid())
+  fixtureId     String
+  teamId        String
+  playerId      String?
+  externalRef   String?
+  side          FixtureSide?
+  entryType     String?
+  jerseyNumber  String?
+  formationSlot String?
+  positionLabel String?
+  isStarter     Boolean      @default(false)
+  sortOrder     Int          @default(0)
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  fixture       Fixture      @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team          Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player        Player?      @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@index([fixtureId, teamId, sortOrder])
+  @@index([teamId, playerId, updatedAt])
 }
 
 model Statistic {
-  id           String      @id @default(cuid())
-  fixtureId     String
-  teamId        String?
-  side          FixtureSide?
-  name          String
-  statGroup     String?
-  period        String?
-  value         String?
-  sortOrder     Int         @default(0)
-  metadata      Json?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  fixture       Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  team          Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  id        String       @id @default(cuid())
+  fixtureId String
+  teamId    String?
+  side      FixtureSide?
+  metricKey String?
+  name      String
+  statGroup String?
+  period    String?
+  value     String?
+  sortOrder Int          @default(0)
+  metadata  Json?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  fixture   Fixture      @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team      Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@index([fixtureId, name, sortOrder])
+  @@index([fixtureId, metricKey, sortOrder])
 }
 
 model H2HSnapshot {
-  id          String   @id @default(cuid())
-  fixtureId    String
-  homeTeamId   String
-  awayTeamId   String
-  payload      Json?
-  capturedAt   DateTime @default(now())
-  fixture      Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  fixtureId  String
+  homeTeamId String
+  awayTeamId String
+  payload    Json?
+  capturedAt DateTime @default(now())
+  fixture    Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
 
   @@index([fixtureId, capturedAt])
 }
 
 model BroadcastChannel {
   id          String   @id @default(cuid())
-  fixtureId    String
+  fixtureId   String
+  externalRef String?
+  sourceCode  String?
   name        String
   territory   String?
   channelType String?
@@ -644,33 +823,34 @@ model BroadcastChannel {
   updatedAt   DateTime @updatedAt
   fixture     Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
 
+  @@unique([fixtureId, externalRef])
   @@index([fixtureId, territory])
 }
 
 model NewsCategory {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  articles    NewsArticle[]
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  name      String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  articles  NewsArticle[]
 }
 
 model NewsArticle {
-  id          String            @id @default(cuid())
+  id          String              @id @default(cuid())
   categoryId  String?
-  slug        String            @unique
+  slug        String              @unique
   title       String
-  excerpt     String?           @db.Text
-  body        String?           @db.LongText
-  status      NewsArticleStatus @default(DRAFT)
+  excerpt     String?             @db.Text
+  body        String?             @db.LongText
+  status      NewsArticleStatus   @default(DRAFT)
   sourceUrl   String?
   imageUrl    String?
   publishedAt DateTime?
   metadata    Json?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  category    NewsCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  category    NewsCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   entityLinks ArticleEntityLink[]
   issues      OpsIssue[]
 
@@ -678,33 +858,34 @@ model NewsArticle {
 }
 
 model ArticleEntityLink {
-  id         String            @id @default(cuid())
+  id          String            @id @default(cuid())
   articleId   String
   entityType  ArticleEntityType
   entityId    String
   label       String?
-  createdAt   DateTime         @default(now())
-  article     NewsArticle      @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  article     NewsArticle       @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
   @@unique([articleId, entityType, entityId])
-  @@index([entityType, entityId])
+  @@index([entityType, entityId, publishedAt])
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  actorUserId String?
-  action      String
-  entityType  String
-  entityId    String
-  requestId   String?
-  actorRoles  Json?
-  ipAddress   String?
-  userAgent   String?
+  id           String   @id @default(cuid())
+  actorUserId  String?
+  action       String
+  entityType   String
+  entityId     String
+  requestId    String?
+  actorRoles   Json?
+  ipAddress    String?
+  userAgent    String?
   previousHash String?
-  eventHash   String?  @unique
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  eventHash    String?  @unique
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  actor        User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId, createdAt])
   @@index([action, createdAt])
@@ -720,71 +901,79 @@ model FeatureFlag {
 }
 
 model SyncJob {
-  id            String        @id @default(cuid())
-  provider      String        @default("SPORTSMONKS")
-  source        String
-  bucket        String        @default("manual")
-  recordsProcessed Int        @default(0)
-  resultSummary Json?
-  status        SyncJobStatus @default(PENDING)
-  startedAt     DateTime?
-  finishedAt    DateTime?
-  errorMessage  String?       @db.Text
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  checkpoints   SyncCheckpoint[]
+  id               String           @id @default(cuid())
+  sourceProviderId String?
+  provider         String           @default("SPORTSMONKS")
+  source           String
+  bucket           String           @default("manual")
+  recordsProcessed Int              @default(0)
+  resultSummary    Json?
+  status           SyncJobStatus    @default(PENDING)
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  errorMessage     String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  sourceProvider   SourceProvider?  @relation(fields: [sourceProviderId], references: [id], onDelete: SetNull)
+  checkpoints      SyncCheckpoint[]
 
   @@index([source, status, createdAt])
   @@index([provider, bucket, createdAt])
+  @@index([sourceProviderId, createdAt])
 }
 
 model SyncCheckpoint {
-  id            String   @id @default(cuid())
-  provider      String   @default("SPORTSMONKS")
-  key           String
-  syncJobId     String?
-  cursor        String?
-  payload       Json?
-  errorMessage  String?  @db.Text
-  lastSuccessAt DateTime?
-  lastFailureAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  syncJob       SyncJob? @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
+  id               String          @id @default(cuid())
+  sourceProviderId String?
+  provider         String          @default("SPORTSMONKS")
+  key              String
+  syncJobId        String?
+  cursor           String?
+  payload          Json?
+  errorMessage     String?         @db.Text
+  lastSuccessAt    DateTime?
+  lastFailureAt    DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  sourceProvider   SourceProvider? @relation(fields: [sourceProviderId], references: [id], onDelete: SetNull)
+  syncJob          SyncJob?        @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
 
   @@unique([provider, key])
   @@index([provider, updatedAt])
+  @@index([sourceProviderId, updatedAt])
 }
 
 model ShellModule {
-  id                String   @id @default(cuid())
-  key               String   @unique
-  name              String
-  location          String
-  description       String?
-  isEnabled         Boolean  @default(true)
-  emergencyDisabled Boolean  @default(false)
-  emergencyReason   String?  @db.Text
-  metadata          Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                     String                  @id @default(cuid())
+  key                    String                  @unique
+  name                   String
+  location               String
+  description            String?
+  isEnabled              Boolean                 @default(true)
+  emergencyDisabled      Boolean                 @default(false)
+  emergencyReason        String?                 @db.Text
+  metadata               Json?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  monetizationPlacements MonetizationPlacement[]
 
   @@index([location, isEnabled])
 }
 
 model AdSlot {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  name      String
-  placement String
-  size      String?
-  copy      String?  @db.Text
-  ctaLabel  String?
-  ctaUrl    String?
-  isEnabled Boolean  @default(true)
-  metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                     String                  @id @default(cuid())
+  key                    String                  @unique
+  name                   String
+  placement              String
+  size                   String?
+  copy                   String?                 @db.Text
+  ctaLabel               String?
+  ctaUrl                 String?
+  isEnabled              Boolean                 @default(true)
+  metadata               Json?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  monetizationPlacements MonetizationPlacement[]
 
   @@index([placement, isEnabled])
 }
@@ -861,4 +1050,190 @@ model OpsIssue {
 
   @@index([status, priority, createdAt])
   @@index([entityType, entityId])
+}
+
+model AffiliateLink {
+  id                     String                  @id @default(cuid())
+  bookmakerId            String
+  key                    String                  @unique
+  code                   String?
+  territory              String?
+  locale                 String?
+  surface                String?
+  linkType               String?
+  destinationUrl         String
+  trackingTemplate       String?                 @db.Text
+  fallbackUrl            String?
+  isDefault              Boolean                 @default(false)
+  isActive               Boolean                 @default(true)
+  priority               Int                     @default(100)
+  metadata               Json?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  bookmaker              Bookmaker               @relation(fields: [bookmakerId], references: [id], onDelete: Cascade)
+  clickEvents            ClickEvent[]
+  conversionEvents       ConversionEvent[]
+  monetizationPlacements MonetizationPlacement[]
+
+  @@index([bookmakerId, territory, isActive, priority])
+  @@index([surface, territory, isActive])
+}
+
+model ClickEvent {
+  id               String            @id @default(cuid())
+  affiliateLinkId  String?
+  bookmakerId      String?
+  userId           String?
+  fixtureId        String?
+  competitionId    String?
+  geo              String?
+  locale           String?
+  surface          String
+  slotKey          String?
+  targetEntityType String?
+  targetEntityId   String?
+  sessionId        String?
+  requestId        String?
+  referrerUrl      String?
+  targetUrl        String?
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  affiliateLink    AffiliateLink?    @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  bookmaker        Bookmaker?        @relation(fields: [bookmakerId], references: [id], onDelete: SetNull)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fixture          Fixture?          @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  competition      Competition?      @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  conversionEvents ConversionEvent[]
+
+  @@index([bookmakerId, geo, surface, createdAt])
+  @@index([affiliateLinkId, createdAt])
+  @@index([competitionId, createdAt])
+  @@index([fixtureId, createdAt])
+}
+
+model ConversionEvent {
+  id               String           @id @default(cuid())
+  affiliateLinkId  String?
+  bookmakerId      String?
+  clickEventId     String?
+  userId           String?
+  fixtureId        String?
+  competitionId    String?
+  geo              String?
+  locale           String?
+  surface          String
+  targetEntityType String?
+  targetEntityId   String?
+  externalRef      String?          @unique
+  status           ConversionStatus @default(PENDING)
+  currency         String           @default("USD")
+  amount           Decimal?         @db.Decimal(12, 2)
+  revenue          Decimal?         @db.Decimal(12, 2)
+  convertedAt      DateTime?
+  metadata         Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  affiliateLink    AffiliateLink?   @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  bookmaker        Bookmaker?       @relation(fields: [bookmakerId], references: [id], onDelete: SetNull)
+  clickEvent       ClickEvent?      @relation(fields: [clickEventId], references: [id], onDelete: SetNull)
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fixture          Fixture?         @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  competition      Competition?     @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+
+  @@index([bookmakerId, geo, surface, createdAt])
+  @@index([affiliateLinkId, createdAt])
+  @@index([status, convertedAt])
+  @@index([competitionId, createdAt])
+  @@index([fixtureId, createdAt])
+}
+
+model FunnelEntry {
+  id                     String                  @id @default(cuid())
+  key                    String                  @unique
+  channel                String
+  surface                String
+  title                  String
+  description            String?                 @db.Text
+  ctaLabel               String
+  ctaUrl                 String
+  territory              String?
+  enabledGeos            Json?
+  isActive               Boolean                 @default(true)
+  priority               Int                     @default(100)
+  metadata               Json?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  monetizationPlacements MonetizationPlacement[]
+
+  @@index([surface, isActive, priority])
+}
+
+model PredictionRecommendation {
+  id                     String                  @id @default(cuid())
+  sourceProviderId       String?
+  fixtureId              String?
+  competitionId          String?
+  teamId                 String?
+  bookmakerId            String?
+  key                    String                  @unique
+  recommendationType     String                  @default("PICK")
+  title                  String
+  summary                String?                 @db.Text
+  marketType             String?
+  selectionLabel         String?
+  line                   Decimal?                @db.Decimal(10, 2)
+  priceDecimal           Decimal?                @db.Decimal(10, 4)
+  confidence             Int?
+  edgeScore              Decimal?                @db.Decimal(6, 2)
+  isPublished            Boolean                 @default(false)
+  publishedAt            DateTime?
+  expiresAt              DateTime?
+  metadata               Json?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  sourceProvider         SourceProvider?         @relation(fields: [sourceProviderId], references: [id], onDelete: SetNull)
+  fixture                Fixture?                @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  competition            Competition?            @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  team                   Team?                   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  bookmaker              Bookmaker?              @relation(fields: [bookmakerId], references: [id], onDelete: SetNull)
+  monetizationPlacements MonetizationPlacement[]
+
+  @@index([fixtureId, isPublished, publishedAt])
+  @@index([competitionId, isPublished, publishedAt])
+  @@index([bookmakerId, isPublished, publishedAt])
+}
+
+model MonetizationPlacement {
+  id                         String                    @id @default(cuid())
+  key                        String                    @unique
+  surface                    String
+  slotKey                    String
+  placementType              String
+  targetEntityType           String?
+  targetEntityId             String?
+  bookmakerId                String?
+  affiliateLinkId            String?
+  funnelEntryId              String?
+  predictionRecommendationId String?
+  adSlotId                   String?
+  shellModuleId              String?
+  title                      String?
+  description                String?                   @db.Text
+  priority                   Int                       @default(100)
+  isActive                   Boolean                   @default(true)
+  startsAt                   DateTime?
+  endsAt                     DateTime?
+  metadata                   Json?
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  bookmaker                  Bookmaker?                @relation(fields: [bookmakerId], references: [id], onDelete: SetNull)
+  affiliateLink              AffiliateLink?            @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  funnelEntry                FunnelEntry?              @relation(fields: [funnelEntryId], references: [id], onDelete: SetNull)
+  predictionRecommendation   PredictionRecommendation? @relation(fields: [predictionRecommendationId], references: [id], onDelete: SetNull)
+  adSlot                     AdSlot?                   @relation(fields: [adSlotId], references: [id], onDelete: SetNull)
+  shellModule                ShellModule?              @relation(fields: [shellModuleId], references: [id], onDelete: SetNull)
+
+  @@index([surface, targetEntityType, targetEntityId, isActive, priority])
+  @@index([placementType, surface, isActive])
+  @@index([slotKey, surface, isActive])
 }

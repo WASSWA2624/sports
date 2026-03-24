@@ -2,7 +2,7 @@ import { PlatformFoundationPage } from "../../../components/coreui/platform-foun
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
 import { getViewerGeo } from "../../../lib/platform/request-context";
-import { getPlatformPublicSnapshot } from "../../../lib/platform/env";
+import { getPlatformPublicSnapshotData } from "../../../lib/platform/env";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
@@ -21,7 +21,7 @@ export default async function PredictionsPage({ params }) {
   const dictionary = getDictionary(locale);
   const [viewerGeo, platform] = await Promise.all([
     getViewerGeo(),
-    Promise.resolve(getPlatformPublicSnapshot()),
+    getPlatformPublicSnapshotData(),
   ]);
   const geoLabel = platform.geoLabels?.[viewerGeo] || viewerGeo;
   const primaryPartner =

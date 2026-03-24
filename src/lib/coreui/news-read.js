@@ -180,6 +180,39 @@ async function fetchArticles({
   return hydrateArticles(articles);
 }
 
+async function fetchArticlesByEntityLinks(clauses = [], take = 6, publishedOnly = true) {
+  if (!clauses.length) {
+    return [];
+  }
+
+  const linkRows = await db.articleEntityLink.findMany({
+    where: {
+      OR: clauses,
+    },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take: Math.max(take * 6, take),
+    select: {
+      articleId: true,
+    },
+  });
+
+  const articleIds = [...new Set(linkRows.map((row) => row.articleId).filter(Boolean))];
+
+  if (!articleIds.length) {
+    return [];
+  }
+
+  return fetchArticles({
+    where: {
+      id: {
+        in: articleIds,
+      },
+    },
+    take,
+    publishedOnly,
+  });
+}
+
 export const getNewsHubSnapshot = unstable_cache(
   async () =>
     safeDataRead(async () => {
@@ -225,17 +258,15 @@ export async function getSportNewsModule(sportId, take = 6) {
 
   const articles = await safeDataRead(
     () =>
-      fetchArticles({
-        where: {
-          entityLinks: {
-            some: {
-              entityType: "SPORT",
-              entityId: sportId,
-            },
+      fetchArticlesByEntityLinks(
+        [
+          {
+            entityType: "SPORT",
+            entityId: sportId,
           },
-        },
-        take,
-      }),
+        ],
+        take
+      ),
     []
   );
 
@@ -252,17 +283,15 @@ export async function getCompetitionNewsModule(competitionId, take = 4) {
 
   const articles = await safeDataRead(
     () =>
-      fetchArticles({
-        where: {
-          entityLinks: {
-            some: {
-              entityType: "COMPETITION",
-              entityId: competitionId,
-            },
+      fetchArticlesByEntityLinks(
+        [
+          {
+            entityType: "COMPETITION",
+            entityId: competitionId,
           },
-        },
-        take,
-      }),
+        ],
+        take
+      ),
     []
   );
 
@@ -279,17 +308,15 @@ export async function getCountryNewsModule(countryId, take = 4) {
 
   const articles = await safeDataRead(
     () =>
-      fetchArticles({
-        where: {
-          entityLinks: {
-            some: {
-              entityType: "COUNTRY",
-              entityId: countryId,
-            },
+      fetchArticlesByEntityLinks(
+        [
+          {
+            entityType: "COUNTRY",
+            entityId: countryId,
           },
-        },
-        take,
-      }),
+        ],
+        take
+      ),
     []
   );
 
@@ -306,17 +333,15 @@ export async function getTeamNewsModule(teamId, take = 4) {
 
   const articles = await safeDataRead(
     () =>
-      fetchArticles({
-        where: {
-          entityLinks: {
-            some: {
-              entityType: "TEAM",
-              entityId: teamId,
-            },
+      fetchArticlesByEntityLinks(
+        [
+          {
+            entityType: "TEAM",
+            entityId: teamId,
           },
-        },
-        take,
-      }),
+        ],
+        take
+      ),
     []
   );
 
@@ -368,13 +393,7 @@ export async function getFixtureNewsModule(
   }
 
   const articles = await safeDataRead(
-    () =>
-      fetchArticles({
-        where: {
-          OR: predicates,
-        },
-        take,
-      }),
+    () => fetchArticlesByEntityLinks(predicates, take),
     []
   );
 

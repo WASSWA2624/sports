@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { db } from "../db";
 import { safeDataRead } from "../data-access";
 import { getShellChromeContent } from "../control-plane";
-import { getPlatformPublicSnapshot } from "../platform/env";
+import { getPlatformPublicSnapshot, getPlatformPublicSnapshotData } from "../platform/env";
 import { markCacheFill, observeCachedOperation, observeOperation } from "../operations";
 import { buildStandingTable } from "./competition-standings";
 import { getPublicSurfaceFlags } from "./feature-flags";
@@ -230,6 +230,7 @@ const getHomeSnapshotCached = unstable_cache(
               take: 1,
               include: {
                 standings: {
+                  where: { scope: "OVERALL" },
                   take: 3,
                   orderBy: { position: "asc" },
                   include: { team: true },
@@ -352,6 +353,7 @@ const getTablesOverviewCached = unstable_cache(
               take: 1,
               include: {
                 standings: {
+                  where: { scope: "OVERALL" },
                   orderBy: { position: "asc" },
                   take: 8,
                   include: { team: true },
@@ -509,7 +511,7 @@ const getShellSnapshotCached = unstable_cache(
         }),
         getShellChromeContent(locale),
       ]);
-      const platform = getPlatformPublicSnapshot();
+      const platform = await getPlatformPublicSnapshotData();
 
       const countryGroups = [...leagues.reduce((accumulator, league) => {
         const countryKey = league.countryRecord?.id || league.countryRecord?.slug || league.country || "";
@@ -999,6 +1001,7 @@ export async function getLeagueDetail(
                   },
                   include: {
                     standings: {
+                      where: { scope: "OVERALL" },
                       orderBy: { position: "asc" },
                       include: {
                         team: true,
@@ -1175,6 +1178,7 @@ export async function getTeamDetail(reference) {
                 },
               },
               standings: {
+                where: { scope: "OVERALL" },
                 orderBy: [{ updatedAt: "desc" }, { position: "asc" }],
                 include: {
                   competition: {

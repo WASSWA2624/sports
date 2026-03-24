@@ -60,6 +60,16 @@ function normalizeEntityLinks(entityLinks) {
   ).values()];
 }
 
+function buildEntityLinkRows(articleId, entityLinks, publishedAt) {
+  return normalizeEntityLinks(entityLinks).map((entry) => ({
+    articleId,
+    entityType: entry.entityType,
+    entityId: entry.entityId,
+    label: entry.label,
+    publishedAt,
+  }));
+}
+
 async function resolveCategoryId(tx, payload) {
   if (payload.categoryId) {
     return payload.categoryId;
@@ -143,6 +153,14 @@ export async function createNewsArticle(payload, actorUserId) {
   const input = newsArticleInputSchema.parse(payload);
   const article = await db.$transaction(async (tx) => {
     const categoryId = await resolveCategoryId(tx, input);
+    const publishedAt =
+      input.status === "PUBLISHED"
+        ? cleanOptionalString(input.publishedAt)
+          ? new Date(input.publishedAt)
+          : new Date()
+        : cleanOptionalString(input.publishedAt)
+          ? new Date(input.publishedAt)
+          : null;
     const record = await tx.newsArticle.create({
       data: {
         categoryId,
@@ -153,28 +171,16 @@ export async function createNewsArticle(payload, actorUserId) {
         status: input.status,
         sourceUrl: cleanOptionalString(input.sourceUrl),
         imageUrl: cleanOptionalString(input.imageUrl),
-        publishedAt:
-          input.status === "PUBLISHED"
-            ? cleanOptionalString(input.publishedAt)
-              ? new Date(input.publishedAt)
-              : new Date()
-            : cleanOptionalString(input.publishedAt)
-              ? new Date(input.publishedAt)
-              : null,
+        publishedAt,
         metadata: buildArticleMetadata(null, input, actorUserId),
       },
       select: { id: true, slug: true },
     });
 
-    const entityLinks = normalizeEntityLinks(input.entityLinks);
+    const entityLinks = buildEntityLinkRows(record.id, input.entityLinks, publishedAt);
     if (entityLinks.length) {
       await tx.articleEntityLink.createMany({
-        data: entityLinks.map((entry) => ({
-          articleId: record.id,
-          entityType: entry.entityType,
-          entityId: entry.entityId,
-          label: entry.label,
-        })),
+        data: entityLinks,
       });
     }
 
@@ -214,6 +220,14 @@ export async function updateNewsArticle(articleId, payload, actorUserId) {
     }
 
     const categoryId = await resolveCategoryId(tx, input);
+    const publishedAt =
+      input.status === "PUBLISHED"
+        ? cleanOptionalString(input.publishedAt)
+          ? new Date(input.publishedAt)
+          : existing.publishedAt || new Date()
+        : cleanOptionalString(input.publishedAt)
+          ? new Date(input.publishedAt)
+          : existing.publishedAt;
     const record = await tx.newsArticle.update({
       where: { id: articleId },
       data: {
@@ -225,14 +239,7 @@ export async function updateNewsArticle(articleId, payload, actorUserId) {
         status: input.status,
         sourceUrl: cleanOptionalString(input.sourceUrl),
         imageUrl: cleanOptionalString(input.imageUrl),
-        publishedAt:
-          input.status === "PUBLISHED"
-            ? cleanOptionalString(input.publishedAt)
-              ? new Date(input.publishedAt)
-              : existing.publishedAt || new Date()
-            : cleanOptionalString(input.publishedAt)
-              ? new Date(input.publishedAt)
-              : existing.publishedAt,
+        publishedAt,
         metadata: buildArticleMetadata(existing.metadata, input, actorUserId),
       },
       select: { id: true, slug: true, status: true },
@@ -242,15 +249,10 @@ export async function updateNewsArticle(articleId, payload, actorUserId) {
       where: { articleId },
     });
 
-    const entityLinks = normalizeEntityLinks(input.entityLinks);
+    const entityLinks = buildEntityLinkRows(record.id, input.entityLinks, publishedAt);
     if (entityLinks.length) {
       await tx.articleEntityLink.createMany({
-        data: entityLinks.map((entry) => ({
-          articleId: record.id,
-          entityType: entry.entityType,
-          entityId: entry.entityId,
-          label: entry.label,
-        })),
+        data: entityLinks,
       });
     }
 
