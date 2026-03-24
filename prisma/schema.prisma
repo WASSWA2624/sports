@@ -92,7 +92,8 @@ enum ConversionStatus {
 
 model User {
   id                        String                     @id @default(cuid())
-  email                     String                     @unique
+  email                     String?                    @unique
+  phoneNumber               String?                    @unique
   username                  String                     @unique
   passwordHash              String
   displayName               String?

@@ -538,9 +538,11 @@ const fr = {
   authOpenSettings: "Ouvrir les parametres",
   authModeLogin: "Se connecter",
   authModeSignup: "Creer un compte",
-  authEmail: "Email",
+  authEmail: "Email ou telephone",
+  authIdentifierHint: "nom@example.com ou +256700000000",
   authPassword: "Mot de passe",
   authUsername: "Nom d'utilisateur",
+  authUsernameOptional: "Nom d'utilisateur (optionnel)",
   authDisplayName: "Nom public",
   authSubmitLogin: "Se connecter",
   authSubmitSignup: "Creer un compte",
@@ -550,7 +552,7 @@ const fr = {
   authSocialConfigured:
     "Un ou plusieurs fournisseurs sociaux sont configures derriere des variables d'environnement et prets pour la phase callback.",
   authSocialUnavailable:
-    "Aucun fournisseur social n'est actif pour l'instant, donc l'email et le mot de passe restent le chemin principal.",
+    "Aucun fournisseur social n'est actif pour l'instant, donc l'email, le telephone et le mot de passe restent le chemin principal.",
 };
 
 export default fr;

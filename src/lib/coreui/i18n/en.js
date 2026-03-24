@@ -572,9 +572,11 @@ const en = {
   authOpenSettings: "Open settings",
   authModeLogin: "Sign in",
   authModeSignup: "Create account",
-  authEmail: "Email",
+  authEmail: "Email or phone",
+  authIdentifierHint: "name@example.com or +256700000000",
   authPassword: "Password",
   authUsername: "Username",
+  authUsernameOptional: "Username (optional)",
   authDisplayName: "Display name",
   authSubmitLogin: "Sign in",
   authSubmitSignup: "Create account",
@@ -584,7 +586,7 @@ const en = {
   authSocialConfigured:
     "One or more social providers are configured behind environment flags and ready for the callback phase.",
   authSocialUnavailable:
-    "No social provider is enabled right now, so email and password remain the active sign-in path.",
+    "No social provider is enabled right now, so email, phone, and password remain the active sign-in path.",
 };
 
 export default en;

@@ -12,6 +12,7 @@ import { logAuditEvent } from "./audit";
 import { getOperationalDashboardSnapshot } from "./operations";
 import { getSportsSyncConfig } from "./sports/config";
 import { getProviderChain, getRegisteredSportsProviders } from "./sports/provider";
+import { getUserLoginIdentifier } from "./auth-identifiers";
 
 const ROLE_NAMES = ["USER", "EDITOR", "ADMIN"];
 const ISSUE_TYPES = ["DATA_DISPUTE", "WRONG_SCORE", "BROKEN_ARTICLE_CONTENT"];
@@ -262,6 +263,8 @@ function serializeUser(user) {
   return {
     id: user.id,
     email: user.email,
+    phoneNumber: user.phoneNumber,
+    loginIdentifier: getUserLoginIdentifier(user),
     username: user.username,
     displayName: user.displayName,
     isActive: user.isActive,
@@ -287,6 +290,8 @@ function serializeIssue(issue) {
       ? {
           id: issue.reporter.id,
           email: issue.reporter.email,
+          phoneNumber: issue.reporter.phoneNumber,
+          loginIdentifier: getUserLoginIdentifier(issue.reporter),
           username: issue.reporter.username,
         }
       : null,
@@ -294,6 +299,8 @@ function serializeIssue(issue) {
       ? {
           id: issue.assignee.id,
           email: issue.assignee.email,
+          phoneNumber: issue.assignee.phoneNumber,
+          loginIdentifier: getUserLoginIdentifier(issue.assignee),
           username: issue.assignee.username,
         }
       : null,
@@ -324,6 +331,8 @@ function serializeAuditLog(entry) {
       ? {
           id: entry.actor.id,
           email: entry.actor.email,
+          phoneNumber: entry.actor.phoneNumber,
+          loginIdentifier: getUserLoginIdentifier(entry.actor),
           username: entry.actor.username,
         }
       : null,
@@ -640,6 +649,7 @@ export async function getControlPlaneWorkspace() {
           select: {
             id: true,
             email: true,
+            phoneNumber: true,
             username: true,
           },
         },
@@ -647,6 +657,7 @@ export async function getControlPlaneWorkspace() {
           select: {
             id: true,
             email: true,
+            phoneNumber: true,
             username: true,
           },
         },
@@ -686,6 +697,7 @@ export async function getControlPlaneWorkspace() {
           select: {
             id: true,
             email: true,
+            phoneNumber: true,
             username: true,
           },
         },
@@ -1238,6 +1250,7 @@ export async function createOpsIssue(payload, auditContext = {}) {
         select: {
           id: true,
           email: true,
+          phoneNumber: true,
           username: true,
         },
       },
@@ -1245,6 +1258,7 @@ export async function createOpsIssue(payload, auditContext = {}) {
         select: {
           id: true,
           email: true,
+          phoneNumber: true,
           username: true,
         },
       },
@@ -1328,6 +1342,7 @@ export async function updateOpsIssue(issueId, payload, auditContext = {}) {
         select: {
           id: true,
           email: true,
+          phoneNumber: true,
           username: true,
         },
       },
@@ -1335,6 +1350,7 @@ export async function updateOpsIssue(issueId, payload, auditContext = {}) {
         select: {
           id: true,
           email: true,
+          phoneNumber: true,
           username: true,
         },
       },

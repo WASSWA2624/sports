@@ -51,6 +51,16 @@ function formatMetric(value, suffix = "") {
   return `${Math.round(value)}${suffix}`;
 }
 
+function getUserIdentity(user) {
+  return user?.loginIdentifier || user?.email || user?.phoneNumber || user?.username || "Unknown user";
+}
+
+function getUserMetaLine(user) {
+  return [user?.username ? `@${user.username}` : null, user?.displayName || null]
+    .filter(Boolean)
+    .join(" | ");
+}
+
 function buildDraftState(workspace) {
   return {
     users: Object.fromEntries(
@@ -745,10 +755,10 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                     <div key={user.id} className={styles.row}>
                       <div className={styles.rowTop}>
                         <div>
-                          <strong>{user.email}</strong>
-                          <p className={styles.smallText}>
-                            @{user.username} {user.displayName ? `· ${user.displayName}` : ""}
-                          </p>
+                          <strong>{getUserIdentity(user)}</strong>
+                          {getUserMetaLine(user) ? (
+                            <p className={styles.smallText}>{getUserMetaLine(user)}</p>
+                          ) : null}
                         </div>
                         <span className={statusClass(user.isActive ? "healthy" : "critical")}>
                           {user.isActive ? "active" : "disabled"}
@@ -801,7 +811,7 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                                 headers: { "content-type": "application/json" },
                                 body: JSON.stringify(drafts.users[user.id]),
                               }),
-                            `Updated ${user.email}.`
+                            `Updated ${getUserIdentity(user)}.`
                           )
                         }
                       >
@@ -1185,7 +1195,7 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                             <option value="">Unassigned</option>
                             {operatorOptions.map((user) => (
                               <option key={user.id} value={user.id}>
-                                {user.email}
+                                {getUserIdentity(user)}
                               </option>
                             ))}
                           </select>
@@ -1245,7 +1255,7 @@ export default function AdminConsoleClient({ locale, initialWorkspace }) {
                     <div className={styles.rowMeta}>
                       <span>{entry.entityType}</span>
                       <span className={styles.code}>{entry.entityId}</span>
-                      <span>{entry.actor?.email || "System"}</span>
+                      <span>{entry.actor ? getUserIdentity(entry.actor) : "System"}</span>
                     </div>
                     <p className={styles.smallText}>
                       Hash {entry.eventHash || "pending"} {entry.previousHash ? `· Prev ${entry.previousHash}` : ""}

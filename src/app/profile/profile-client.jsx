@@ -15,6 +15,10 @@ function formatDate(value, locale, fallback) {
   }).format(new Date(value));
 }
 
+function getSessionIdentifier(user) {
+  return user?.loginIdentifier || user?.email || user?.phoneNumber || user?.username || "Unknown";
+}
+
 export default function ProfileClient({ dictionary, locale }) {
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
@@ -159,7 +163,7 @@ export default function ProfileClient({ dictionary, locale }) {
           </div>
           <div className={styles.accountMeta}>
             <p className={styles.copy}>
-              {dictionary.profileSignedInAs} <strong>{sessionUser.email}</strong>
+              {dictionary.profileSignedInAs} <strong>{getSessionIdentifier(sessionUser)}</strong>
             </p>
             <p className={styles.copy}>
               {dictionary.profileRoles}: {sessionUser.roles.join(", ")}

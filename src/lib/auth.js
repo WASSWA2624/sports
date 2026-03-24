@@ -10,6 +10,11 @@ import {
   verifyPassword,
 } from "./security";
 import { logAuditEvent } from "./audit";
+import {
+  buildUsernameSeed,
+  getUserLoginIdentifier,
+  normalizeAuthIdentifier,
+} from "./auth-identifiers";
 
 const SESSION_COOKIE = "sports_session";
 const STEP_UP_COOKIE = "sports_step_up";
@@ -19,13 +24,32 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const STEP_UP_TTL_MS = 1000 * 60 * 10;
 
 const authSchema = z.object({
-  email: z.string().email().transform((value) => value.toLowerCase()),
+  identifier: z.string().optional(),
+  email: z.string().optional(),
   password: z.string().min(8).max(128),
 });
 
+const optionalUsernameSchema = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}, z.string().min(3).max(24).regex(/^[a-zA-Z0-9_]+$/).optional());
+
+const optionalDisplayNameSchema = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}, z.string().min(2).max(80).optional());
+
 const signUpSchema = authSchema.extend({
-  username: z.string().min(3).max(24).regex(/^[a-zA-Z0-9_]+$/),
-  displayName: z.string().min(2).max(80).optional(),
+  username: optionalUsernameSchema,
+  displayName: optionalDisplayNameSchema,
 });
 
 const stepUpSchema = z.object({
@@ -64,6 +88,52 @@ function createSignedCookieToken(payload) {
   return `${Buffer.from(body).toString("base64url")}.${signPayload(body, getAuthSecret())}`;
 }
 
+function getSubmittedIdentifier(input) {
+  const identifier = String(input?.identifier || input?.email || "").trim();
+  if (!identifier) {
+    throw new Error("Enter an email address or phone number with country code.");
+  }
+
+  return identifier;
+}
+
+async function isUsernameAvailable(username) {
+  const existing = await db.user.findUnique({
+    where: { username },
+    select: { id: true },
+  });
+
+  return !existing;
+}
+
+async function resolveUsername(requestedUsername, identifier, displayName) {
+  if (requestedUsername) {
+    if (!(await isUsernameAvailable(requestedUsername))) {
+      throw new Error("A user with this username already exists.");
+    }
+
+    return requestedUsername;
+  }
+
+  const bases = [
+    buildUsernameSeed(identifier, displayName),
+    `user_${Date.now().toString(36)}`,
+  ];
+
+  for (const base of bases) {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const suffix = attempt === 0 ? "" : `_${attempt + 1}`;
+      const candidate = `${base.slice(0, 24 - suffix.length)}${suffix}`;
+
+      if (await isUsernameAvailable(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  throw new Error("Could not allocate a username for this account.");
+}
+
 export function writeAccessCookie(response, input) {
   const payload = getAccessTokenPayload(input);
 
@@ -89,6 +159,8 @@ export function toSessionUserPayload(userContext) {
   return {
     id: userContext.user.id,
     email: userContext.user.email,
+    phoneNumber: userContext.user.phoneNumber,
+    loginIdentifier: getUserLoginIdentifier(userContext.user),
     username: userContext.user.username,
     displayName: userContext.user.displayName,
     roles: userContext.roles || [],
@@ -97,6 +169,7 @@ export function toSessionUserPayload(userContext) {
 
 export async function signUpWithEmailPassword(input, requestMeta) {
   const payload = signUpSchema.parse(input);
+  const identifier = normalizeAuthIdentifier(getSubmittedIdentifier(payload));
   await db.role.upsert({
     where: { name: "USER" },
     update: {},
@@ -105,22 +178,28 @@ export async function signUpWithEmailPassword(input, requestMeta) {
       description: "Standard app user",
     },
   });
-  const existingUser = await db.user.findFirst({
-    where: {
-      OR: [{ email: payload.email }, { username: payload.username }],
-    },
-    select: { id: true },
-  });
+  const existingUser =
+    identifier.type === "email"
+      ? await db.user.findUnique({
+          where: { email: identifier.email },
+          select: { id: true },
+        })
+      : await db.user.findUnique({
+          where: { phoneNumber: identifier.phoneNumber },
+          select: { id: true },
+        });
 
   if (existingUser) {
-    throw new Error("A user with this email or username already exists.");
+    throw new Error("A user with this email address or phone number already exists.");
   }
 
+  const username = await resolveUsername(payload.username, identifier, payload.displayName);
   const passwordHash = await hashPassword(payload.password);
   const user = await db.user.create({
     data: {
-      email: payload.email,
-      username: payload.username,
+      email: identifier.email,
+      phoneNumber: identifier.phoneNumber,
+      username,
       displayName: payload.displayName,
       passwordHash,
       roles: {
@@ -138,19 +217,32 @@ export async function signUpWithEmailPassword(input, requestMeta) {
     action: "auth.signup",
     entityType: "User",
     entityId: user.id,
-    metadata: { email: user.email },
+    metadata: {
+      identifierType: identifier.type,
+      loginIdentifier: getUserLoginIdentifier(user),
+      username: user.username,
+    },
   });
   return { user, session };
 }
 
 export async function loginWithEmailPassword(input, requestMeta) {
   const payload = authSchema.parse(input);
-  const user = await db.user.findUnique({
-    where: { email: payload.email },
-    include: {
-      roles: { include: { role: true } },
-    },
-  });
+  const identifier = normalizeAuthIdentifier(getSubmittedIdentifier(payload));
+  const user =
+    identifier.type === "email"
+      ? await db.user.findUnique({
+          where: { email: identifier.email },
+          include: {
+            roles: { include: { role: true } },
+          },
+        })
+      : await db.user.findUnique({
+          where: { phoneNumber: identifier.phoneNumber },
+          include: {
+            roles: { include: { role: true } },
+          },
+        });
 
   if (!user || !user.isActive) {
     return null;
@@ -167,6 +259,10 @@ export async function loginWithEmailPassword(input, requestMeta) {
     action: "auth.login",
     entityType: "User",
     entityId: user.id,
+    metadata: {
+      identifierType: identifier.type,
+      loginIdentifier: getUserLoginIdentifier(user),
+    },
   });
   return { user, session };
 }

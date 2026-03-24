@@ -9,7 +9,7 @@ import { usePreferences } from "../../../components/coreui/preferences-provider"
 
 function buildDefaultFields() {
   return {
-    email: "",
+    identifier: "",
     password: "",
     username: "",
     displayName: "",
@@ -46,13 +46,13 @@ export default function AuthClient({ dictionary, locale, socialProviders = [] })
     const payload =
       mode === "login"
         ? {
-            email: fields.email,
+            identifier: fields.identifier,
             password: fields.password,
           }
         : {
-            email: fields.email,
+            identifier: fields.identifier,
             password: fields.password,
-            username: fields.username,
+            username: fields.username || undefined,
             displayName: fields.displayName || undefined,
           };
 
@@ -147,12 +147,14 @@ export default function AuthClient({ dictionary, locale, socialProviders = [] })
               <label className={styles.field}>
                 <span>{dictionary.authEmail}</span>
                 <input
-                  type="email"
-                  value={fields.email}
+                  type="text"
+                  autoComplete="username"
+                  placeholder={dictionary.authIdentifierHint}
+                  value={fields.identifier}
                   onChange={(event) =>
                     setFields((current) => ({
                       ...current,
-                      email: event.target.value,
+                      identifier: event.target.value,
                     }))
                   }
                   required
@@ -178,7 +180,7 @@ export default function AuthClient({ dictionary, locale, socialProviders = [] })
             {mode === "signup" ? (
               <div className={styles.grid}>
                 <label className={styles.field}>
-                  <span>{dictionary.authUsername}</span>
+                  <span>{dictionary.authUsernameOptional}</span>
                   <input
                     value={fields.username}
                     onChange={(event) =>
@@ -187,7 +189,6 @@ export default function AuthClient({ dictionary, locale, socialProviders = [] })
                         username: event.target.value,
                       }))
                     }
-                    required
                   />
                 </label>
 

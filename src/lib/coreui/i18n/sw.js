@@ -540,9 +540,11 @@ const sw = {
   authOpenSettings: "Fungua settings",
   authModeLogin: "Ingia",
   authModeSignup: "Fungua akaunti",
-  authEmail: "Barua pepe",
+  authEmail: "Barua pepe au simu",
+  authIdentifierHint: "jina@example.com au +256700000000",
   authPassword: "Nenosiri",
   authUsername: "Jina la mtumiaji",
+  authUsernameOptional: "Jina la mtumiaji (hiari)",
   authDisplayName: "Jina la kuonekana",
   authSubmitLogin: "Ingia",
   authSubmitSignup: "Fungua akaunti",
@@ -552,7 +554,7 @@ const sw = {
   authSocialConfigured:
     "Mtoa huduma mmoja au zaidi wa social umewekwa kupitia env flags na uko tayari kwa hatua ya callback.",
   authSocialUnavailable:
-    "Hakuna mtoa huduma wa social aliyewashwa sasa, kwa hiyo email na nenosiri bado ndio njia kuu ya kuingia.",
+    "Hakuna mtoa huduma wa social aliyewashwa sasa, kwa hiyo email, simu, na nenosiri bado ndio njia kuu ya kuingia.",
 };
 
 export default sw;
