@@ -1,15 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import styles from "./onboarding-panel.module.css";
 import { usePreferences } from "./preferences-provider";
 import { trackProductAnalyticsEvent } from "../../lib/product-analytics";
 
 const ONBOARDING_STORAGE_KEY = "sports:onboarding:completed";
 const ONBOARDING_DISMISS_KEY = "sports:onboarding:dismissed";
+const ONBOARDING_STORAGE_EVENT = "sports:onboarding-storage";
 
 function toggleSelection(items, value) {
   return items.includes(value) ? items.filter((entry) => entry !== value) : [...items, value];
+}
+
+function readDismissedByStorage() {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  return (
+    window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1" ||
+    window.localStorage.getItem(ONBOARDING_DISMISS_KEY) === "1"
+  );
+}
+
+function subscribeToOnboardingStorage(onStoreChange) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(ONBOARDING_STORAGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(ONBOARDING_STORAGE_EVENT, onStoreChange);
+  };
 }
 
 export function OnboardingPanel({
@@ -26,16 +52,11 @@ export function OnboardingPanel({
     setFavoriteSports,
     addFavoriteItems,
   } = usePreferences();
-  const [dismissedByStorage, setDismissedByStorage] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-
-    return (
-      window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1" ||
-      window.localStorage.getItem(ONBOARDING_DISMISS_KEY) === "1"
-    );
-  });
+  const dismissedByStorage = useSyncExternalStore(
+    subscribeToOnboardingStorage,
+    readDismissedByStorage,
+    () => true
+  );
   const [saving, setSaving] = useState(false);
   const [selectedSports, setSelectedSports] = useState(favoriteSports || []);
   const [selectedCompetitions, setSelectedCompetitions] = useState(
@@ -66,6 +87,7 @@ export function OnboardingPanel({
     await addFavoriteItems(favoriteItemIds, { surface: "home-onboarding" });
     window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
     window.localStorage.removeItem(ONBOARDING_DISMISS_KEY);
+    window.dispatchEvent(new Event(ONBOARDING_STORAGE_EVENT));
 
     trackProductAnalyticsEvent({
       event: "onboarding_completed",
@@ -80,12 +102,11 @@ export function OnboardingPanel({
     });
 
     setSaving(false);
-    setDismissedByStorage(true);
   }
 
   function handleDismiss() {
     window.localStorage.setItem(ONBOARDING_DISMISS_KEY, "1");
-    setDismissedByStorage(true);
+    window.dispatchEvent(new Event(ONBOARDING_STORAGE_EVENT));
   }
 
   return (
