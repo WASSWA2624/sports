@@ -43,7 +43,7 @@ npm run release:artifact
 
 ## Sync Jobs
 
-Configure SportsMonks credentials and tracked IDs in `.env`, then trigger the admin sync endpoint for one of the registered buckets: `static-ish`, `daily`, or `high-frequency`.
+Configure the selected provider credentials and tracked IDs in `.env`, then trigger the admin sync endpoint for one of the registered buckets: `static-ish`, `daily`, or `high-frequency`.
 
 Admin-triggered sync endpoint: `POST /api/admin/sync/[job]`
 
@@ -66,6 +66,24 @@ Prepared provider expansion slots:
 - `SPORTSMONKS_BASKETBALL`
 - `SPORTSMONKS_TENNIS`
 - `SCOREBOARD_BACKUP`
+
+The provider layer is now catalog-driven. To switch the primary feed, update:
+
+- `SPORTS_DATA_PROVIDER`
+- the matching `<PROVIDER_CODE>_API_KEY`
+- the matching `<PROVIDER_CODE>_BASE_URL`
+
+Optional generic overrides are also supported:
+
+- `SPORTS_PROVIDER_API_KEY`
+- `SPORTS_PROVIDER_BASE_URL`
+- `SPORTS_PROVIDER_API_HOST`
+- `SPORTS_PROVIDER_AUTH_HEADER`
+- `SPORTS_PROVIDER_AUTH_SCHEME`
+
+If the new provider serves logos or media from different domains, update `ASSET_REMOTE_HOSTS` before rebuilding so Next image allowlists stay aligned with the feed.
+
+Today the SportsMonks adapter family is implemented end to end. The other listed providers are cataloged and env-configurable now, so adding a new adapter family does not require rewriting the app domain, sync orchestration, or persistence layers.
 
 The admin control room surfaces provider chain readiness, latency/cache/search observability, failure drills, and asset/CDN coverage.
 

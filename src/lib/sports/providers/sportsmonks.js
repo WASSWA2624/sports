@@ -61,6 +61,10 @@ export class SportsMonksProvider {
         Accept: "application/json",
       },
       cache: "no-store",
+      signal:
+        Number.isFinite(this.config.timeoutMs) && this.config.timeoutMs > 0
+          ? AbortSignal.timeout(this.config.timeoutMs)
+          : undefined,
     });
 
     if (!response.ok) {

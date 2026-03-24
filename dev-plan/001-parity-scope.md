@@ -10,9 +10,10 @@ Lock the app to the full Flashscore-style public web target defined in `app-writ
 4. Lock the compliance frame: informational-only betting-adjacent content, explicit region and age gating, and legal copy requirements for regulated surfaces.
 5. Lock the target go-to-market geos as Uganda, Kenya, and Nigeria so later phases can design geo-aware bookmaker, copy, and funnel behavior correctly.
 6. Lock the technical stack: Next.js App Router, JavaScript, Prisma, MySQL, Styled Components, Redux Toolkit, and i18n.
-7. Publish and approve the parity sign-off document in `docs/mvp-scope.md` so every later phase inherits the same product and revenue assumptions.
+7. Lock the provider strategy: the public product and domain layer must stay provider-agnostic so the active sports feed can be switched through env configuration instead of feature rewrites.
+8. Publish and approve the parity sign-off document in `docs/mvp-scope.md` so every later phase inherits the same product, revenue, and provider-flexibility assumptions.
 
 ## Done When
 - Scope explicitly targets Flashscore-style product parity plus the monetization model in `app-write-up.md`.
 - Removed features and non-goals are clearly documented.
-- Team has one approved source of truth for both product and revenue scope.
+- Team has one approved source of truth for product, revenue, and provider-flexibility scope.

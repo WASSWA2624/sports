@@ -65,26 +65,48 @@ The admin control room now exposes:
 
 ## Provider Expansion Pattern
 
-The provider layer now uses a registry instead of a single hard-coded factory.
+The provider layer now uses a registry and env-driven selector instead of a single hard-coded factory.
 
-Current prepared slots:
+Activation rules:
+
+- `SPORTS_DATA_PROVIDER` selects the active catalog entry.
+- Generic overrides like `SPORTS_PROVIDER_API_KEY` and `SPORTS_PROVIDER_BASE_URL` can be used for fast swaps.
+- Provider-specific keys like `API_SPORTS_API_KEY` or `SPORTSMONKS_API_KEY` remain supported for long-lived environments.
+- `ASSET_REMOTE_HOSTS` must be updated when a provider introduces different image domains.
+
+Current live adapter family:
 
 - `SPORTSMONKS`
-  - role: primary
-  - sport coverage: football
-  - tier: live
 - `SPORTSMONKS_BASKETBALL`
-  - role: expansion
-  - sport coverage: basketball
-  - tier: planned
 - `SPORTSMONKS_TENNIS`
-  - role: expansion
-  - sport coverage: tennis
-  - tier: planned
+
+Cataloged alternatives now prepared for env-based adoption:
+
+- `API_SPORTS`
+- `API_FOOTBALL`
+- `SPORTSDATAIO`
+- `THE_ODDS_API`
+- `GOALSERVE`
+- `SPORTS_GAME_ODDS`
+- `SPORTAPI`
+- `JSON_ODDS`
+- `ALLSPORTSAPI`
+- `SOCCERDATA_API`
+- `SPORTS_OPEN_DATA`
+- `ODDSJAM`
+- `EXEFEED`
+- `BETFAIR`
+- `SPORTDATAAPI`
+- `RAPIDAPI_SPORTS`
+- `ERGAST_F1`
+- `ESPN_UNOFFICIAL`
+- `PINNACLE`
+- `SPORTRADAR`
+- `STATS_PERFORM`
+- `BET365_UNOFFICIAL`
+- `FEEDCONSTRUCT`
+- `SPORTSCORE`
 - `SCOREBOARD_BACKUP`
-  - role: backup
-  - sport coverage: football, basketball, tennis
-  - tier: prepared
 
 ### Expansion Rule
 
@@ -92,7 +114,8 @@ Do not activate a planned provider until:
 
 1. entity normalization exists for that sport
 2. seed and test coverage include that sport
-3. the admin workspace shows the provider as intentionally enabled
+3. the adapter family is marked implemented in the catalog and passes release preflight
+4. the admin workspace shows the provider as intentionally enabled
 
 ## Asset and CDN Strategy
 

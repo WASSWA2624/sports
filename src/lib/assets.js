@@ -8,8 +8,21 @@ const DEFAULT_REMOTE_HOSTS = [
 function parseCsv(value) {
   return (value || "")
     .split(",")
-    .map((entry) => entry.trim())
+    .map((entry) => normalizeRemoteHost(entry))
     .filter(Boolean);
+}
+
+function normalizeRemoteHost(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  try {
+    return new URL(normalized).hostname;
+  } catch (error) {
+    return normalized.replace(/^https?:\/\//i, "").replace(/\/.*$/, "");
+  }
 }
 
 function pickFallback(type) {

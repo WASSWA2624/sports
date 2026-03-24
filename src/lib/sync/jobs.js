@@ -2,7 +2,7 @@ import { getSportsSyncConfig } from "../sports/config";
 import { ensureProviderIsActive } from "../control-plane";
 import { db } from "../db";
 import { recordSyncPressureEvent } from "../operations";
-import { createSportsProvider, getProviderChain } from "../sports/provider";
+import { createSportsProvider, getProviderChain, getProviderDescriptor } from "../sports/provider";
 import {
   persistFixtureBatch,
   persistOddsBatch,
@@ -289,9 +289,20 @@ export const syncJobRegistry = {
 export async function runSyncJob(jobName) {
   const config = getSportsSyncConfig();
   const jobDefinition = syncJobRegistry[jobName];
+  const providerDescriptor = getProviderDescriptor(config.provider);
 
   if (!jobDefinition) {
     throw new Error(`Unknown sync job: ${jobName}`);
+  }
+
+  if (!providerDescriptor) {
+    throw new Error(`Unsupported sports provider: ${config.provider}`);
+  }
+
+  if (!providerDescriptor.implemented) {
+    throw new Error(
+      `Provider ${config.provider} is cataloged for env-driven switching, but adapter family ${providerDescriptor.adapter} is not implemented yet.`
+    );
   }
 
   await ensureProviderIsActive(config.provider);

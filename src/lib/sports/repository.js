@@ -1,6 +1,7 @@
 import { db } from "../db";
+import { getSportsSyncConfig } from "./config";
+import { getProviderDescriptor } from "./provider";
 
-const PROVIDER_CODE = "SPORTSMONKS";
 const DEFAULT_SPORT = {
   code: "football",
   slug: "football",
@@ -40,47 +41,77 @@ function toCountryCode(value) {
   return slugify(value, "international").replace(/-/g, "_").toUpperCase().slice(0, 24);
 }
 
-async function ensureSourceProvider(tx) {
+function toTitleCase(value) {
+  return String(value || "")
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getProviderContext() {
+  const config = getSportsSyncConfig();
+  const descriptor = getProviderDescriptor(config.provider);
+  const sportCode = config.primarySport || DEFAULT_SPORT.code;
+
+  return {
+    providerCode: config.provider,
+    providerName: descriptor?.name || config.provider,
+    providerRole: descriptor?.role || "primary",
+    providerTier: descriptor?.tier || "live",
+    providerSports: descriptor?.sports?.length ? descriptor.sports : [sportCode],
+    providerNotes: descriptor?.notes || null,
+    sport: {
+      code: sportCode,
+      slug: slugify(sportCode, DEFAULT_SPORT.slug),
+      name: toTitleCase(sportCode) || DEFAULT_SPORT.name,
+    },
+  };
+}
+
+async function ensureSourceProvider(tx, providerContext) {
   return tx.sourceProvider.upsert({
-    where: { code: PROVIDER_CODE },
+    where: { code: providerContext.providerCode },
     update: {
-      name: "SportsMonks",
-      kind: "football-feed",
+      name: providerContext.providerName,
+      kind: `${providerContext.sport.code}-feed`,
       isActive: true,
       metadata: {
-        role: "primary",
-        tier: "live",
-        sports: ["football"],
-        stage: "live",
+        role: providerContext.providerRole,
+        tier: providerContext.providerTier,
+        sports: providerContext.providerSports,
+        stage: providerContext.providerTier,
+        note: providerContext.providerNotes,
       },
     },
     create: {
-      code: PROVIDER_CODE,
-      name: "SportsMonks",
-      kind: "football-feed",
+      code: providerContext.providerCode,
+      name: providerContext.providerName,
+      kind: `${providerContext.sport.code}-feed`,
       isActive: true,
       metadata: {
-        role: "primary",
-        tier: "live",
-        sports: ["football"],
-        stage: "live",
+        role: providerContext.providerRole,
+        tier: providerContext.providerTier,
+        sports: providerContext.providerSports,
+        stage: providerContext.providerTier,
+        note: providerContext.providerNotes,
       },
     },
   });
 }
 
-async function ensureSport(tx) {
+async function ensureSport(tx, providerContext) {
   return tx.sport.upsert({
-    where: { code: DEFAULT_SPORT.code },
+    where: { code: providerContext.sport.code },
     update: {
-      slug: DEFAULT_SPORT.slug,
-      name: DEFAULT_SPORT.name,
+      slug: providerContext.sport.slug,
+      name: providerContext.sport.name,
       isEnabled: true,
     },
     create: {
-      code: DEFAULT_SPORT.code,
-      slug: DEFAULT_SPORT.slug,
-      name: DEFAULT_SPORT.name,
+      code: providerContext.sport.code,
+      slug: providerContext.sport.slug,
+      name: providerContext.sport.name,
       isEnabled: true,
     },
   });
@@ -142,13 +173,13 @@ async function ensureCompetition(tx, league, sportId, countryId) {
   });
 }
 
-async function ensureLeague(tx, league, links) {
+async function ensureLeague(tx, league, links, providerContext) {
   if (!league) {
     return null;
   }
 
   const basePayload = {
-    provider: PROVIDER_CODE,
+    provider: providerContext.providerCode,
     sportId: links.sportId,
     countryId: links.countryId,
     competitionId: links.competitionId,
@@ -181,13 +212,13 @@ async function ensureLeague(tx, league, links) {
   });
 }
 
-async function ensureSeason(tx, season, leagueId, competitionId) {
+async function ensureSeason(tx, season, leagueId, competitionId, providerContext) {
   if (!season) {
     return null;
   }
 
   const basePayload = {
-    provider: PROVIDER_CODE,
+    provider: providerContext.providerCode,
     leagueId,
     competitionId,
     name: season.name,
@@ -223,13 +254,13 @@ async function ensureSeason(tx, season, leagueId, competitionId) {
   });
 }
 
-async function ensureTeam(tx, team, leagueId, competitionId) {
+async function ensureTeam(tx, team, leagueId, competitionId, providerContext) {
   if (!team) {
     return null;
   }
 
   const basePayload = {
-    provider: PROVIDER_CODE,
+    provider: providerContext.providerCode,
     leagueId,
     competitionId,
     name: team.name,
@@ -331,22 +362,41 @@ async function replaceFixtureParticipants(tx, storedFixture, homeTeam, awayTeam)
 }
 
 export async function persistFixtureBatch(fixtures) {
+  const providerContext = getProviderContext();
   let processed = 0;
 
   for (const fixture of fixtures) {
     await db.$transaction(async (tx) => {
-      await ensureSourceProvider(tx);
-      const sport = await ensureSport(tx);
+      await ensureSourceProvider(tx, providerContext);
+      const sport = await ensureSport(tx, providerContext);
       const country = await ensureCountry(tx, fixture.league?.country);
       const competition = await ensureCompetition(tx, fixture.league, sport.id, country?.id || null);
       const league = await ensureLeague(tx, fixture.league, {
         sportId: sport.id,
         countryId: country?.id || null,
         competitionId: competition?.id || null,
-      });
-      const season = await ensureSeason(tx, fixture.season, league.id, competition?.id || null);
-      const homeTeam = await ensureTeam(tx, fixture.homeTeam, league.id, competition?.id || null);
-      const awayTeam = await ensureTeam(tx, fixture.awayTeam, league.id, competition?.id || null);
+      }, providerContext);
+      const season = await ensureSeason(
+        tx,
+        fixture.season,
+        league.id,
+        competition?.id || null,
+        providerContext
+      );
+      const homeTeam = await ensureTeam(
+        tx,
+        fixture.homeTeam,
+        league.id,
+        competition?.id || null,
+        providerContext
+      );
+      const awayTeam = await ensureTeam(
+        tx,
+        fixture.awayTeam,
+        league.id,
+        competition?.id || null,
+        providerContext
+      );
       const venue = await ensureVenue(tx, fixture.venue, fixture.metadata);
 
       const existingFixture = fixture.externalRef
@@ -359,7 +409,7 @@ export async function persistFixtureBatch(fixtures) {
       const storedFixture = await tx.fixture.upsert({
         where: { externalRef: fixture.externalRef },
         update: {
-          provider: PROVIDER_CODE,
+          provider: providerContext.providerCode,
           sportId: sport.id,
           countryId: country?.id || null,
           competitionId: competition?.id || null,
@@ -377,7 +427,7 @@ export async function persistFixtureBatch(fixtures) {
           metadata: fixture.metadata,
         },
         create: {
-          provider: PROVIDER_CODE,
+          provider: providerContext.providerCode,
           externalRef: fixture.externalRef,
           sportId: sport.id,
           countryId: country?.id || null,
@@ -433,6 +483,7 @@ export async function persistFixtureBatch(fixtures) {
 }
 
 export async function persistTeamBatch(teams, seasonExternalRef) {
+  const providerContext = getProviderContext();
   if (!teams.length) {
     return 0;
   }
@@ -448,7 +499,7 @@ export async function persistTeamBatch(teams, seasonExternalRef) {
   let processed = 0;
   for (const team of teams) {
     await db.$transaction(async (tx) => {
-      await ensureTeam(tx, team, season.leagueId, season.competitionId);
+      await ensureTeam(tx, team, season.leagueId, season.competitionId, providerContext);
     });
     processed += 1;
   }
@@ -457,6 +508,7 @@ export async function persistTeamBatch(teams, seasonExternalRef) {
 }
 
 export async function persistStandingsBatch(standings) {
+  const providerContext = getProviderContext();
   let processed = 0;
 
   for (const standing of standings) {
@@ -469,7 +521,13 @@ export async function persistStandingsBatch(standings) {
         throw new Error(`Season ${standing.seasonExternalRef} must exist before standings sync.`);
       }
 
-      const team = await ensureTeam(tx, standing.team, season.leagueId, season.competitionId);
+      const team = await ensureTeam(
+        tx,
+        standing.team,
+        season.leagueId,
+        season.competitionId,
+        providerContext
+      );
 
       await tx.standing.upsert({
         where: {
@@ -511,12 +569,12 @@ export async function persistStandingsBatch(standings) {
   return processed;
 }
 
-async function upsertOddsMarket(tx, fixtureId, market) {
+async function upsertOddsMarket(tx, fixtureId, market, providerContext) {
   if (market.externalRef) {
     return tx.oddsMarket.upsert({
       where: { externalRef: market.externalRef },
       update: {
-        provider: PROVIDER_CODE,
+        provider: providerContext.providerCode,
         fixtureId,
         bookmaker: market.bookmaker,
         marketType: market.marketType,
@@ -525,7 +583,7 @@ async function upsertOddsMarket(tx, fixtureId, market) {
         metadata: market.metadata,
       },
       create: {
-        provider: PROVIDER_CODE,
+        provider: providerContext.providerCode,
         externalRef: market.externalRef,
         fixtureId,
         bookmaker: market.bookmaker,
@@ -559,7 +617,7 @@ async function upsertOddsMarket(tx, fixtureId, market) {
   return tx.oddsMarket.create({
     data: {
       fixtureId,
-      provider: PROVIDER_CODE,
+      provider: providerContext.providerCode,
       bookmaker: market.bookmaker,
       marketType: market.marketType,
       suspended: market.suspended,
@@ -570,6 +628,7 @@ async function upsertOddsMarket(tx, fixtureId, market) {
 }
 
 export async function persistOddsBatch(markets) {
+  const providerContext = getProviderContext();
   let processed = 0;
 
   for (const market of markets) {
@@ -582,7 +641,7 @@ export async function persistOddsBatch(markets) {
         throw new Error(`Fixture ${market.fixtureExternalRef} must exist before odds sync.`);
       }
 
-      const storedMarket = await upsertOddsMarket(tx, fixture.id, market);
+      const storedMarket = await upsertOddsMarket(tx, fixture.id, market, providerContext);
 
       for (const selection of market.selections) {
         if (selection.externalRef) {

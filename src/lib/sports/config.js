@@ -1,3 +1,11 @@
+import {
+  DEFAULT_SPORTS_PROVIDER_CODE,
+  getSportsProviderCatalogEntry,
+  getSportsProviderEnvNamespace,
+  normalizeSportsProviderCode,
+  sportsProviderSupportsCapability,
+} from "./provider-catalog";
+
 const DEFAULT_FIXTURE_DAYS_PAST = 1;
 const DEFAULT_FIXTURE_DAYS_AHEAD = 7;
 const DEFAULT_MAX_ACTIVE_DETAIL_FIXTURES = 20;
@@ -5,6 +13,7 @@ const DEFAULT_MAX_ODDS_FIXTURES = 18;
 const DEFAULT_MAX_BROADCAST_FIXTURES = 12;
 const DEFAULT_BACKPRESSURE_THRESHOLD = 12;
 const DEFAULT_STALE_LIVE_GRACE_MINUTES = 8;
+const DEFAULT_PROVIDER_TIMEOUT_MS = 15000;
 
 function parseCsv(value) {
   return (value || "")
@@ -18,13 +27,89 @@ function parseInteger(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseBoolean(value, fallback) {
+  if (typeof value !== "string" || !value.trim()) {
+    return fallback;
+  }
+
+  return value.trim().toLowerCase() !== "false";
+}
+
+function readFirstString(...names) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (typeof value !== "string") {
+      continue;
+    }
+
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return "";
+}
+
+function buildProviderEnvCandidates(providerCode, suffix) {
+  const namespace = getSportsProviderEnvNamespace(providerCode);
+  return [
+    `SPORTS_PROVIDER_${suffix}`,
+    `${namespace}_${suffix}`,
+  ];
+}
+
+function readProviderEnvString(providerCode, suffix, fallback = "") {
+  return readFirstString(...buildProviderEnvCandidates(providerCode, suffix)) || fallback;
+}
+
 export function getSportsSyncConfig() {
+  const provider = normalizeSportsProviderCode(
+    process.env.SPORTS_DATA_PROVIDER || DEFAULT_SPORTS_PROVIDER_CODE
+  );
+  const descriptor = getSportsProviderCatalogEntry(provider);
+  const primarySport =
+    readProviderEnvString(provider, "PRIMARY_SPORT") ||
+    readFirstString("SPORTS_PRIMARY_SPORT") ||
+    descriptor?.defaultPrimarySport ||
+    "football";
+
   return {
-    provider: process.env.SPORTS_DATA_PROVIDER || "SPORTSMONKS",
-    primarySport: process.env.SPORTS_PRIMARY_SPORT || "football",
-    baseUrl: process.env.SPORTSMONKS_BASE_URL || "https://api.sportmonks.com/v3/football",
-    apiKey: process.env.SPORTSMONKS_API_KEY || "",
-    fallbackProviders: parseCsv(process.env.SPORTS_SYNC_FAILOVER_PROVIDERS),
+    provider,
+    providerDescriptor: descriptor,
+    providerEnvNamespace: getSportsProviderEnvNamespace(provider),
+    adapterFamily: descriptor?.adapterFamily || "custom",
+    providerImplemented: Boolean(descriptor?.implemented),
+    primarySport,
+    supportedSports: descriptor?.sports || [],
+    baseUrl:
+      readProviderEnvString(provider, "BASE_URL") ||
+      descriptor?.defaultBaseUrl ||
+      "",
+    oddsBaseUrl: readProviderEnvString(provider, "ODDS_BASE_URL"),
+    newsBaseUrl: readProviderEnvString(provider, "NEWS_BASE_URL"),
+    apiKey: readProviderEnvString(provider, "API_KEY"),
+    apiHost: readProviderEnvString(provider, "API_HOST", descriptor?.defaultApiHost || ""),
+    authLocation: descriptor?.authLocation || "custom",
+    authQueryKey: descriptor?.authQueryKey || null,
+    authHeader: readProviderEnvString(provider, "AUTH_HEADER", descriptor?.defaultAuthHeader || ""),
+    authScheme: readProviderEnvString(provider, "AUTH_SCHEME", descriptor?.defaultAuthScheme || ""),
+    timeoutMs: parseInteger(
+      readProviderEnvString(provider, "TIMEOUT_MS") || process.env.SPORTS_PROVIDER_TIMEOUT_MS,
+      DEFAULT_PROVIDER_TIMEOUT_MS
+    ),
+    supports: {
+      fixtures: sportsProviderSupportsCapability(descriptor, "fixtures"),
+      livescores: sportsProviderSupportsCapability(descriptor, "livescores"),
+      standings: sportsProviderSupportsCapability(descriptor, "standings"),
+      teams: sportsProviderSupportsCapability(descriptor, "teams"),
+      odds: sportsProviderSupportsCapability(descriptor, "odds"),
+      broadcast: sportsProviderSupportsCapability(descriptor, "broadcast"),
+      news: sportsProviderSupportsCapability(descriptor, "news"),
+    },
+    fallbackProviders: parseCsv(process.env.SPORTS_SYNC_FAILOVER_PROVIDERS).map((entry) =>
+      normalizeSportsProviderCode(entry, entry)
+    ),
     trackedLeagueCodes: parseCsv(process.env.SPORTS_SYNC_LEAGUE_CODES),
     trackedSeasonRefs: parseCsv(process.env.SPORTS_SYNC_SEASON_IDS),
     trackedFixtureRefs: parseCsv(process.env.SPORTS_SYNC_FIXTURE_IDS),
@@ -57,15 +142,31 @@ export function getSportsSyncConfig() {
       process.env.SPORTS_SYNC_STALE_LIVE_GRACE_MINUTES,
       DEFAULT_STALE_LIVE_GRACE_MINUTES
     ),
-    oddsEnabled: (process.env.SPORTS_SYNC_ODDS_ENABLED || "true") !== "false",
-    broadcastEnabled: (process.env.SPORTS_SYNC_BROADCAST_ENABLED || "true") !== "false",
+    oddsEnabled: parseBoolean(
+      process.env.SPORTS_SYNC_ODDS_ENABLED,
+      sportsProviderSupportsCapability(descriptor, "odds")
+    ),
+    broadcastEnabled: parseBoolean(
+      process.env.SPORTS_SYNC_BROADCAST_ENABLED,
+      sportsProviderSupportsCapability(descriptor, "broadcast")
+    ),
   };
 }
 
-export function requireSportsApiKey() {
+export function requireSportsProviderAccess() {
   const config = getSportsSyncConfig();
+  if (!config.providerDescriptor) {
+    throw new Error(`Unknown sports provider: ${config.provider}`);
+  }
+
   if (!config.apiKey) {
-    throw new Error("SPORTSMONKS_API_KEY is not configured.");
+    throw new Error(
+      `${config.provider} credentials are not configured. Set SPORTS_PROVIDER_API_KEY or ${config.providerEnvNamespace}_API_KEY.`
+    );
   }
   return config;
+}
+
+export function requireSportsApiKey() {
+  return requireSportsProviderAccess();
 }

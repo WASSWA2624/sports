@@ -96,7 +96,43 @@ Current registry state:
 | `SPORTSMONKS` | primary | live | football | connected |
 | `SPORTSMONKS_BASKETBALL` | expansion | planned | basketball | prepared, not normalized |
 | `SPORTSMONKS_TENNIS` | expansion | planned | tennis | prepared, not normalized |
+| `API_SPORTS` | alternative | catalog | football, basketball, f1, mma | cataloged for env switching, adapter pending |
+| `API_FOOTBALL` | alternative | catalog | football | cataloged for env switching, adapter pending |
+| `SPORTSDATAIO` | alternative | catalog | football, basketball, baseball, hockey | cataloged for env switching, adapter pending |
+| `THE_ODDS_API` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `GOALSERVE` | alternative | catalog | football, basketball, tennis | cataloged for env switching, adapter pending |
+| `SPORTS_GAME_ODDS` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `SPORTAPI` | alternative | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `JSON_ODDS` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `ALLSPORTSAPI` | alternative | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `SOCCERDATA_API` | alternative | catalog | football | cataloged for env switching, adapter pending |
+| `SPORTS_OPEN_DATA` | community | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `ODDSJAM` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `EXEFEED` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `BETFAIR` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `SPORTDATAAPI` | alternative | catalog | football | cataloged for env switching, adapter pending |
+| `RAPIDAPI_SPORTS` | marketplace | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `ERGAST_F1` | niche | catalog | f1 | cataloged for env switching, adapter pending |
+| `ESPN_UNOFFICIAL` | alternative | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `PINNACLE` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `SPORTRADAR` | enterprise | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `STATS_PERFORM` | enterprise | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `BET365_UNOFFICIAL` | odds-feed | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `FEEDCONSTRUCT` | enterprise | catalog | multi-sport | cataloged for env switching, adapter pending |
+| `SPORTSCORE` | alternative | catalog | multi-sport | cataloged for env switching, adapter pending |
 | `SCOREBOARD_BACKUP` | backup | prepared | football, basketball, tennis | reserved failover slot, not connected |
+
+### Env-Driven Switch Contract
+
+Switching the primary feed is now driven by configuration instead of code edits:
+
+- set `SPORTS_DATA_PROVIDER`
+- set either `SPORTS_PROVIDER_API_KEY` or `<PROVIDER_CODE>_API_KEY`
+- set either `SPORTS_PROVIDER_BASE_URL` or `<PROVIDER_CODE>_BASE_URL`
+- set `<PROVIDER_CODE>_AUTH_HEADER` and `<PROVIDER_CODE>_API_HOST` when the selected provider uses header auth
+- update `ASSET_REMOTE_HOSTS` when the provider changes image domains
+
+The app domain, persistence layer, sync orchestration, health checks, and control-plane registry now resolve the active provider from that env state.
 
 ### SportsMonks Adapter Notes
 
@@ -106,6 +142,10 @@ Current registry state:
 - Detail hydration uses `fixtures/{fixtureExternalRef}`
 - Standings, odds, teams, and TV metadata each have dedicated endpoint mappings
 - `fetchTaxonomy` and `fetchNews` are still stubs and should be completed before broader provider expansion
+
+### Adapter Readiness Note
+
+Only the SportsMonks adapter family is implemented end to end today. The rest of the listed providers are already registered, normalized into env namespaces, exposed in the control plane, and validated by the same runtime contract, but they still need adapter-family implementations before they can be promoted as active sync sources.
 
 ## Sync Schedules and Checkpoints
 

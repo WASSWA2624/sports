@@ -17,6 +17,25 @@ import { ROOT_DIR, buildReleaseDescriptor, writeJsonFile } from "./lib/release-u
 const REPORT_DIR = resolve(ROOT_DIR, "build");
 const PROD_ONLY = ["production"];
 const STAGE_AND_PROD = ["staging", "production"];
+const IMPLEMENTED_PROVIDER_CODES = new Set([
+  "SPORTSMONKS",
+  "SPORTSMONKS_BASKETBALL",
+  "SPORTSMONKS_TENNIS",
+]);
+const PROVIDER_AUTH_EXPECTATIONS = {
+  API_SPORTS: {
+    header: true,
+    host: false,
+  },
+  API_FOOTBALL: {
+    header: true,
+    host: false,
+  },
+  RAPIDAPI_SPORTS: {
+    header: true,
+    host: true,
+  },
+};
 
 function pushCheck(report, category, label, status, detail, metadata = null) {
   report.checks.push({
@@ -73,6 +92,100 @@ function validateStringSetting(report, mode, category, name, options = {}) {
   pushCheck(report, category, name, "pass", `${name} is configured.`, {
     value: options.secret ? maskSecret(value) : value,
   });
+}
+
+function normalizeProviderCode(value, fallback = "SPORTSMONKS") {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return normalized || fallback;
+}
+
+function buildProviderEnvCandidates(providerCode, suffix) {
+  return [`SPORTS_PROVIDER_${suffix}`, `${normalizeProviderCode(providerCode)}_${suffix}`];
+}
+
+function readFirstConfiguredString(names = []) {
+  for (const name of names) {
+    const value = readEnvString(name);
+    if (value) {
+      return { name, value };
+    }
+  }
+
+  return null;
+}
+
+function validateAnyStringSetting(report, mode, category, label, names = [], options = {}) {
+  const required = isRequiredForMode(mode, options.requiredModes || []);
+  const recommended = isRequiredForMode(mode, options.recommendedModes || []);
+  const configured = readFirstConfiguredString(names);
+
+  if (!configured) {
+    if (required) {
+      pushCheck(report, category, label, "fail", `${label} is missing.`, { names });
+    } else if (recommended) {
+      pushCheck(report, category, label, "warn", `${label} is not configured.`, { names });
+    } else {
+      pushCheck(report, category, label, "pass", `${label} is optional and not configured.`, {
+        names,
+      });
+    }
+    return;
+  }
+
+  const { name, value } = configured;
+  if (isPlaceholderValue(value) || (options.validate && !options.validate(value))) {
+    const detail = `${label} is configured but still looks unsafe for release.`;
+
+    if (required) {
+      pushCheck(report, category, label, "fail", detail, {
+        names,
+        selected: name,
+        value: options.secret ? maskSecret(value) : value,
+      });
+    } else {
+      pushCheck(report, category, label, "warn", detail, {
+        names,
+        selected: name,
+        value: options.secret ? maskSecret(value) : value,
+      });
+    }
+    return;
+  }
+
+  pushCheck(report, category, label, "pass", `${label} is configured.`, {
+    names,
+    selected: name,
+    value: options.secret ? maskSecret(value) : value,
+  });
+}
+
+function validateSelectedProviderImplementation(report, mode, providerCode) {
+  if (!isRequiredForMode(mode, STAGE_AND_PROD)) {
+    return;
+  }
+
+  const isImplemented = IMPLEMENTED_PROVIDER_CODES.has(providerCode);
+  pushCheck(
+    report,
+    "providers",
+    `${providerCode} adapter readiness`,
+    isImplemented ? "pass" : "fail",
+    isImplemented
+      ? `${providerCode} is implemented in this build.`
+      : `${providerCode} is not release-ready in this build. Switch SPORTS_DATA_PROVIDER or add the adapter family before promotion.`
+  );
+}
+
+function getProviderAuthExpectation(providerCode) {
+  return PROVIDER_AUTH_EXPECTATIONS[providerCode] || {
+    header: false,
+    host: false,
+  };
 }
 
 function validateNumberSetting(report, mode, category, name, options = {}) {
@@ -296,10 +409,50 @@ export async function runReleasePreflight(options = {}) {
   validateStringSetting(report, mode, "providers", "SPORTS_DATA_PROVIDER", {
     requiredModes: STAGE_AND_PROD,
   });
-  validateStringSetting(report, mode, "providers", "SPORTSMONKS_API_KEY", {
-    requiredModes: STAGE_AND_PROD,
-    secret: true,
-  });
+  const providerCode = normalizeProviderCode(readEnvString("SPORTS_DATA_PROVIDER"));
+  validateSelectedProviderImplementation(report, mode, providerCode);
+  validateAnyStringSetting(
+    report,
+    mode,
+    "providers",
+    `${providerCode} provider API key`,
+    buildProviderEnvCandidates(providerCode, "API_KEY"),
+    {
+      requiredModes: STAGE_AND_PROD,
+      secret: true,
+    }
+  );
+  validateAnyStringSetting(
+    report,
+    mode,
+    "providers",
+    `${providerCode} provider base URL`,
+    buildProviderEnvCandidates(providerCode, "BASE_URL"),
+    {
+      recommendedModes: STAGE_AND_PROD,
+      validate: (value) => value.startsWith("http://") || value.startsWith("https://"),
+    }
+  );
+  validateAnyStringSetting(
+    report,
+    mode,
+    "providers",
+    `${providerCode} provider auth header`,
+    buildProviderEnvCandidates(providerCode, "AUTH_HEADER"),
+    {
+      recommendedModes: getProviderAuthExpectation(providerCode).header ? STAGE_AND_PROD : [],
+    }
+  );
+  validateAnyStringSetting(
+    report,
+    mode,
+    "providers",
+    `${providerCode} provider API host`,
+    buildProviderEnvCandidates(providerCode, "API_HOST"),
+    {
+      recommendedModes: getProviderAuthExpectation(providerCode).host ? STAGE_AND_PROD : [],
+    }
+  );
   validateStringSetting(report, mode, "providers", "SPORTS_SYNC_FAILOVER_PROVIDERS", {
     requiredModes: STAGE_AND_PROD,
   });
@@ -308,6 +461,12 @@ export async function runReleasePreflight(options = {}) {
     integer: true,
     min: 500,
     max: 20000,
+  });
+  validateNumberSetting(report, mode, "providers", "SPORTS_PROVIDER_TIMEOUT_MS", {
+    recommendedModes: ["staging", "production"],
+    integer: true,
+    min: 500,
+    max: 60000,
   });
 
   validateBooleanSetting(report, mode, "monitoring", "OPS_METRICS_ENABLED", {
@@ -418,6 +577,11 @@ export async function runReleasePreflight(options = {}) {
       secret: !name.includes("CDN") && !name.includes("ADS"),
     });
   }
+
+  validateStringSetting(report, mode, "assets", "ASSET_REMOTE_HOSTS", {
+    recommendedModes: ["staging", "production"],
+    validate: (value) => value.includes("."),
+  });
 
   await checkPrismaStatus(report, mode);
   await checkReleaseDocs(report);

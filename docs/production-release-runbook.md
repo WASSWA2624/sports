@@ -59,9 +59,13 @@ Release metadata:
 Provider and runtime:
 
 - `SPORTS_DATA_PROVIDER`
-- `SPORTSMONKS_API_KEY`
+- `SPORTS_PROVIDER_API_KEY` or `<PROVIDER_CODE>_API_KEY`
+- `SPORTS_PROVIDER_BASE_URL` or `<PROVIDER_CODE>_BASE_URL`
+- `SPORTS_PROVIDER_AUTH_HEADER` or `<PROVIDER_CODE>_AUTH_HEADER` when the provider uses header auth
+- `SPORTS_PROVIDER_API_HOST` or `<PROVIDER_CODE>_API_HOST` when the provider requires a host header
 - `SPORTS_SYNC_FAILOVER_PROVIDERS`
 - `SPORTS_DATA_ACCESS_TIMEOUT_MS`
+- `ASSET_REMOTE_HOSTS`
 
 Monitoring and release gates:
 
@@ -118,7 +122,9 @@ Watch `GET /api/health` and the admin control room for:
 - cache hit rate at or above the release threshold
 - route errors per hour at or below the release threshold
 - provider chain readiness and fallback slot availability
+- selected provider implementation status and credential namespace alignment
 - stale live-data counts and fixture correctness
+- asset host coverage after any provider or CDN change
 - cache attention items
 - ads/consent shell readiness and feature-flag state
 
