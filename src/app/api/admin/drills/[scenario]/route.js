@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdminAccess } from "../../../../../../lib/admin-auth";
-import { runFailureDrill } from "../../../../../../lib/operations";
+import { requireAdminAccess } from "../../../../../lib/admin-auth";
+import { runFailureDrill } from "../../../../../lib/operations";
 
 export async function POST(request, { params }) {
   const { error } = await requireAdminAccess(request, { stepUp: true });

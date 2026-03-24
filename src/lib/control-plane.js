@@ -5,7 +5,7 @@ import {
   KNOWN_CACHE_TAGS,
   revalidateTagsWithAudit,
 } from "./cache";
-import { getAssetDeliverySnapshot } from "./assets";
+import { getAssetDeliverySnapshot } from "./assets-server";
 import { db } from "./db";
 import { logAuditEvent } from "./audit";
 import { getOperationalDashboardSnapshot } from "./operations";

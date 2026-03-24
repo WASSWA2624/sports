@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAssetDeliverySnapshot } from "../../../lib/assets";
+import { getAssetDeliverySnapshot } from "../../../lib/assets-server";
 import { getOperationalDashboardSnapshot } from "../../../lib/operations";
 import { getSportsSyncConfig } from "../../../lib/sports/config";
 import { getProviderChain } from "../../../lib/sports/provider";
