@@ -2,7 +2,9 @@ import { PrismaClient } from "../generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const globalForPrisma = globalThis;
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL);
+const adapter =
+  globalForPrisma.__sportsPrismaAdapter ??
+  new PrismaMariaDb(process.env.DATABASE_URL);
 
 export const db =
   globalForPrisma.__sportsPrisma ??
@@ -11,5 +13,6 @@ export const db =
   });
 
 if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.__sportsPrismaAdapter = adapter;
   globalForPrisma.__sportsPrisma = db;
 }

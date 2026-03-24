@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "../db";
 import { parseFavoriteItemId } from "../favorites";
 import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "./routes";
@@ -45,73 +46,105 @@ function buildFixtureInclude() {
   };
 }
 
-export async function getTopCompetitionsModule(limit = 6) {
-  const now = new Date();
-  const windowEnd = addDays(now, TOP_COMPETITION_WINDOW_DAYS);
-  const leagues = await db.league.findMany({
-    where: {
-      isActive: true,
-    },
-    orderBy: [{ name: "asc" }],
-    take: limit * 3,
-    include: {
-      teams: {
-        select: {
-          id: true,
-        },
-      },
-      seasons: {
-        where: { isCurrent: true },
-        take: 1,
-        select: {
-          name: true,
-        },
-      },
-      fixtures: {
-        where: {
-          OR: [
-            { status: "LIVE" },
-            {
-              startsAt: {
-                gte: now,
-                lte: windowEnd,
+async function safely(query, fallback) {
+  try {
+    return await query();
+  } catch (error) {
+    return fallback;
+  }
+}
+
+const getTopCompetitionsModuleCached = unstable_cache(
+  async (limit = 6) => {
+    const boundedLimit = Math.min(Math.max(Number(limit) || 6, 1), 12);
+    const now = new Date();
+    const windowEnd = addDays(now, TOP_COMPETITION_WINDOW_DAYS);
+    const leagues = await db.league.findMany({
+      where: {
+        isActive: true,
+        fixtures: {
+          some: {
+            OR: [
+              { status: "LIVE" },
+              {
+                startsAt: {
+                  gte: now,
+                  lte: windowEnd,
+                },
               },
-            },
-          ],
+            ],
+          },
         },
-        orderBy: [{ startsAt: "asc" }],
-        take: 4,
-        include: buildFixtureInclude(),
       },
-    },
-  });
+      orderBy: [{ name: "asc" }],
+      take: boundedLimit * 2,
+      include: {
+        _count: {
+          select: {
+            teams: true,
+          },
+        },
+        seasons: {
+          where: { isCurrent: true },
+          take: 1,
+          select: {
+            name: true,
+          },
+        },
+        fixtures: {
+          where: {
+            OR: [
+              { status: "LIVE" },
+              {
+                startsAt: {
+                  gte: now,
+                  lte: windowEnd,
+                },
+              },
+            ],
+          },
+          orderBy: [{ startsAt: "asc" }],
+          take: 4,
+          include: buildFixtureInclude(),
+        },
+      },
+    });
 
-  return leagues
-    .map((league) => {
-      const liveCount = league.fixtures.filter((fixture) => fixture.status === "LIVE").length;
-      const scheduledCount = league.fixtures.filter((fixture) => fixture.status === "SCHEDULED").length;
+    return leagues
+      .map((league) => {
+        const liveCount = league.fixtures.filter((fixture) => fixture.status === "LIVE").length;
+        const scheduledCount = league.fixtures.filter(
+          (fixture) => fixture.status === "SCHEDULED"
+        ).length;
 
-      return {
-        id: league.id,
-        code: league.code,
-        name: league.name,
-        country: league.country || null,
-        currentSeason: league.seasons[0]?.name || null,
-        teamCount: league.teams.length,
-        fixtures: league.fixtures,
-        liveCount,
-        scheduledCount,
-        score: liveCount * 60 + scheduledCount * 24 + league.teams.length,
-      };
-    })
-    .sort((left, right) => {
-      if (right.score !== left.score) {
-        return right.score - left.score;
-      }
+        return {
+          id: league.id,
+          code: league.code,
+          name: league.name,
+          country: league.country || null,
+          currentSeason: league.seasons[0]?.name || null,
+          teamCount: league._count?.teams || 0,
+          fixtures: league.fixtures,
+          liveCount,
+          scheduledCount,
+          score: liveCount * 60 + scheduledCount * 24 + (league._count?.teams || 0),
+        };
+      })
+      .sort((left, right) => {
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
 
-      return left.name.localeCompare(right.name);
-    })
-    .slice(0, limit);
+        return left.name.localeCompare(right.name);
+      })
+      .slice(0, boundedLimit);
+  },
+  ["coreui:top-competitions"],
+  { revalidate: 300, tags: ["coreui:home", "coreui:leagues"] }
+);
+
+export async function getTopCompetitionsModule(limit = 6) {
+  return safely(() => getTopCompetitionsModuleCached(limit), []);
 }
 
 export async function getRecentItemsModule(personalization, { locale = "en", limit = 6 } = {}) {

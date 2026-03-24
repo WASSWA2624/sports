@@ -72,6 +72,37 @@ html[data-theme="dark"] {
   --notice-muted: rgba(242, 246, 247, 0.82);
 }
 
+@media (prefers-color-scheme: dark) {
+  html[data-theme="system"] {
+    --background: #04161c;
+    --background-accent: linear-gradient(180deg, #04161c 0%, #071b22 100%);
+    --surface: #081f26;
+    --surface-strong: #0b2730;
+    --surface-muted: #0d2b34;
+    --surface-inverse: #eff5f6;
+    --text: #f2f6f7;
+    --text-muted: #a5b8bc;
+    --text-soft: #81959a;
+    --border: rgba(185, 209, 213, 0.12);
+    --accent: #ff1f59;
+    --accent-strong: #ff4a7c;
+    --accent-soft: rgba(255, 31, 89, 0.16);
+    --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.26);
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.18);
+    --overlay-backdrop: rgba(2, 10, 13, 0.72);
+    --overlay-panel: rgba(8, 31, 38, 0.98);
+    --overlay-panel-border: rgba(191, 216, 220, 0.12);
+    --overlay-panel-text: #f2f6f7;
+    --overlay-placeholder: rgba(242, 246, 247, 0.5);
+    --shell-bar-bg: #061a22;
+    --shell-bar-border: rgba(191, 216, 220, 0.08);
+    --shell-chip-bg: rgba(255, 255, 255, 0.08);
+    --notice-bg: #0a3152;
+    --notice-text: #f2f6f7;
+    --notice-muted: rgba(242, 246, 247, 0.82);
+  }
+}
+
 html {
   min-height: 100%;
   color-scheme: light;
@@ -79,6 +110,12 @@ html {
 
 html[data-theme="dark"] {
   color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="system"] {
+    color-scheme: dark;
+  }
 }
 
 body {

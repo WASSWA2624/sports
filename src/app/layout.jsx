@@ -1,14 +1,16 @@
 import { Barlow_Condensed, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { StoreProvider } from "../components/coreui/store-provider";
 import StyledComponentsRegistry from "../lib/styled-components/registry";
 import {
   DEFAULT_LOCALE,
-  THEME_COOKIE_NAME,
+  DEFAULT_THEME,
 } from "../lib/coreui/preferences";
 import { getDictionary } from "../lib/coreui/dictionaries";
-import { getPreferredLocale } from "../lib/coreui/preferences-server";
+import {
+  getPreferenceSnapshot,
+  getPreferredLocale,
+} from "../lib/coreui/preferences-server";
 import { getSiteOrigin } from "../lib/coreui/site";
 
 const bodyFont = Space_Grotesk({
@@ -48,36 +50,21 @@ export const viewport = {
   viewportFit: "cover",
 };
 
-const themeInitScript = `
-  (function () {
-    var match = document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=([^;]*)/);
-    var savedTheme = match ? decodeURIComponent(match[1]) : null;
-    var localTheme = null;
-    try {
-      localTheme = window.localStorage.getItem("${THEME_COOKIE_NAME}");
-    } catch (error) {}
-    var theme = savedTheme || localTheme || "system";
-    var resolvedTheme = theme === "system"
-      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : theme;
-    document.documentElement.dataset.theme = resolvedTheme;
-    document.documentElement.dataset.themePreference = theme;
-  })();
-`;
-
 export default async function RootLayout({ children }) {
-  const locale = await getPreferredLocale().catch(() => DEFAULT_LOCALE);
+  const preferences = await getPreferenceSnapshot().catch(() => ({
+    locale: DEFAULT_LOCALE,
+    theme: DEFAULT_THEME,
+  }));
 
   return (
     <html
-      lang={locale}
+      lang={preferences.locale}
       suppressHydrationWarning
       className={`${bodyFont.variable} ${monoFont.variable} ${displayFont.variable}`}
+      data-theme={preferences.theme}
+      data-theme-preference={preferences.theme}
     >
       <body>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {themeInitScript}
-        </Script>
         <StyledComponentsRegistry>
           <StoreProvider>{children}</StoreProvider>
         </StyledComponentsRegistry>
