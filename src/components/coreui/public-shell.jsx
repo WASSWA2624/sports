@@ -904,73 +904,75 @@ function ShellFrame({ children, locale, dictionary, watchlistItems, shellData, v
 
       <footer className={`${styles.footer} ${footerVisible ? styles.footerVisible : ""}`}>
         <div className={styles.footerInner}>
-          <div className={styles.footerGrid}>
-            <section className={styles.footerLead}>
-              <div className={styles.footerBrandRow}>
-                <div className={styles.footerBrandMark} aria-hidden="true">
-                  SP
+          <div className={styles.footerContent}>
+            <div className={styles.footerGrid}>
+              <section className={styles.footerLead}>
+                <div className={styles.footerBrandRow}>
+                  <div className={styles.footerBrandMark} aria-hidden="true">
+                    SP
+                  </div>
+                  <div className={styles.footerBrandCopy}>
+                    <strong className={styles.footerBrandTitle}>{dictionary.brand}</strong>
+                    <p className={styles.footerSummary}>{dictionary.footerSummary}</p>
+                  </div>
                 </div>
-                <div className={styles.footerBrandCopy}>
-                  <strong className={styles.footerBrandTitle}>{dictionary.brand}</strong>
-                  <p className={styles.footerSummary}>{dictionary.footerSummary}</p>
-                </div>
-              </div>
 
-              <div className={styles.footerMeta}>
-                <span className={styles.badge}>
-                  {dictionary.currentMarket}: {currentGeoLabel}
-                </span>
-                {affiliatePartner ? (
+                <div className={styles.footerMeta}>
                   <span className={styles.badge}>
-                    {dictionary.affiliatePartnerLabel}: {affiliatePartner}
+                    {dictionary.currentMarket}: {currentGeoLabel}
                   </span>
-                ) : null}
-                <span className={styles.badge}>{accountLabel}</span>
-              </div>
-            </section>
+                  {affiliatePartner ? (
+                    <span className={styles.badge}>
+                      {dictionary.affiliatePartnerLabel}: {affiliatePartner}
+                    </span>
+                  ) : null}
+                  <span className={styles.badge}>{accountLabel}</span>
+                </div>
+              </section>
 
-            <section className={styles.footerPanel}>
-              <h2 className={styles.footerHeading}>{dictionary.browse}</h2>
-              <div className={styles.footerActions}>
-                <Link href={`/${locale}/search`} className={styles.sectionAction}>
-                  {dictionary.search}
-                </Link>
-                <Link href={`/${locale}/favorites`} className={styles.sectionAction}>
-                  {dictionary.favorites}
-                </Link>
-                <Link href={`/${locale}/settings`} className={styles.sectionAction}>
-                  {dictionary.settingsTitle}
-                </Link>
-                <Link href={accountHref} className={styles.sectionAction}>
-                  {accountLabel}
-                </Link>
-                <Link href={modeSwitchLink.href} className={styles.sectionAction}>
-                  {modeSwitchLink.label}
-                </Link>
-              </div>
-            </section>
+              <section className={styles.footerPanel}>
+                <h2 className={styles.footerHeading}>{dictionary.browse}</h2>
+                <div className={styles.footerActions}>
+                  <Link href={`/${locale}/search`} className={styles.sectionAction}>
+                    {dictionary.search}
+                  </Link>
+                  <Link href={`/${locale}/favorites`} className={styles.sectionAction}>
+                    {dictionary.favorites}
+                  </Link>
+                  <Link href={`/${locale}/settings`} className={styles.sectionAction}>
+                    {dictionary.settingsTitle}
+                  </Link>
+                  <Link href={accountHref} className={styles.sectionAction}>
+                    {accountLabel}
+                  </Link>
+                  <Link href={modeSwitchLink.href} className={styles.sectionAction}>
+                    {modeSwitchLink.label}
+                  </Link>
+                </div>
+              </section>
 
-            <section className={styles.footerPanel}>
-              <h2 className={styles.footerHeading}>{dictionary.favorites}</h2>
-              <div className={styles.footerStatGrid}>
-                <div className={styles.footerStatCard}>
-                  <span>{dictionary.watchlist}</span>
-                  <strong>{watchCount}</strong>
+              <section className={styles.footerPanel}>
+                <h2 className={styles.footerHeading}>{dictionary.favorites}</h2>
+                <div className={styles.footerStatGrid}>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.watchlist}</span>
+                    <strong>{watchCount}</strong>
+                  </div>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.pinnedCompetitions}</span>
+                    <strong>{pinnedCompetitions.length}</strong>
+                  </div>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.myTeams}</span>
+                    <strong>{savedTeams.length}</strong>
+                  </div>
+                  <div className={styles.footerStatCard}>
+                    <span>{dictionary.currentMarket}</span>
+                    <strong>{currentGeoLabel}</strong>
+                  </div>
                 </div>
-                <div className={styles.footerStatCard}>
-                  <span>{dictionary.pinnedCompetitions}</span>
-                  <strong>{pinnedCompetitions.length}</strong>
-                </div>
-                <div className={styles.footerStatCard}>
-                  <span>{dictionary.myTeams}</span>
-                  <strong>{savedTeams.length}</strong>
-                </div>
-                <div className={styles.footerStatCard}>
-                  <span>{dictionary.currentMarket}</span>
-                  <strong>{currentGeoLabel}</strong>
-                </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
       </footer>
