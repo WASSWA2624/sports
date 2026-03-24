@@ -7,6 +7,7 @@ import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
 import { NewsModule } from "../../../../components/coreui/news-module";
+import { OddsPredictionWidgets } from "../../../../components/coreui/odds-prediction-widgets";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
 import { StructuredData } from "../../../../components/coreui/structured-data";
@@ -282,6 +283,16 @@ export default async function LeagueDetailPage({ params, searchParams }) {
 
       {oddsSurface.message ? <div className={styles.infoBanner}>{oddsSurface.message}</div> : null}
 
+      {oddsSurface.bookmakers?.length ? (
+        <div className={styles.inlineBadgeRow}>
+          {oddsSurface.bookmakers.slice(0, 6).map((bookmaker) => (
+            <span key={bookmaker.key} className={styles.legalChip}>
+              {bookmaker.shortName || bookmaker.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       {oddsSurface.tabs.length ? (
         <CompetitionOddsTabs tabs={oddsSurface.tabs} locale={locale} />
       ) : (
@@ -296,6 +307,14 @@ export default async function LeagueDetailPage({ params, searchParams }) {
         ))}
       </div>
     </div>
+  );
+  const hasCompetitionInsights = Boolean(
+    oddsSurface.insights?.topPicks?.length ||
+      oddsSurface.insights?.valueBets?.length ||
+      oddsSurface.insights?.bestOdds?.length ||
+      oddsSurface.insights?.highOddsMatches?.length ||
+      oddsSurface.ctaConfig?.primaryAffiliate?.href ||
+      oddsSurface.ctaConfig?.funnelActions?.length
   );
 
   return (
@@ -559,6 +578,31 @@ export default async function LeagueDetailPage({ params, searchParams }) {
               <span className={styles.badge}>{oddsSurface.summary.fixtureCount}</span>
             </div>
           </div>
+
+          {hasCompetitionInsights ? (
+            <div className={styles.surfaceStack}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <p className={styles.eyebrow}>{dictionary.competitionInsights}</p>
+                  <h3 className={styles.cardTitle}>{dictionary.competitionInsights}</h3>
+                  <p className={styles.sectionLead}>{dictionary.competitionInsightsLead}</p>
+                </div>
+                {oddsSurface.bookmakers?.length ? (
+                  <span className={styles.badge}>{oddsSurface.bookmakers.length}</span>
+                ) : null}
+              </div>
+
+              <OddsPredictionWidgets
+                locale={locale}
+                dictionary={dictionary}
+                surface="league-detail"
+                entityType="league"
+                entityId={league.id}
+                insights={oddsSurface.insights}
+                ctaConfig={oddsSurface.ctaConfig}
+              />
+            </div>
+          ) : null}
 
           <ModuleEngagementTracker
             moduleType="competition_odds"

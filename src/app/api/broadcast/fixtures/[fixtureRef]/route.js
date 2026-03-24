@@ -29,5 +29,7 @@ export async function GET(request, { params }) {
       status: fixture.status,
     },
     broadcast: fixture.broadcast,
+    quickActions: fixture.broadcast.quickActions || null,
+    provider: fixture.broadcast.capability || null,
   });
 }

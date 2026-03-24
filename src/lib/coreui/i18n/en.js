@@ -186,6 +186,33 @@ const en = {
   oddsLegalAge: "18+ only",
   oddsLegalJurisdiction: "Check local laws and availability.",
   oddsLegalSupport: "Bet responsibly.",
+  betNow: "Bet now",
+  openAffiliateHub: "Open affiliate hub",
+  bestPrice: "Best price",
+  bestBet: "Best Bet",
+  highOddsMatches: "High-odds matches",
+  highOddsMatchesLead:
+    "Quick long-price fixtures stay visible so bigger-return angles do not get buried in the wider board.",
+  highOddsEmpty: "No high-odds matches are available for this surface yet.",
+  predictionConfidence: "Confidence",
+  predictionEdge: "Edge",
+  predictionReasoning: "Reasoning",
+  competitionInsights: "Competition insights",
+  competitionInsightsLead:
+    "Top picks, best odds, and lightweight handoff actions stay close to the competition odds tab.",
+  matchInsights: "Match insights",
+  matchInsightsLead:
+    "Best Bet, fast bookmaker handoffs, and watch options stay near the match header without crowding the core centre.",
+  availableBookmakers: "Available bookmakers",
+  watchOptions: "Watch options",
+  oddsProviderUnsupported:
+    "Odds are unavailable because {provider} does not support odds feeds in the current provider setup.",
+  broadcastProviderUnsupported:
+    "Broadcast listings are unavailable because {provider} does not support media coverage in the current provider setup.",
+  predictionsProviderUnsupported:
+    "Prediction modules are unavailable because {provider} does not support prediction feeds in the current provider setup.",
+  predictionRecommendationsEmpty:
+    "Prediction recommendations have not been published for this surface yet.",
   coverageStale: "Stale",
   coverageUnavailable: "Unavailable",
   coverageRestricted: "Restricted",

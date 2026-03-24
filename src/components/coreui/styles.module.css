@@ -4244,6 +4244,79 @@
   gap: 1rem;
 }
 
+.insightGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.insightCard,
+.insightHero,
+.insightItem {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+.insightCard,
+.insightHero {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  background: var(--surface);
+}
+
+.insightHero {
+  background:
+    linear-gradient(135deg, rgba(33, 109, 255, 0.08), transparent 65%),
+    var(--surface);
+}
+
+.insightList {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.insightItem {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  background: var(--surface-muted);
+}
+
+.insightMeta,
+.insightSplit,
+.insightActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.insightSplit {
+  justify-content: space-between;
+}
+
+.insightActions {
+  align-items: stretch;
+}
+
+.insightMetric {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.58rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.insightPrice {
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  line-height: 1;
+}
+
 .surfacePanel,
 .selectionCard,
 .channelCard,
@@ -4403,6 +4476,10 @@
 }
 
 @media (max-width: 720px) {
+  .insightGrid {
+    grid-template-columns: 1fr;
+  }
+
   .surfaceTabList {
     display: grid;
     grid-template-columns: 1fr;

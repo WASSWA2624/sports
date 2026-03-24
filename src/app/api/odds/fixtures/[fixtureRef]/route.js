@@ -33,5 +33,9 @@ export async function GET(request, { params }) {
       status: fixture.status,
     },
     odds: fixture.odds,
+    bookmakers: fixture.odds.bookmakers || [],
+    ctaConfig: fixture.odds.ctaConfig || null,
+    insights: fixture.odds.insights || null,
+    provider: fixture.odds.capability || null,
   });
 }

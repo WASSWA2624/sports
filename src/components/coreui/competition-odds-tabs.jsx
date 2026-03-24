@@ -3,6 +3,7 @@
 import { startTransition, useState } from "react";
 import { getDictionary } from "../../lib/coreui/dictionaries";
 import { formatKickoff } from "../../lib/coreui/format";
+import { TrackedActionLink } from "./tracked-action-link";
 import styles from "./styles.module.css";
 
 function stateTone(state) {
@@ -92,9 +93,65 @@ export function CompetitionOddsTabs({ tabs, locale }) {
                       </div>
                     ))}
                   </div>
+                  {market.featuredSelection ? (
+                    <div className={styles.insightSplit}>
+                      <span className={styles.insightMetric}>
+                        {dictionary.bestPrice}: {market.featuredSelection.label}
+                      </span>
+                      <strong className={styles.insightPrice}>{market.featuredSelection.priceLabel}</strong>
+                    </div>
+                  ) : null}
+                  {market.cta?.href ? (
+                    <TrackedActionLink
+                      href={market.cta.href}
+                      external={market.cta.external}
+                      className={styles.actionLink}
+                      analyticsEvent="odds_cta_click"
+                      analyticsSurface="competition-odds-tabs"
+                      analyticsEntityType="fixture"
+                      analyticsEntityId={row.fixtureId}
+                      analyticsAction={`competition-market:${market.bookmaker}`}
+                      analyticsMetadata={{
+                        fixtureId: row.fixtureId,
+                        marketType: market.marketType,
+                      }}
+                      affiliateClick={market.cta}
+                    >
+                      {dictionary.betNow}
+                    </TrackedActionLink>
+                  ) : null}
                 </div>
               ))}
             </div>
+            {row.comparison?.bestPriceLabel ? (
+              <div className={styles.insightMeta}>
+                <span className={styles.insightMetric}>
+                  {dictionary.bestPrice}: {row.comparison.bestPriceLabel}
+                </span>
+                {row.comparison.bestBookmaker ? (
+                  <span className={styles.badge}>{row.comparison.bestBookmaker}</span>
+                ) : null}
+                {row.primaryCta?.href ? (
+                  <TrackedActionLink
+                    href={row.primaryCta.href}
+                    external={row.primaryCta.external}
+                    className={styles.sectionAction}
+                    analyticsEvent="odds_cta_click"
+                    analyticsSurface="competition-odds-tabs"
+                    analyticsEntityType="fixture"
+                    analyticsEntityId={row.fixtureId}
+                    analyticsAction="competition-row-primary-affiliate"
+                    analyticsMetadata={{
+                      fixtureId: row.fixtureId,
+                      bestSelection: row.comparison.bestSelectionLabel || null,
+                    }}
+                    affiliateClick={row.primaryCta}
+                  >
+                    {dictionary.betNow}
+                  </TrackedActionLink>
+                ) : null}
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

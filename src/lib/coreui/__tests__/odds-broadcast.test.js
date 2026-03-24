@@ -66,6 +66,17 @@ describe("odds and broadcast read models", () => {
     expect(odds.groups[0]).toMatchObject({
       label: "1X2",
       sources: ["PulseBook"],
+      comparison: {
+        bestSelectionLabel: "Home",
+        bestPriceLabel: "1.84",
+      },
+    });
+    expect(odds.groups[0].markets[0]).toMatchObject({
+      bookmakerId: null,
+      featuredSelection: {
+        label: "Home",
+        priceLabel: "1.84",
+      },
     });
   });
 
@@ -128,6 +139,9 @@ describe("odds and broadcast read models", () => {
     expect(competitionOdds.state).toBe("available");
     expect(competitionOdds.tabs).toHaveLength(1);
     expect(competitionOdds.tabs[0].rows).toHaveLength(2);
+    expect(competitionOdds.tabs[0].rows[0].comparison).toMatchObject({
+      bestPriceLabel: expect.any(String),
+    });
   });
 
   it("returns broadcast listings for the viewer territory", () => {

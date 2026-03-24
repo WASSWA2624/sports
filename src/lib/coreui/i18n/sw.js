@@ -155,6 +155,33 @@ const sw = {
   oddsLegalAge: "18+ pekee",
   oddsLegalJurisdiction: "Angalia sheria za eneo lako na upatikanaji.",
   oddsLegalSupport: "Bet kwa uwajibikaji.",
+  betNow: "Bet sasa",
+  openAffiliateHub: "Fungua affiliate hub",
+  bestPrice: "Bei bora",
+  bestBet: "Best Bet",
+  highOddsMatches: "Mechi za odds kubwa",
+  highOddsMatchesLead:
+    "Mechi zenye bei kubwa hubaki wazi ili nafasi za kurudi zaidi zisipotee ndani ya board kubwa.",
+  highOddsEmpty: "Hakuna mechi za odds kubwa kwa sehemu hii bado.",
+  predictionConfidence: "Confidence",
+  predictionEdge: "Edge",
+  predictionReasoning: "Sababu",
+  competitionInsights: "Insights za mashindano",
+  competitionInsightsLead:
+    "Top picks, odds bora na hatua nyepesi za handoff hubaki karibu na tab ya odds za mashindano.",
+  matchInsights: "Insights za mechi",
+  matchInsightsLead:
+    "Best Bet, handoff za bookmaker za haraka na chaguo za kuangalia hubaki karibu na kichwa cha mechi bila kubana match centre.",
+  availableBookmakers: "Bookmaker waliopo",
+  watchOptions: "Chaguo za kuangalia",
+  oddsProviderUnsupported:
+    "Odds hazipatikani kwa sababu {provider} haitoi feed za odds katika mpangilio wa sasa wa provider.",
+  broadcastProviderUnsupported:
+    "Orodha za matangazo hazipatikani kwa sababu {provider} haitoi media coverage katika mpangilio wa sasa wa provider.",
+  predictionsProviderUnsupported:
+    "Moduli za prediction hazipatikani kwa sababu {provider} haitoi prediction feeds katika mpangilio wa sasa wa provider.",
+  predictionRecommendationsEmpty:
+    "Mapendekezo ya prediction bado hayajachapishwa kwa sehemu hii.",
   coverageStale: "Za zamani",
   coverageUnavailable: "Hazipatikani",
   coverageRestricted: "Zimewekewa mipaka",

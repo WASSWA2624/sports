@@ -5,12 +5,11 @@ import { getShellChromeContent } from "../control-plane";
 import { getPlatformPublicSnapshot, getPlatformPublicSnapshotData } from "../platform/env";
 import { markCacheFill, observeCachedOperation, observeOperation } from "../operations";
 import { buildStandingTable } from "./competition-standings";
-import { getPublicSurfaceFlags } from "./feature-flags";
 import {
-  buildCompetitionOddsModule,
-  buildFixtureBroadcastModule,
-  buildFixtureOddsModule,
-} from "./odds-broadcast";
+  buildCompetitionBettingExperience,
+  buildFixtureBettingExperience,
+} from "./odds-experience";
+import { getPublicSurfaceFlags } from "./feature-flags";
 import {
   buildCompetitionHref,
   buildCountryHref,
@@ -1119,6 +1118,14 @@ export async function getLeagueDetail(
         )
       );
       const archiveSeasons = league.seasons.map(toSeasonSummary);
+      const competitionOdds = await buildCompetitionBettingExperience(
+        { ...league, fixtures: league.oddsFixtures, oddsFixtures: league.oddsFixtures },
+        {
+          locale,
+          viewerTerritory,
+          flags,
+        }
+      );
 
       return {
         ...league,
@@ -1133,14 +1140,7 @@ export async function getLeagueDetail(
         recentResults: recentResults.slice(0, 12),
         fixtureSummary: summarizeFixtureStates(seasonFixtures),
         standingsTable,
-        competitionOdds: buildCompetitionOddsModule(
-          { ...league, fixtures: league.oddsFixtures },
-          {
-            locale,
-            viewerTerritory,
-            enabled: flags.competitionOdds,
-          }
-        ),
+        competitionOdds,
       };
     }
   );
@@ -1387,19 +1387,15 @@ export async function getFixtureDetail(
       }
 
       const flags = await getPublicSurfaceFlags();
+      const bettingExperience = await buildFixtureBettingExperience(fixture, {
+        locale,
+        viewerTerritory,
+        flags,
+      });
 
       return {
         ...fixture,
-        odds: buildFixtureOddsModule(fixture, {
-          locale,
-          viewerTerritory,
-          enabled: flags.fixtureOdds,
-        }),
-        broadcast: buildFixtureBroadcastModule(fixture, {
-          locale,
-          viewerTerritory,
-          enabled: flags.fixtureBroadcast,
-        }),
+        ...bettingExperience,
       };
     }
   );

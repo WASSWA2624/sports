@@ -4,8 +4,8 @@ import { db } from "../db";
 import { observeOperation } from "../operations";
 import { getPlatformPublicSnapshotData } from "../platform/env";
 import { buildGroupStandingsPreview, buildBestOddsCards, buildBoardGroupSummary, buildCompletedFixtureSummary, buildPredictionCards } from "./live-board";
+import { buildFixtureBettingExperience } from "./odds-experience";
 import { getPublicSurfaceFlags } from "./feature-flags";
-import { buildFixtureBroadcastModule, buildFixtureOddsModule } from "./odds-broadcast";
 import {
   buildFeedRefreshProfile,
   buildFixtureDetailModules,
@@ -668,20 +668,16 @@ export async function getLiveMatchDetail(reference, locale = "en", viewerTerrito
 
         const detail = buildFixtureDetailModules(fixture, locale);
         const flags = await getPublicSurfaceFlags();
+        const bettingExperience = await buildFixtureBettingExperience(fixture, {
+          locale,
+          viewerTerritory,
+          flags,
+        });
 
         return {
           ...fixture,
           detail,
-          odds: buildFixtureOddsModule(fixture, {
-            locale,
-            viewerTerritory,
-            enabled: flags.fixtureOdds,
-          }),
-          broadcast: buildFixtureBroadcastModule(fixture, {
-            locale,
-            viewerTerritory,
-            enabled: flags.fixtureBroadcast,
-          }),
+          ...bettingExperience,
         };
       }, null)
   );

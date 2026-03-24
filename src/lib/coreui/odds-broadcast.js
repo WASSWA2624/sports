@@ -251,6 +251,23 @@ function sortSelections(left, right) {
   return left.label.localeCompare(right.label);
 }
 
+function pickFeaturedSelection(selections = []) {
+  return selections.reduce((best, selection) => {
+    const selectionPrice = toNumber(selection?.priceDecimal);
+    const bestPrice = toNumber(best?.priceDecimal);
+
+    if (selectionPrice == null) {
+      return best;
+    }
+
+    if (bestPrice == null || selectionPrice > bestPrice) {
+      return selection;
+    }
+
+    return best;
+  }, null);
+}
+
 function normalizeOddsSelection(selection, locale) {
   const line = formatLine(selection.line);
 
@@ -270,13 +287,24 @@ function normalizeOddsMarket(market, locale) {
     .map((selection) => normalizeOddsSelection(selection, locale))
     .filter((selection) => selection.priceDecimal != null)
     .sort(sortSelections);
+  const featuredSelection = pickFeaturedSelection(selections);
 
   return {
     id: String(pickFirst(market.id, market.externalRef, `${market.bookmaker}-${market.marketType}`)),
+    bookmakerId: pickFirst(market.bookmakerId, market.bookmakerRecord?.id),
     bookmaker: market.bookmaker,
     marketType: market.marketType,
     suspended: Boolean(market.suspended),
     selections,
+    featuredSelection: featuredSelection
+      ? {
+          label: featuredSelection.label,
+          line: featuredSelection.line,
+          lineLabel: featuredSelection.lineLabel,
+          priceDecimal: featuredSelection.priceDecimal,
+          priceLabel: featuredSelection.priceLabel,
+        }
+      : null,
     lastUpdatedAt: toIsoString(pickFirst(market.lastSyncedAt, market.updatedAt)),
   };
 }
@@ -316,6 +344,39 @@ function getStateLabel(state, dictionary) {
   };
 
   return labels[state] || dictionary.coverageUnavailable;
+}
+
+function buildGroupComparison(markets = []) {
+  const featuredEntries = markets
+    .map((market) => ({
+      bookmaker: market.bookmaker,
+      selection: market.featuredSelection,
+      suspended: market.suspended,
+    }))
+    .filter((entry) => entry.selection);
+  const bestEntry = featuredEntries.reduce((best, entry) => {
+    const entryPrice = toNumber(entry.selection?.priceDecimal);
+    const bestPrice = toNumber(best?.selection?.priceDecimal);
+
+    if (entryPrice == null) {
+      return best;
+    }
+
+    if (bestPrice == null || entryPrice > bestPrice) {
+      return entry;
+    }
+
+    return best;
+  }, null);
+
+  return {
+    suspendedCount: markets.filter((market) => market.suspended).length,
+    sourceCount: [...new Set(markets.map((market) => market.bookmaker).filter(Boolean))].length,
+    bestBookmaker: bestEntry?.bookmaker || null,
+    bestSelectionLabel: bestEntry?.selection?.label || null,
+    bestPriceDecimal: toNumber(bestEntry?.selection?.priceDecimal),
+    bestPriceLabel: bestEntry?.selection?.priceLabel || null,
+  };
 }
 
 function getStateMessage(surface, state, dictionary, viewerTerritory, territories = []) {
@@ -497,6 +558,7 @@ export function buildFixtureOddsModule(
     .map((group) => ({
       ...group,
       rowCount: group.markets.length,
+      comparison: buildGroupComparison(group.markets),
     }))
     .sort(sortMarketGroups);
 
@@ -585,6 +647,7 @@ export function buildCompetitionOddsModule(
         stateLabel: fixtureModule.odds.stateLabel,
         sources: group.sources,
         markets: group.markets,
+        comparison: group.comparison,
       });
     }
 

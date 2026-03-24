@@ -154,6 +154,33 @@ const fr = {
   oddsLegalAge: "18+ only",
   oddsLegalJurisdiction: "Check local laws and availability.",
   oddsLegalSupport: "Bet responsibly.",
+  betNow: "Parier",
+  openAffiliateHub: "Ouvrir le hub affiliate",
+  bestPrice: "Meilleur prix",
+  bestBet: "Best Bet",
+  highOddsMatches: "Matchs a grosse cote",
+  highOddsMatchesLead:
+    "Les matchs a prix eleve restent visibles pour garder les angles a gros retour proches de l'utilisateur.",
+  highOddsEmpty: "Aucun match a grosse cote n'est disponible pour cette surface.",
+  predictionConfidence: "Confiance",
+  predictionEdge: "Edge",
+  predictionReasoning: "Raison",
+  competitionInsights: "Insights competition",
+  competitionInsightsLead:
+    "Top picks, meilleures cotes et handoff rapides restent proches de l'onglet odds competition.",
+  matchInsights: "Insights match",
+  matchInsightsLead:
+    "Best Bet, handoff bookmaker rapides et options de visionnage restent proches de l'en-tete du match sans charger le centre.",
+  availableBookmakers: "Bookmakers disponibles",
+  watchOptions: "Options de visionnage",
+  oddsProviderUnsupported:
+    "Les odds sont indisponibles car {provider} ne prend pas en charge les feeds odds dans la configuration actuelle.",
+  broadcastProviderUnsupported:
+    "Les listings de diffusion sont indisponibles car {provider} ne prend pas en charge la couverture media dans la configuration actuelle.",
+  predictionsProviderUnsupported:
+    "Les modules prediction sont indisponibles car {provider} ne prend pas en charge les feeds prediction dans la configuration actuelle.",
+  predictionRecommendationsEmpty:
+    "Aucune recommandation prediction n'a encore ete publiee pour cette surface.",
   coverageStale: "Stale",
   coverageUnavailable: "Unavailable",
   coverageRestricted: "Restricted",

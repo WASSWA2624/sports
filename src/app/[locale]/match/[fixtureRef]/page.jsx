@@ -6,9 +6,11 @@ import { FavoriteToggle } from "../../../../components/coreui/favorite-toggle";
 import { LiveRefresh } from "../../../../components/coreui/live-refresh";
 import { ModuleEngagementTracker } from "../../../../components/coreui/module-engagement-tracker";
 import { NewsModule } from "../../../../components/coreui/news-module";
+import { OddsPredictionWidgets } from "../../../../components/coreui/odds-prediction-widgets";
 import { RecentViewTracker } from "../../../../components/coreui/recent-view-tracker";
 import { RegulatedContentGate } from "../../../../components/coreui/regulated-content-gate";
 import { StructuredData } from "../../../../components/coreui/structured-data";
+import { TrackedActionLink } from "../../../../components/coreui/tracked-action-link";
 import { FixtureCard } from "../../../../components/coreui/fixture-card";
 import styles from "../../../../components/coreui/styles.module.css";
 import { formatDictionaryText, getDictionary } from "../../../../lib/coreui/dictionaries";
@@ -189,6 +191,17 @@ export default async function MatchDetailPage({ params, searchParams }) {
       location: fixture.venue,
     }),
   ];
+  const hasMatchInsights = Boolean(
+    odds.insights?.bestBet ||
+      odds.insights?.topPicks?.length ||
+      odds.insights?.valueBets?.length ||
+      odds.insights?.bestOdds?.length ||
+      odds.insights?.highOddsMatches?.length ||
+      odds.ctaConfig?.primaryAffiliate?.href ||
+      odds.ctaConfig?.funnelActions?.length ||
+      broadcast.quickActions?.primary ||
+      broadcast.quickActions?.message
+  );
 
   const oddsContent = (
     <div className={styles.surfaceStack}>
@@ -208,6 +221,16 @@ export default async function MatchDetailPage({ params, searchParams }) {
 
       {odds.message ? <div className={styles.infoBanner}>{odds.message}</div> : null}
 
+      {odds.bookmakers?.length ? (
+        <div className={styles.inlineBadgeRow}>
+          {odds.bookmakers.slice(0, 6).map((bookmaker) => (
+            <span key={bookmaker.key} className={styles.legalChip}>
+              {bookmaker.shortName || bookmaker.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       {odds.groups.length ? (
         <div className={styles.surfaceRows}>
           {odds.groups.map((group) => (
@@ -222,11 +245,11 @@ export default async function MatchDetailPage({ params, searchParams }) {
 
               <div className={styles.surfaceRowsCompact}>
                 {group.markets.map((market) => (
-                  <div key={market.id} className={styles.surfacePanel}>
-                    <div className={styles.cardHeader}>
-                      <strong>{market.bookmaker}</strong>
-                      <span className={styles.badge}>
-                        {market.suspended ? dictionary.marketSuspended : dictionary.marketOpen}
+                    <div key={market.id} className={styles.surfacePanel}>
+                      <div className={styles.cardHeader}>
+                        <strong>{market.bookmaker}</strong>
+                        <span className={styles.badge}>
+                          {market.suspended ? dictionary.marketSuspended : dictionary.marketOpen}
                       </span>
                     </div>
                     <div className={styles.selectionGrid}>
@@ -240,9 +263,66 @@ export default async function MatchDetailPage({ params, searchParams }) {
                         </div>
                       ))}
                     </div>
+                    {market.featuredSelection ? (
+                      <div className={styles.insightSplit}>
+                        <span className={styles.insightMetric}>
+                          {dictionary.bestPrice}: {market.featuredSelection.label}
+                        </span>
+                        <strong className={styles.insightPrice}>{market.featuredSelection.priceLabel}</strong>
+                      </div>
+                    ) : null}
+                    {market.cta?.href ? (
+                      <TrackedActionLink
+                        href={market.cta.href}
+                        external={market.cta.external}
+                        className={styles.actionLink}
+                        analyticsEvent="odds_cta_click"
+                        analyticsSurface="match-detail"
+                        analyticsEntityType="fixture"
+                        analyticsEntityId={fixture.id}
+                        analyticsAction={`fixture-market:${market.bookmaker}`}
+                        analyticsMetadata={{
+                          fixtureId: fixture.id,
+                          marketType: market.marketType,
+                        }}
+                        affiliateClick={market.cta}
+                      >
+                        {dictionary.betNow}
+                      </TrackedActionLink>
+                    ) : null}
                   </div>
                 ))}
               </div>
+
+              {group.comparison?.bestPriceLabel ? (
+                <div className={styles.insightMeta}>
+                  <span className={styles.insightMetric}>
+                    {dictionary.bestPrice}: {group.comparison.bestPriceLabel}
+                  </span>
+                  {group.comparison.bestSelectionLabel ? (
+                    <span className={styles.badge}>{group.comparison.bestSelectionLabel}</span>
+                  ) : null}
+                  {group.primaryCta?.href ? (
+                    <TrackedActionLink
+                      href={group.primaryCta.href}
+                      external={group.primaryCta.external}
+                      className={styles.sectionAction}
+                      analyticsEvent="odds_cta_click"
+                      analyticsSurface="match-detail"
+                      analyticsEntityType="fixture"
+                      analyticsEntityId={fixture.id}
+                      analyticsAction={`fixture-group:${group.label}`}
+                      analyticsMetadata={{
+                        fixtureId: fixture.id,
+                        groupId: group.id,
+                      }}
+                      affiliateClick={group.primaryCta}
+                    >
+                      {dictionary.betNow}
+                    </TrackedActionLink>
+                  ) : null}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
@@ -407,7 +487,32 @@ export default async function MatchDetailPage({ params, searchParams }) {
         </article>
       </div>
 
-      <section className={styles.section}>
+      {hasMatchInsights ? (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>{dictionary.matchInsights}</p>
+              <h2 className={styles.sectionTitle}>{dictionary.matchInsights}</h2>
+              <p className={styles.sectionLead}>{dictionary.matchInsightsLead}</p>
+            </div>
+            {odds.bookmakers?.length ? <span className={styles.badge}>{odds.bookmakers.length}</span> : null}
+          </div>
+
+          <OddsPredictionWidgets
+            locale={locale}
+            dictionary={dictionary}
+            surface="match-detail"
+            entityType="fixture"
+            entityId={fixture.id}
+            insights={odds.insights}
+            ctaConfig={odds.ctaConfig}
+            broadcastQuickActions={broadcast.quickActions}
+            showBestBet
+          />
+        </section>
+      ) : null}
+
+      <section id="match-odds" className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>{dictionary.match}</p>
@@ -442,7 +547,7 @@ export default async function MatchDetailPage({ params, searchParams }) {
         />
       ) : null}
 
-      <section className={styles.section}>
+      <section id="match-broadcast" className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>{dictionary.highlights}</p>
@@ -743,15 +848,22 @@ export default async function MatchDetailPage({ params, searchParams }) {
                     ) : null}
 
                     {channel.url ? (
-                      <a
+                      <TrackedActionLink
                         href={channel.url}
-                        target="_blank"
-                        rel="noreferrer"
+                        external
                         className={styles.channelLink}
-                        data-analytics-action={`channel:${channel.name}`}
+                        analyticsEvent="broadcast_channel_click"
+                        analyticsSurface="match-detail"
+                        analyticsEntityType="fixture"
+                        analyticsEntityId={fixture.id}
+                        analyticsAction={`channel:${channel.name}`}
+                        analyticsMetadata={{
+                          channelType: channel.channelType,
+                          territory: channel.territory,
+                        }}
                       >
                         {dictionary.openChannel}
-                      </a>
+                      </TrackedActionLink>
                     ) : (
                       <span className={styles.badge}>{dictionary.channelListingOnly}</span>
                     )}

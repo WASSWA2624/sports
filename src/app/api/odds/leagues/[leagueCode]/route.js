@@ -26,5 +26,9 @@ export async function GET(request, { params }) {
       country: league.country,
     },
     competitionOdds: league.competitionOdds,
+    bookmakers: league.competitionOdds.bookmakers || [],
+    ctaConfig: league.competitionOdds.ctaConfig || null,
+    insights: league.competitionOdds.insights || null,
+    provider: league.competitionOdds.capability || null,
   });
 }
