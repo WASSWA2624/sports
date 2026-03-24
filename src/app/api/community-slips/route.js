@@ -14,6 +14,7 @@ const pickSchema = z.object({
   fixtureId: z.string().min(1).max(191).optional().nullable(),
   oddsSelectionId: z.string().min(1).max(191),
   oddsMarketId: z.string().min(1).max(191).optional().nullable(),
+  reason: z.string().max(500).optional().nullable(),
 });
 
 const createSlipSchema = z.object({
@@ -28,6 +29,7 @@ export async function GET(request) {
   const locale = request.nextUrl.searchParams.get("locale") || "en";
   const viewerTerritory = request.nextUrl.searchParams.get("territory") || "US";
   const fixtureId = request.nextUrl.searchParams.get("fixtureId") || null;
+  const authorId = request.nextUrl.searchParams.get("authorId") || null;
   const withComposer =
     request.nextUrl.searchParams.get("withComposer") === "1" ||
     request.nextUrl.searchParams.get("withComposer") === "true";
@@ -38,6 +40,7 @@ export async function GET(request) {
     viewerTerritory,
     currentUserId: userContext?.user?.id || null,
     fixtureId,
+    selectedAuthorId: authorId,
     includeComposerCatalog: withComposer,
   });
 

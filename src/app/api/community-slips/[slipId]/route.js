@@ -14,6 +14,7 @@ const pickSchema = z.object({
   fixtureId: z.string().min(1).max(191).optional().nullable(),
   oddsSelectionId: z.string().min(1).max(191),
   oddsMarketId: z.string().min(1).max(191).optional().nullable(),
+  reason: z.string().max(500).optional().nullable(),
 });
 
 const updateSlipSchema = z.object({

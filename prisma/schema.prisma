@@ -1268,6 +1268,7 @@ model CommunitySlipSelection {
   oddsMarketId   String?
   marketType     String?
   selectionLabel String
+  reason         String?        @db.Text
   line           Decimal?       @db.Decimal(10, 2)
   priceDecimal   Decimal        @db.Decimal(10, 4)
   bookmaker      String?

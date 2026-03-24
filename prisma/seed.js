@@ -1638,11 +1638,11 @@ async function seed() {
     await connection.query(
       `
       INSERT INTO CommunitySlipSelection (
-        id, communitySlipId, fixtureId, oddsSelectionId, oddsMarketId, marketType, selectionLabel, line,
+        id, communitySlipId, fixtureId, oddsSelectionId, oddsMarketId, marketType, selectionLabel, reason, line,
         priceDecimal, bookmaker, fixtureLabel, sortOrder, metadata, createdAt, updatedAt
       )
       SELECT
-        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, ?, os.line,
         os.priceDecimal, om.bookmaker, 'Arsenal vs Chelsea', 0,
         JSON_OBJECT('fixtureRef', 'seed-live-ars-che', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MINUTE), '%Y-%m-%dT%H:%i:%sZ')),
         NOW(), NOW()
@@ -1651,7 +1651,7 @@ async function seed() {
       WHERE os.id = ?
       UNION ALL
       SELECT
-        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, ?, os.line,
         os.priceDecimal, om.bookmaker, 'Arsenal vs Chelsea', 1,
         JSON_OBJECT('fixtureRef', 'seed-live-ars-che', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MINUTE), '%Y-%m-%dT%H:%i:%sZ')),
         NOW(), NOW()
@@ -1660,7 +1660,7 @@ async function seed() {
       WHERE os.id = ?
       UNION ALL
       SELECT
-        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, ?, os.line,
         os.priceDecimal, om.bookmaker, 'Manchester City vs Liverpool', 0,
         JSON_OBJECT('fixtureRef', 'seed-upcoming-mci-liv', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 4 HOUR), '%Y-%m-%dT%H:%i:%sZ')),
         NOW(), NOW()
@@ -1669,7 +1669,7 @@ async function seed() {
       WHERE os.id = ?
       UNION ALL
       SELECT
-        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, ?, os.line,
         os.priceDecimal, om.bookmaker, 'Manchester City vs Liverpool', 0,
         JSON_OBJECT('fixtureRef', 'seed-upcoming-mci-liv', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 4 HOUR), '%Y-%m-%dT%H:%i:%sZ')),
         NOW(), NOW()
@@ -1678,7 +1678,7 @@ async function seed() {
       WHERE os.id = ?
       UNION ALL
       SELECT
-        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, os.line,
+        UUID(), ?, om.fixtureId, os.id, om.id, om.marketType, os.label, ?, os.line,
         os.priceDecimal, om.bookmaker, 'Arsenal vs Chelsea', 0,
         JSON_OBJECT('fixtureRef', 'seed-live-ars-che', 'competitionName', 'Premier League', 'startsAt', DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MINUTE), '%Y-%m-%dT%H:%i:%sZ')),
         NOW(), NOW()
@@ -1687,11 +1687,21 @@ async function seed() {
       WHERE os.id = ?
       `,
       [
-        emmaFeaturedSlipId, liveHomeSelectionId,
-        emmaFeaturedSlipId, liveUnderSelectionId,
-        samDrawSlipId, upcomingDrawSelectionId,
-        ninaPriceSlipId, upcomingAwaySelectionId,
-        emmaDraftSlipId, liveOverSelectionId,
+        emmaFeaturedSlipId,
+        "Arsenal are controlling territory and Chelsea are giving away too many set-piece entries.",
+        liveHomeSelectionId,
+        emmaFeaturedSlipId,
+        "The live pace is slower than the pre-match line suggested, so the under still has room.",
+        liveUnderSelectionId,
+        samDrawSlipId,
+        "Both midfields can pin the other side back, which keeps the draw price live deep into the match.",
+        upcomingDrawSelectionId,
+        ninaPriceSlipId,
+        "Liverpool's transition threat makes the away number look bigger than it should be.",
+        upcomingAwaySelectionId,
+        emmaDraftSlipId,
+        "Saving this for later in case the tempo climbs after halftime.",
+        liveOverSelectionId,
       ]
     );
 

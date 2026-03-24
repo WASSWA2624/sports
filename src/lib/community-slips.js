@@ -3,6 +3,7 @@ import { db } from "./db";
 import { buildFixtureOddsModule } from "./coreui/odds-broadcast";
 
 const MAX_COMMUNITY_SLIP_PICKS = 8;
+const MAX_SELECTION_REASON_LENGTH = 500;
 
 function toNumber(value) {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -49,6 +50,15 @@ function normalizeSummary(value) {
   return normalized ? normalized.slice(0, 1200) : null;
 }
 
+function normalizeSelectionReason(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized.slice(0, MAX_SELECTION_REASON_LENGTH) : null;
+}
+
 function formatDecimal(value, locale = "en", digits = 2) {
   const parsed = toNumber(value);
   if (parsed == null) {
@@ -84,6 +94,7 @@ function dedupePicks(picks = []) {
       fixtureId: normalizeString(pick?.fixtureId, { maxLength: 191 }),
       oddsSelectionId: selectionId,
       oddsMarketId: normalizeString(pick?.oddsMarketId, { maxLength: 191 }),
+      reason: normalizeSelectionReason(pick?.reason),
     });
   }
 
@@ -124,7 +135,7 @@ function computeSlipTotals(selections = [], stakeAmount = null) {
   };
 }
 
-function buildSelectionSnapshot(record, sortOrder = 0) {
+function buildSelectionSnapshot(record, pick = {}, sortOrder = 0) {
   const fixture = record?.oddsMarket?.fixture;
 
   return {
@@ -133,6 +144,7 @@ function buildSelectionSnapshot(record, sortOrder = 0) {
     oddsMarketId: record.oddsMarket?.id || null,
     marketType: record.oddsMarket?.marketType || null,
     selectionLabel: record.label,
+    reason: normalizeSelectionReason(pick?.reason),
     line: toNumber(record.line),
     priceDecimal: toNumber(record.priceDecimal),
     bookmaker: record.oddsMarket?.bookmaker || null,
@@ -162,6 +174,7 @@ function serializeSlipSelection(selection, locale = "en") {
       selection.metadata?.competitionName || selection.fixture?.league?.name || null,
     marketType: selection.marketType || selection.oddsMarket?.marketType || null,
     selectionLabel: selection.selectionLabel,
+    reason: selection.reason || null,
     bookmaker: selection.bookmaker || selection.oddsMarket?.bookmaker || null,
     priceDecimal: toNumber(selection.priceDecimal),
     priceLabel: formatDecimal(selection.priceDecimal, locale, 2),
@@ -219,6 +232,7 @@ function serializeCommunitySlip(slip, { locale = "en", currentUserId = null } = 
     fixtureRefs: [...new Set(selections.map((selection) => selection.fixtureRef).filter(Boolean))],
     fixtureIds: [...new Set(selections.map((selection) => selection.fixtureId).filter(Boolean))],
     primaryFixtureRef: selections[0]?.fixtureRef || null,
+    primaryAuthorId: slip.userId || slip.user?.id || null,
     isOwner: Boolean(currentUserId && slip.userId === currentUserId),
     hasLiked: Boolean((slip.likes || []).some((entry) => entry.userId === currentUserId)),
   };
@@ -330,13 +344,23 @@ async function readCatalogFixtures({
     .filter(Boolean);
 }
 
-async function readPublicCommunitySlips({ currentUserId = null, fixtureId = null, take = 8 } = {}) {
+async function readPublicCommunitySlips({
+  currentUserId = null,
+  fixtureId = null,
+  authorId = null,
+  take = 8,
+} = {}) {
   return safeDataRead(
     () =>
       db.communitySlip.findMany({
         where: {
           status: "PUBLISHED",
           visibility: "PUBLIC",
+          ...(authorId
+            ? {
+                userId: authorId,
+              }
+            : {}),
           ...(fixtureId
             ? {
                 selections: {
@@ -520,11 +544,12 @@ export async function getCommunitySlipHubData({
   viewerTerritory = "US",
   currentUserId = null,
   fixtureId = null,
+  selectedAuthorId = null,
   includeComposerCatalog = false,
   publicLimit = 6,
   catalogFixtureLimit = 6,
 } = {}) {
-  const [publicSlips, mySlips, stats, catalog] = await Promise.all([
+  const [publicSlips, mySlips, stats, catalog, authorHistoryRaw] = await Promise.all([
     readPublicCommunitySlips({
       currentUserId,
       fixtureId,
@@ -538,6 +563,13 @@ export async function getCommunitySlipHubData({
           viewerTerritory,
           fixtureId,
           limit: catalogFixtureLimit,
+        })
+      : Promise.resolve([]),
+    selectedAuthorId
+      ? readPublicCommunitySlips({
+          currentUserId,
+          authorId: selectedAuthorId,
+          take: 12,
         })
       : Promise.resolve([]),
   ]);
@@ -558,6 +590,16 @@ export async function getCommunitySlipHubData({
       currentUserId,
     })
   );
+  const authorHistory = authorHistoryRaw.map((slip) =>
+    serializeCommunitySlip(slip, {
+      locale,
+      currentUserId,
+    })
+  );
+  const selectedAuthor =
+    authorHistory[0]?.author ||
+    serializedPublic.find((entry) => entry.author.id === selectedAuthorId)?.author ||
+    null;
 
   return {
     summary: stats,
@@ -565,6 +607,8 @@ export async function getCommunitySlipHubData({
     latest,
     mine,
     catalog,
+    selectedAuthor,
+    authorHistory,
   };
 }
 
@@ -684,7 +728,7 @@ export async function saveCommunitySlip({
       throw new Error("A selected pick no longer matches its fixture.");
     }
 
-    return buildSelectionSnapshot(record, index);
+    return buildSelectionSnapshot(record, pick, index);
   });
 
   const metrics = computeSlipTotals(selections, stakeAmount);
@@ -745,6 +789,7 @@ export async function saveCommunitySlip({
           oddsMarketId: selection.oddsMarketId,
           marketType: selection.marketType,
           selectionLabel: selection.selectionLabel,
+          reason: selection.reason,
           line: selection.line,
           priceDecimal: selection.priceDecimal,
           bookmaker: selection.bookmaker,
@@ -783,6 +828,7 @@ export async function saveCommunitySlip({
         oddsMarketId: selection.oddsMarketId,
         marketType: selection.marketType,
         selectionLabel: selection.selectionLabel,
+        reason: selection.reason,
         line: selection.line,
         priceDecimal: selection.priceDecimal,
         bookmaker: selection.bookmaker,

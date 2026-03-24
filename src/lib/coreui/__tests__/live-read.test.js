@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildBoardGroups,
   buildFixtureRefereeSummary,
@@ -7,6 +7,10 @@ import {
 } from "../live-read";
 
 describe("live read helpers", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("summarizes head-to-head results in the current matchup orientation", () => {
     const summary = buildHeadToHeadSummary(
       [
@@ -95,6 +99,9 @@ describe("live read helpers", () => {
   });
 
   it("serializes grouped live-board fixtures before they reach client components", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-24T18:10:00.000Z"));
+
     const groups = buildBoardGroups(
       [
         {
