@@ -1,84 +1,163 @@
 .shell {
+  position: relative;
   min-height: 100vh;
-  padding: 0.35rem;
+  padding: 0.5rem;
+  overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(45, 211, 111, 0.12), transparent 14rem),
-    radial-gradient(circle at top right, rgba(24, 78, 56, 0.3), transparent 13rem),
-    linear-gradient(180deg, #08120d 0%, #0c1711 42%, #09120d 100%);
+    radial-gradient(circle at top left, rgba(45, 211, 111, 0.16), transparent 18rem),
+    radial-gradient(circle at 88% 6%, rgba(39, 113, 78, 0.22), transparent 16rem),
+    linear-gradient(180deg, #04100c 0%, #06140f 38%, #04100c 100%);
   color: #f4f7f4;
+}
+
+.shell::before,
+.shell::after {
+  content: "";
+  position: absolute;
+  inset: auto;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.shell::before {
+  top: -8rem;
+  right: -8rem;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(45, 211, 111, 0.16), transparent 68%);
+  filter: blur(8px);
+}
+
+.shell::after {
+  left: -10rem;
+  bottom: 10rem;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(18, 63, 45, 0.3), transparent 70%);
+  filter: blur(18px);
 }
 
 .header,
 .content {
+  position: relative;
+  z-index: 1;
   width: min(100%, 1480px);
   margin: 0 auto;
 }
 
 .header {
-  margin-bottom: 0.45rem;
+  position: sticky;
+  top: 0.45rem;
+  z-index: 10;
+  margin-bottom: 0.7rem;
 }
 
 .headerInner {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(187, 214, 196, 0.12);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(10, 21, 16, 0.96), rgba(7, 16, 12, 0.88)),
+    radial-gradient(circle at top left, rgba(45, 211, 111, 0.08), transparent 55%);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.headerTop {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.45rem 0.7rem;
-  padding: 0.48rem 0.6rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
-  border-radius: 0.9rem;
-  background: rgba(8, 17, 13, 0.8);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.2);
+  gap: 0.75rem;
 }
 
 .brandLink {
   display: inline-flex;
   align-items: center;
-  gap: 0.48rem;
+  gap: 0.7rem;
   min-width: 0;
 }
 
 .brandMark {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 0.55rem;
-  background: linear-gradient(135deg, #2dd36f, #165c38);
-  color: #08120d;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.9rem;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.26), transparent 42%),
+    linear-gradient(145deg, #31de77, #158047);
+  color: #06120c;
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 22px rgba(45, 211, 111, 0.16);
 }
 
 .brandBlock {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 0.12rem;
 }
 
 .brandTitle {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: 0.92rem;
+  font-size: 1.05rem;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .brandTag,
 .leagueRailEyebrow,
 .leagueChip span {
-  color: rgba(231, 240, 234, 0.7);
-  font-size: 0.74rem;
+  color: rgba(231, 240, 234, 0.62);
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
+}
+
+.headerUtility {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.headerUtilityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.42rem 0.72rem;
+  border: 1px solid rgba(187, 214, 196, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(244, 247, 244, 0.86);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.headerUtilityDot {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: #2dd36f;
+  box-shadow: 0 0 0 0.24rem rgba(45, 211, 111, 0.14);
 }
 
 .nav,
 .leagueStrip {
   display: flex;
-  gap: 0.24rem;
+  gap: 0.3rem;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -89,9 +168,10 @@
 }
 
 .nav {
-  flex: 1 1 auto;
-  justify-content: flex-start;
-  padding-bottom: 0.05rem;
+  padding: 0.22rem;
+  border: 1px solid rgba(187, 214, 196, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .navLink,
@@ -104,18 +184,18 @@
   justify-content: center;
   flex: 0 0 auto;
   border-radius: 999px;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .navLink,
 .navLinkActive {
-  min-height: 1.88rem;
-  padding: 0.4rem 0.68rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
+  min-height: 2.35rem;
+  padding: 0.55rem 0.92rem;
+  border: 1px solid rgba(187, 214, 196, 0.1);
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(234, 240, 236, 0.76);
-  font-size: 0.76rem;
-  font-weight: 600;
+  color: rgba(234, 240, 236, 0.72);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .navLink:hover,
@@ -123,13 +203,16 @@
   background: rgba(45, 211, 111, 0.08);
   border-color: rgba(45, 211, 111, 0.18);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .navLinkActive {
-  background: #2dd36f;
-  border-color: transparent;
+  border-color: rgba(45, 211, 111, 0.18);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 58%),
+    linear-gradient(145deg, #31de77, #20b661);
   color: #06110c;
-  box-shadow: 0 8px 18px rgba(45, 211, 111, 0.22);
+  box-shadow: 0 12px 22px rgba(45, 211, 111, 0.2);
 }
 
 .leagueRailHead {
@@ -196,11 +279,15 @@
 
 @media (min-width: 780px) {
   .shell {
-    padding: 0.55rem;
+    padding: 0.75rem;
   }
 
-  .nav {
-    justify-content: flex-end;
+  .headerInner {
+    padding: 0.85rem;
+  }
+
+  .headerTop {
+    align-items: flex-start;
   }
 
   .leagueRailHead {

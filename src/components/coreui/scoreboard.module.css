@@ -1,7 +1,7 @@
 .page {
   display: grid;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
 }
 
 .boardHeader,
@@ -9,63 +9,141 @@
 .groupCard,
 .emptyState {
   border: 1px solid rgba(193, 218, 201, 0.1);
-  border-radius: 0.95rem;
-  background: rgba(8, 17, 13, 0.84);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.14);
+  border-radius: 1.3rem;
+  background:
+    linear-gradient(180deg, rgba(10, 20, 15, 0.96), rgba(6, 14, 10, 0.92)),
+    radial-gradient(circle at top left, rgba(45, 211, 111, 0.08), transparent 48%);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .boardHeader {
   display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 0.8rem;
+  padding: 1rem 1.05rem;
 }
 
 .boardIntro {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.42rem;
 }
 
 .eyebrow,
-.groupCountry,
 .searchLabel,
 .summaryCard span {
-  color: rgba(228, 240, 231, 0.66);
-  font-size: 0.74rem;
+  color: rgba(228, 240, 231, 0.62);
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
 
 .title {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(1.85rem, 9vw, 2.7rem);
+  font-size: clamp(1.45rem, 6vw, 2.35rem);
   line-height: 0.94;
+  letter-spacing: -0.04em;
 }
 
 .lead {
-  max-width: 42rem;
-  color: rgba(233, 242, 235, 0.76);
-  font-size: 0.95rem;
-  line-height: 1.5;
+  max-width: 46rem;
+  color: rgba(233, 242, 235, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.liveBadge,
+.liveBadgeMuted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.95rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.liveBadge {
+  background: rgba(45, 211, 111, 0.14);
+  color: #bdf7d1;
+  box-shadow: 0 10px 20px rgba(45, 211, 111, 0.12);
+}
+
+.liveBadgeMuted {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(236, 243, 238, 0.76);
 }
 
 .headerMeta,
-.dateRail,
-.filterRail,
-.presetRail,
-.groupSummary {
+.summaryGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.5rem;
 }
 
-.toolbarTop {
+.summaryGrid {
   display: grid;
-  gap: 0.3rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summaryCard {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+  padding: 0.78rem 0.82rem;
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    rgba(7, 15, 11, 0.6);
+}
+
+.summaryCard strong {
+  color: #f5f8f5;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.summaryCard small {
+  color: rgba(228, 240, 231, 0.68);
+  font-size: 0.76rem;
+  line-height: 1.35;
 }
 
 .dateRail,
 .filterRail,
 .presetRail {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+}
+
+.toolbarTop {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dateRail,
+.filterRail,
+.presetRail {
+  align-items: center;
+  padding: 0.26rem;
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -81,30 +159,28 @@
 .commandButton,
 .filterChip,
 .filterChipActive,
-.groupSummary span,
-.refineToggle {
+.refinePreviewChip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  gap: 0.28rem;
-  min-height: 1.82rem;
-  padding: 0.35rem 0.62rem;
+  gap: 0.3rem;
+  min-height: 2.1rem;
+  padding: 0.44rem 0.78rem;
   border: 1px solid rgba(193, 218, 201, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 0.74rem;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.78rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metaChip,
 .datePill {
-  color: rgba(245, 248, 245, 0.88);
+  color: rgba(245, 248, 245, 0.9);
 }
 
 .commandButton,
-.filterChip,
-.groupSummary span {
+.filterChip {
   color: rgba(235, 242, 237, 0.82);
 }
 
@@ -115,10 +191,15 @@
   transform: translateY(-1px);
   border-color: rgba(45, 211, 111, 0.24);
   background: rgba(45, 211, 111, 0.08);
+  box-shadow: 0 8px 18px rgba(45, 211, 111, 0.08);
 }
 
 .datePill {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.02);
   font-weight: 700;
+  flex: 1 1 12rem;
   max-width: min(100%, 26rem);
   white-space: normal;
   text-align: center;
@@ -126,51 +207,173 @@
 
 .filterChip strong,
 .filterChipActive strong,
-.refineToggle strong {
+.refineHeading strong {
   font-size: 0.68rem;
 }
 
 .filterChipActive {
   color: #ffffff;
   border-color: rgba(45, 211, 111, 0.34);
-  background: linear-gradient(135deg, rgba(45, 211, 111, 0.2), rgba(45, 211, 111, 0.06));
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.16), transparent 58%),
+    linear-gradient(135deg, rgba(45, 211, 111, 0.24), rgba(45, 211, 111, 0.08));
+  box-shadow: 0 10px 22px rgba(45, 211, 111, 0.12);
 }
 
 .toolbar {
+  position: relative;
   display: grid;
-  gap: 0.4rem;
-  padding: 0.5rem;
+  gap: 0.55rem;
+  padding: 0.7rem;
 }
 
-.refineGrid {
+.toolbarBar {
   display: grid;
-  gap: 0.45rem;
-  margin-top: 0.45rem;
-}
-
-.refinePanel {
+  gap: 0.5rem;
   min-width: 0;
 }
 
-.refinePanel[open] {
-  padding-top: 0.02rem;
+.toolbarActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
 }
 
-.refineToggle {
-  width: 100%;
+.toolbarMenu,
+.refinePanel {
+  position: relative;
+  min-width: 0;
+}
+
+.compactToggle {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  color: rgba(235, 242, 237, 0.82);
+  gap: 0.55rem;
+  min-height: 2.4rem;
+  width: 100%;
+  padding: 0.5rem 0.78rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(235, 242, 237, 0.84);
   cursor: pointer;
   list-style: none;
 }
 
-.refineToggle::-webkit-details-marker {
+.compactToggle::-webkit-details-marker {
   display: none;
+}
+
+.compactToggleLabel {
+  color: rgba(228, 240, 231, 0.62);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.compactToggle strong {
+  font-size: 0.8rem;
+}
+
+.menuPanel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  z-index: 30;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 0.72rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(10, 20, 15, 0.98), rgba(6, 14, 10, 0.96)),
+    rgba(6, 14, 10, 0.96);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.statusMenuPanel {
+  width: min(14rem, calc(100vw - 2rem));
+}
+
+.refineMenu {
+  display: grid;
+  gap: 0.7rem;
+  max-height: min(78vh, 34rem);
+  overflow: auto;
+}
+
+.menuList {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.menuLink,
+.menuLinkActive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-height: 2.35rem;
+  padding: 0.52rem 0.7rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(235, 242, 237, 0.84);
+}
+
+.menuLinkActive {
+  border-color: rgba(45, 211, 111, 0.24);
+  background: rgba(45, 211, 111, 0.1);
+  color: #ffffff;
+}
+
+.refineSummaryInline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.refinePreviewChip {
+  min-height: 1.65rem;
+  max-width: 100%;
+  justify-content: flex-start;
+  color: rgba(245, 248, 245, 0.82);
+  padding-inline: 0.55rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refineHint {
+  color: rgba(228, 240, 231, 0.62);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.refineBody {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0;
+}
+
+.refineSection {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.refineGrid {
+  display: grid;
+  gap: 0.7rem;
 }
 
 .searchField {
   display: grid;
-  gap: 0.16rem;
+  gap: 0.28rem;
+}
+
+.searchFieldWide {
+  grid-column: 1 / -1;
 }
 
 .fieldHint {
@@ -180,87 +383,106 @@
 }
 
 .searchInput {
-  min-height: 2.15rem;
-  padding: 0.46rem 0.68rem;
+  min-height: 2.85rem;
+  padding: 0.6rem 0.8rem;
   border: 1px solid rgba(193, 218, 201, 0.1);
-  border-radius: 0.72rem;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.045);
   color: #f4f7f4;
+  font: inherit;
+}
+
+.searchInput:focus-visible {
+  outline: none;
+  border-color: rgba(45, 211, 111, 0.4);
+  box-shadow: 0 0 0 3px rgba(45, 211, 111, 0.12);
 }
 
 .searchInput::placeholder {
   color: rgba(244, 247, 244, 0.46);
 }
 
+.rangePanel {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rangePanelHeader {
+  display: grid;
+  gap: 0.18rem;
+}
+
 .rangeFields {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.6rem;
 }
 
 .searchSubmit {
-  min-height: 2.15rem;
-  padding: 0.48rem 0.75rem;
+  min-height: 2.85rem;
+  padding: 0.62rem 0.95rem;
   border: 1px solid rgba(45, 211, 111, 0.28);
-  border-radius: 0.72rem;
-  background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.08));
+  border-radius: 0.85rem;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.16), transparent 65%),
+    linear-gradient(135deg, rgba(45, 211, 111, 0.24), rgba(45, 211, 111, 0.08));
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
   width: 100%;
+  box-shadow: 0 12px 24px rgba(45, 211, 111, 0.12);
 }
 
 .groupStack {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.7rem;
 }
 
 .groupCard {
+  position: relative;
   overflow: hidden;
+}
+
+.groupCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(45, 211, 111, 0.72), rgba(45, 211, 111, 0));
+  opacity: 0.7;
 }
 
 .groupHeader {
   display: grid;
-  gap: 0.35rem;
-  padding: 0.52rem 0.62rem;
-  border-bottom: 1px solid rgba(193, 218, 201, 0.08);
-}
-
-.groupHeading {
-  display: grid;
-  gap: 0.08rem;
-  min-width: 0;
+  gap: 0.22rem;
+  padding: 0.52rem 0.72rem 0.38rem;
+  border-bottom: 1px solid rgba(193, 218, 201, 0.06);
 }
 
 .groupTitle {
   min-width: 0;
-  font-size: 0.92rem;
-  line-height: 1;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  color: #f5f8f5;
 }
 
-.groupTitle a {
-  display: block;
-  min-width: 0;
+.groupMeta {
+  color: rgba(228, 240, 231, 0.68);
+  font-size: 0.72rem;
+  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.groupSummary span {
-  min-height: 1.45rem;
-  padding: 0.24rem 0.46rem;
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.groupSummary span {
-  color: rgba(235, 242, 237, 0.7);
-}
-
 .matchList {
   display: grid;
-  gap: 0.28rem;
-  padding: 0.35rem;
+  gap: 0.35rem;
+  padding: 0.38rem 0.4rem 0.42rem;
 }
 
 .matchRow {
@@ -274,24 +496,24 @@
 .matchRowMain:hover .matchRowCard,
 .matchRowMain:focus-visible .matchRowCard {
   transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 10px 20px rgba(4, 10, 7, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 16px 30px rgba(4, 10, 7, 0.16);
 }
 
 .matchRowCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.32rem;
-  padding: 0.36rem 0.48rem;
-  border: 1px solid rgba(220, 226, 221, 0.14);
-  border-radius: 0.75rem;
+  gap: 0.42rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(220, 226, 221, 0.18);
+  border-radius: 1rem;
   background:
     linear-gradient(180deg, rgba(252, 252, 250, 0.985), rgba(247, 248, 244, 0.96)),
     radial-gradient(circle at top, rgba(255, 255, 255, 0.6), transparent 58%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 5px 12px rgba(2, 8, 5, 0.08);
+    0 8px 18px rgba(2, 8, 5, 0.1);
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -437,7 +659,16 @@
   line-height: 1.4;
 }
 
-@media (min-width: 560px) {
+@media (min-width: 520px) {
+  .summaryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .refineGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
   .rangeFields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -445,13 +676,35 @@
 
 @media (min-width: 700px) {
   .toolbarTop {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .refineToggle {
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
   }
 
+  .refineSummary {
+    justify-content: flex-end;
+  }
+
   .groupHeader {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+    gap: 0.14rem;
+  }
+
+  .dateRail {
+    width: fit-content;
+  }
+
+  .rangePanel {
+    grid-column: 1 / -1;
+  }
+
+  .searchSubmit {
+    width: auto;
+    min-width: 11rem;
+    justify-self: start;
   }
 
   .matchList {
@@ -461,22 +714,27 @@
 
 @media (min-width: 860px) {
   .refineGrid {
-    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)) auto;
-    align-items: end;
+    grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .rangePanel,
+  .rangeFields {
+    grid-column: 1 / -1;
   }
 
   .rangeFields {
-    grid-column: 1 / -1;
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .searchSubmit {
-    width: auto;
+    grid-column: 1 / -1;
+    justify-self: end;
   }
 
   .matchRowCard {
-    gap: 0.45rem;
-    padding: 0.42rem 0.56rem;
+    gap: 0.52rem;
+    padding: 0.56rem 0.68rem;
   }
 
   .scoreline {

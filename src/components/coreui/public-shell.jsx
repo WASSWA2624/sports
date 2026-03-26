@@ -61,14 +61,24 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
     <div className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link href={`/${locale}`} className={styles.brandLink}>
-            <span className={styles.brandMark} aria-hidden="true">
-              SP
-            </span>
-            <span className={styles.brandBlock}>
-              <strong className={styles.brandTitle}>{dictionary.brand}</strong>
-            </span>
-          </Link>
+          <div className={styles.headerTop}>
+            <Link href={`/${locale}`} className={styles.brandLink}>
+              <span className={styles.brandMark} aria-hidden="true">
+                SP
+              </span>
+              <span className={styles.brandBlock}>
+                <span className={styles.brandTag}>{dictionary.brandTag || "Live match center"}</span>
+                <strong className={styles.brandTitle}>{dictionary.brand}</strong>
+              </span>
+            </Link>
+
+            <div className={styles.headerUtility}>
+              <span className={styles.headerUtilityChip}>
+                <span className={styles.headerUtilityDot} aria-hidden="true" />
+                Matchday
+              </span>
+            </div>
+          </div>
 
           <nav className={styles.nav} aria-label="Primary">
             {navItems.map((item) => (

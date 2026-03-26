@@ -80,4 +80,26 @@ describe("matchday feed date-time filters", () => {
       ])
     );
   });
+
+  it("groups today's matches by kickoff time in chronological order", () => {
+    const feed = getMatchdayFeed();
+
+    expect(feed.competitionCount).toBe(5);
+    expect(feed.groups.map((group) => group.fixtures[0].id)).toEqual([
+      "bl1-finished-bvb-rbl",
+      "epl-live-ars-che",
+      "sa-upcoming-int-laz",
+      "ucl-live-rma-bay",
+      "ll-upcoming-bar-sev",
+    ]);
+    expect(feed.groups[0].leagueNames).toEqual(["Bundesliga"]);
+  });
+
+  it("supports league-name search while keeping time-grouped results", () => {
+    const feed = getMatchdayFeed({ query: "premier league" });
+
+    expect(feed.fixtures.map((fixture) => fixture.id)).toEqual(["epl-live-ars-che"]);
+    expect(feed.groups).toHaveLength(1);
+    expect(feed.groups[0].leagueNames).toEqual(["Premier League"]);
+  });
 });

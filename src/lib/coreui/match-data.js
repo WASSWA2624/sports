@@ -939,21 +939,27 @@ function summarize(fixtures) {
   );
 }
 
+function countCompetitions(fixtures) {
+  return new Set(fixtures.map((fixture) => fixture.league.code)).size;
+}
+
 function groupFixtures(fixtures) {
   const grouped = fixtures.reduce((map, fixture) => {
-    const key = fixture.league.code;
+    const kickoff = new Date(fixture.startsAt);
+    const key = `${toDateKey(kickoff)}T${toTimeKey(kickoff)}`;
 
     if (!map.has(key)) {
       map.set(key, {
         key,
-        leagueCode: fixture.league.code,
-        leagueName: fixture.league.name,
-        country: fixture.league.country,
+        startsAt: fixture.startsAt,
         fixtures: [],
+        leagues: new Map(),
       });
     }
 
-    map.get(key).fixtures.push(fixture);
+    const group = map.get(key);
+    group.fixtures.push(fixture);
+    group.leagues.set(fixture.league.code, fixture.league.name);
     return map;
   }, new Map());
 
@@ -961,11 +967,17 @@ function groupFixtures(fixtures) {
     .map((group) => ({
       ...group,
       summary: summarize(group.fixtures),
+      fixtureCount: group.fixtures.length,
+      leagueCount: group.leagues.size,
+      leagueNames: [...group.leagues.values()].sort((left, right) => left.localeCompare(right)),
       fixtures: [...group.fixtures].sort(
-        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+        (left, right) =>
+          fixtureSortWeight(left) - fixtureSortWeight(right) ||
+          left.league.name.localeCompare(right.league.name) ||
+          left.homeTeam.name.localeCompare(right.homeTeam.name)
       ),
     }))
-    .sort((left, right) => left.leagueName.localeCompare(right.leagueName));
+    .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime());
 }
 
 function normalizeStatus(status) {
@@ -1114,12 +1126,16 @@ export function getMatchdayFeed({
       ? baseFiltered
       : baseFiltered.filter((fixture) => fixture.status === selectedStatus);
   const orderedFixtures = [...visibleFixtures].sort((left, right) => {
-    const statusDifference = fixtureSortWeight(left) - fixtureSortWeight(right);
-    if (statusDifference !== 0) {
-      return statusDifference;
+    const timeDifference = new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
+    if (timeDifference !== 0) {
+      return timeDifference;
     }
 
-    return new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
+    return (
+      fixtureSortWeight(left) - fixtureSortWeight(right) ||
+      left.league.name.localeCompare(right.league.name) ||
+      left.homeTeam.name.localeCompare(right.homeTeam.name)
+    );
   });
 
   return {
@@ -1138,6 +1154,7 @@ export function getMatchdayFeed({
     selectedLeague,
     selectedTime,
     query: String(query || ""),
+    competitionCount: countCompetitions(baseFiltered),
     fixtures: orderedFixtures,
     groups: groupFixtures(orderedFixtures),
     summary: summarize(baseFiltered),

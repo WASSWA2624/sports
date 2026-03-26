@@ -214,6 +214,38 @@ function buildRangeModeLabel(feed) {
   return hasFullDayWindow(feed) ? "Custom date range" : "Custom date-time range";
 }
 
+function rangeSpansSingleDay(feed) {
+  const start = new Date(feed.rangeStart);
+  const end = new Date(feed.rangeEnd);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return true;
+  }
+
+  return isSameDay(start, end);
+}
+
+function buildTimeGroupLabel(group, locale, showDate) {
+  return new Intl.DateTimeFormat(locale, showDate ? {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  } : {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(group.startsAt));
+}
+
+function buildTimeGroupMeta(group) {
+  const leagueLabel =
+    group.leagueCount === 1 ? group.leagueNames[0] : `${group.leagueCount} leagues`;
+  const matchLabel = `${group.fixtureCount} ${group.fixtureCount === 1 ? "match" : "matches"}`;
+
+  return `${leagueLabel} · ${matchLabel}`;
+}
+
 function buildRangeQuery(feed) {
   if (feed.selectedPreset && feed.selectedPreset !== "custom") {
     return {
@@ -278,14 +310,6 @@ function buildScorelineText(fixture) {
   return "VS";
 }
 
-function buildGroupSummaryItems(summary) {
-  return [
-    summary.LIVE ? { key: "live", label: `${summary.LIVE} live` } : null,
-    summary.SCHEDULED ? { key: "scheduled", label: `${summary.SCHEDULED} fixtures` } : null,
-    summary.FINISHED ? { key: "finished", label: `${summary.FINISHED} results` } : null,
-  ].filter(Boolean);
-}
-
 export function MatchRow({ fixture, locale }) {
   const matchStateClassName =
     fixture.status === "LIVE"
@@ -326,7 +350,10 @@ export function MatchRow({ fixture, locale }) {
 
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
+  const selectedRangeModeLabel = buildRangeModeLabel(feed);
+  const singleDayRange = rangeSpansSingleDay(feed);
   const rangeQuery = buildRangeQuery(feed);
+  const liveCount = feed.summary.LIVE || 0;
   const currentFilters = {
     ...rangeQuery,
     q: feed.query,
@@ -339,6 +366,10 @@ export function Scoreboard({ locale, feed }) {
   );
   const hasTimeFilter = Boolean(feed.selectedTime && String(feed.selectedTime).toLowerCase() !== "all");
   const rangeFilterActive = !feed.rangeIsDefault;
+  const selectedLeagueLabel =
+    feed.leagueOptions.find((option) => option.code === feed.selectedLeague)?.name || "All leagues";
+  const selectedTimeLabel =
+    feed.timeOptions.find((option) => option.value === feed.selectedTime)?.label || "Any time";
   const activeFilterCount = [
     rangeFilterActive,
     Boolean(feed.query),
@@ -346,11 +377,20 @@ export function Scoreboard({ locale, feed }) {
     hasTimeFilter,
   ].filter(Boolean).length;
   const hasRefinements = activeFilterCount > 0;
-  const metaChips = [
-    { key: "window", label: buildRangeModeLabel(feed) },
-    { key: "matches", label: `${feed.summary.total} matches` },
-    ...(feed.refresh?.enabled ? [{ key: "refresh", label: "Live refresh" }] : []),
-    ...(hasRefinements ? [{ key: "filters", label: `${activeFilterCount} filters` }] : []),
+  const selectedStatusOption =
+    feed.statusOptions.find((option) => option.value === feed.selectedStatus) || feed.statusOptions[0];
+  const toolbarSummary = [
+    `${feed.summary.total} matches`,
+    liveCount ? `${liveCount} live` : null,
+    hasRefinements ? `${activeFilterCount} filters` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const refinementPreview = [
+    ...(feed.query ? [{ key: "query", label: feed.query }] : []),
+    ...(hasLeagueFilter ? [{ key: "league", label: selectedLeagueLabel }] : []),
+    ...(hasTimeFilter ? [{ key: "time", label: selectedTimeLabel }] : []),
+    ...(rangeFilterActive ? [{ key: "range", label: selectedRangeModeLabel }] : []),
   ];
 
   return (
@@ -362,7 +402,7 @@ export function Scoreboard({ locale, feed }) {
       />
 
       <section className={styles.toolbar}>
-        <div className={styles.toolbarTop}>
+        <div className={styles.toolbarBar}>
           <div className={styles.dateRail}>
             <Link
               href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.previous)}
@@ -370,7 +410,10 @@ export function Scoreboard({ locale, feed }) {
             >
               Prev
             </Link>
-            <span className={styles.datePill}>{selectedRangeLabel}</span>
+            <span className={styles.datePill}>
+              <span className={styles.datePillPrimary}>{selectedRangeLabel}</span>
+              <span className={styles.datePillSecondary}>{toolbarSummary}</span>
+            </span>
             <Link
               href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.next)}
               className={styles.commandButton}
@@ -379,176 +422,199 @@ export function Scoreboard({ locale, feed }) {
             </Link>
           </div>
 
-          <div className={styles.headerMeta}>
-            {metaChips.map((item) => (
-              <span key={item.key} className={styles.metaChip}>
-                {item.label}
-              </span>
-            ))}
+          <div className={styles.toolbarActions}>
+            <details className={styles.toolbarMenu}>
+              <summary className={styles.compactToggle}>
+                <span className={styles.compactToggleLabel}>View</span>
+                <strong>
+                  {statusLabel(feed.selectedStatus)} {selectedStatusOption?.count ?? feed.summary.total}
+                </strong>
+              </summary>
+
+              <div className={`${styles.menuPanel} ${styles.statusMenuPanel}`}>
+                <div className={styles.menuList}>
+                  {feed.statusOptions.map((option) => (
+                    <Link
+                      key={option.value}
+                      href={buildMatchBoardHref(locale, currentFilters, { status: option.value.toLowerCase() })}
+                      className={option.value === feed.selectedStatus ? styles.menuLinkActive : styles.menuLink}
+                    >
+                      <span>{statusLabel(option.value)}</span>
+                      <strong>{option.count}</strong>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </details>
+        
+            <details className={`${styles.toolbarMenu} ${styles.refinePanel}`}>
+              <summary className={styles.compactToggle}>
+                <span className={styles.compactToggleLabel}>Filters</span>
+                <strong>{hasRefinements ? `${activeFilterCount} active` : "Optional"}</strong>
+              </summary>
+
+              <div className={`${styles.menuPanel} ${styles.refineMenu}`}>
+                {refinementPreview.length ? (
+                  <div className={styles.refineSummaryInline}>
+                    {refinementPreview.map((item) => (
+                      <span key={item.key} className={styles.refinePreviewChip}>
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.refineHint}>Search teams, pick a league, or narrow the time window.</p>
+                )}
+
+                <div className={styles.refineBody}>
+                  <div className={styles.refineSection}>
+                    <span className={styles.searchLabel}>Quick range</span>
+                    <div className={styles.presetRail}>
+                      {feed.quickPresetOptions.map((option) => (
+                        <Link
+                          key={option.value}
+                          href={buildMatchBoardHref(
+                            locale,
+                            currentFilters,
+                            {
+                              preset: option.value,
+                              startDate: "",
+                              startTime: "",
+                              endDate: "",
+                              endTime: "",
+                              date: "",
+                            }
+                          )}
+                          className={option.value === feed.selectedPreset ? styles.filterChipActive : styles.filterChip}
+                        >
+                          <span>{option.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  <form action={`/${locale}`} className={styles.refineGrid}>
+                    {feed.selectedStatus !== "ALL" ? (
+                      <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
+                    ) : null}
+                    <label className={`${styles.searchField} ${styles.searchFieldWide}`}>
+                      <span className={styles.searchLabel}>Search</span>
+                      <input
+                        type="search"
+                        name="q"
+                        defaultValue={feed.query}
+                        placeholder="Search leagues, teams, or kickoff time"
+                        className={styles.searchInput}
+                      />
+                    </label>
+
+                    <label className={styles.searchField}>
+                      <span className={styles.searchLabel}>League</span>
+                      <select name="league" defaultValue={feed.selectedLeague} className={styles.searchInput}>
+                        {feed.leagueOptions.map((option) => (
+                          <option key={option.code} value={option.code}>
+                            {option.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className={styles.searchField}>
+                      <span className={styles.searchLabel}>Time</span>
+                      <select name="time" defaultValue={feed.selectedTime} className={styles.searchInput}>
+                        {feed.timeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className={styles.searchField}>
+                      <span className={styles.searchLabel}>Range preset</span>
+                      <select name="preset" defaultValue={feed.selectedPreset} className={styles.searchInput}>
+                        {feed.presetOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className={styles.fieldHint}>Use a preset for speed, then fine-tune with exact dates only if you need to.</span>
+                    </label>
+
+                    <div className={styles.rangePanel}>
+                      <div className={styles.rangePanelHeader}>
+                        <span className={styles.searchLabel}>Custom window</span>
+                        <span className={styles.fieldHint}>Exact start and end boundaries help when you want a very specific match slice.</span>
+                      </div>
+
+                      <div className={styles.rangeFields}>
+                        <label className={styles.searchField}>
+                          <span className={styles.searchLabel}>Start date</span>
+                          <input
+                            type="date"
+                            name="startDate"
+                            defaultValue={feed.selectedStartDate}
+                            className={styles.searchInput}
+                          />
+                        </label>
+
+                        <label className={styles.searchField}>
+                          <span className={styles.searchLabel}>Start time</span>
+                          <input
+                            type="time"
+                            name="startTime"
+                            defaultValue={feed.selectedStartTime}
+                            className={styles.searchInput}
+                          />
+                        </label>
+
+                        <label className={styles.searchField}>
+                          <span className={styles.searchLabel}>End date</span>
+                          <input
+                            type="date"
+                            name="endDate"
+                            defaultValue={feed.selectedEndDate}
+                            className={styles.searchInput}
+                          />
+                        </label>
+
+                        <label className={styles.searchField}>
+                          <span className={styles.searchLabel}>End time</span>
+                          <input
+                            type="time"
+                            name="endTime"
+                            defaultValue={feed.selectedEndTime}
+                            className={styles.searchInput}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <button type="submit" className={styles.searchSubmit}>
+                      Apply filters
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
-
-        <div className={styles.filterRail}>
-          {feed.statusOptions.map((option) => (
-            <Link
-              key={option.value}
-              href={buildMatchBoardHref(locale, currentFilters, { status: option.value.toLowerCase() })}
-              className={option.value === feed.selectedStatus ? styles.filterChipActive : styles.filterChip}
-            >
-              <span>{statusLabel(option.value)}</span>
-              <strong>{option.count}</strong>
-            </Link>
-          ))}
-        </div>
-
-        <div className={styles.presetRail}>
-          {feed.quickPresetOptions.map((option) => (
-            <Link
-              key={option.value}
-              href={buildMatchBoardHref(
-                locale,
-                currentFilters,
-                {
-                  preset: option.value,
-                  startDate: "",
-                  startTime: "",
-                  endDate: "",
-                  endTime: "",
-                  date: "",
-                }
-              )}
-              className={option.value === feed.selectedPreset ? styles.filterChipActive : styles.filterChip}
-            >
-              <span>{option.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        <details className={styles.refinePanel} open={hasRefinements}>
-          <summary className={styles.refineToggle}>
-            <span>Refine</span>
-            <strong>{hasRefinements ? `${activeFilterCount} active` : "Optional"}</strong>
-          </summary>
-
-          <form action={`/${locale}`} className={styles.refineGrid}>
-            {feed.selectedStatus !== "ALL" ? (
-              <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
-            ) : null}
-            <label className={styles.searchField}>
-              <span className={styles.searchLabel}>Search</span>
-              <input
-                type="search"
-                name="q"
-                defaultValue={feed.query}
-                placeholder="League, team, or kickoff time"
-                className={styles.searchInput}
-              />
-            </label>
-
-            <label className={styles.searchField}>
-              <span className={styles.searchLabel}>League</span>
-              <select name="league" defaultValue={feed.selectedLeague} className={styles.searchInput}>
-                {feed.leagueOptions.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className={styles.searchField}>
-              <span className={styles.searchLabel}>Time</span>
-              <select name="time" defaultValue={feed.selectedTime} className={styles.searchInput}>
-                {feed.timeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className={styles.searchField}>
-              <span className={styles.searchLabel}>Preset</span>
-              <select name="preset" defaultValue={feed.selectedPreset} className={styles.searchInput}>
-                {feed.presetOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <span className={styles.fieldHint}>Quick ranges and exact start/end boundaries can work together.</span>
-            </label>
-
-            <div className={styles.rangeFields}>
-              <label className={styles.searchField}>
-                <span className={styles.searchLabel}>Start date</span>
-                <input
-                  type="date"
-                  name="startDate"
-                  defaultValue={feed.selectedStartDate}
-                  className={styles.searchInput}
-                />
-              </label>
-
-              <label className={styles.searchField}>
-                <span className={styles.searchLabel}>Start time</span>
-                <input
-                  type="time"
-                  name="startTime"
-                  defaultValue={feed.selectedStartTime}
-                  className={styles.searchInput}
-                />
-              </label>
-
-              <label className={styles.searchField}>
-                <span className={styles.searchLabel}>End date</span>
-                <input
-                  type="date"
-                  name="endDate"
-                  defaultValue={feed.selectedEndDate}
-                  className={styles.searchInput}
-                />
-              </label>
-
-              <label className={styles.searchField}>
-                <span className={styles.searchLabel}>End time</span>
-                <input
-                  type="time"
-                  name="endTime"
-                  defaultValue={feed.selectedEndTime}
-                  className={styles.searchInput}
-                />
-              </label>
-            </div>
-
-            <button type="submit" className={styles.searchSubmit}>
-              Apply
-            </button>
-          </form>
-        </details>
       </section>
 
       <div className={styles.groupStack}>
         {feed.groups.length ? (
           feed.groups.map((group) => {
-            const groupSummaryItems = buildGroupSummaryItems(group.summary);
+            const groupLabel = buildTimeGroupLabel(group, locale, !singleDayRange);
+            const groupMeta = buildTimeGroupMeta(group);
 
             return (
               <section key={group.key} className={styles.groupCard}>
                 <div className={styles.groupHeader}>
-                  <div className={styles.groupHeading}>
-                    <p className={styles.groupCountry}>{group.country}</p>
-                    <h2 className={styles.groupTitle}>
-                      <Link href={`/${locale}/leagues/${group.leagueCode}`}>{group.leagueName}</Link>
-                    </h2>
-                  </div>
+                  <h2 className={styles.groupTitle}>{groupLabel}</h2>
 
-                  {groupSummaryItems.length ? (
-                    <div className={styles.groupSummary}>
-                      {groupSummaryItems.map((item) => (
-                        <span key={item.key}>{item.label}</span>
-                      ))}
-                    </div>
+                  {groupMeta ? (
+                    <p className={styles.groupMeta}>{groupMeta}</p>
                   ) : null}
                 </div>
 
