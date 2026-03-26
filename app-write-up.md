@@ -104,11 +104,12 @@ The sport scope is fixed to soccer. Other sports are out of scope for this produ
 The default page layout should prioritize:
 
 - top bar with logo and date navigation
+- compact left competition rail on larger screens
 - primary filter row: All, LIVE, Finished, Scheduled
 - competition-grouped match list
 - optional compact footer
 
-Avoid marketing sections, side rails, and promotional modules.
+Avoid marketing side rails and promotional modules. A compact league rail is acceptable when it directly improves match browsing speed.
 
 ### 5.2 Match Row Design
 
@@ -218,6 +219,7 @@ Users can browse a single competition's fixtures and results without leaving the
 
 ### 7.2 Main Content
 
+- compact competition rail or league list for fast switching
 - state filters
 - competition sections
 - match rows

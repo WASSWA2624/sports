@@ -1,0 +1,142 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hero,
+.panel,
+.seasonCard,
+.directoryCard {
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 1.5rem;
+  background: rgba(10, 19, 14, 0.84);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.16);
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.eyebrow {
+  margin-bottom: 0.35rem;
+  color: rgba(228, 240, 231, 0.66);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.95;
+}
+
+.lead {
+  margin-top: 0.55rem;
+  color: rgba(233, 242, 235, 0.74);
+  line-height: 1.6;
+}
+
+.chipRow,
+.sectionTools,
+.seasonRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.badge,
+.tabChip,
+.tabChipActive,
+.seasonChip,
+.seasonChipActive,
+.sectionAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(237, 244, 239, 0.82);
+  font-size: 0.88rem;
+}
+
+.tabChipActive,
+.seasonChipActive {
+  border-color: rgba(45, 211, 111, 0.28);
+  background: linear-gradient(135deg, rgba(45, 211, 111, 0.16), rgba(45, 211, 111, 0.06));
+  color: #ffffff;
+}
+
+.panel {
+  padding: 1.2rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1.4rem;
+}
+
+.directoryGrid,
+.archiveGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.directoryCard,
+.seasonCard {
+  padding: 1.15rem;
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+}
+
+.cardMeta {
+  margin-top: 0.35rem;
+  color: rgba(227, 237, 230, 0.68);
+  line-height: 1.5;
+}
+
+.emptyState {
+  padding: 1.6rem;
+  border: 1px dashed rgba(193, 218, 201, 0.16);
+  border-radius: 1.2rem;
+  color: rgba(233, 241, 235, 0.68);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .directoryGrid,
+  .archiveGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero,
+  .panel,
+  .directoryCard,
+  .seasonCard {
+    padding: 1rem;
+  }
+}

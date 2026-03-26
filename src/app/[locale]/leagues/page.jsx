@@ -1,78 +1,56 @@
 import Link from "next/link";
-import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getDictionary } from "../../../lib/coreui/dictionaries";
-import { formatFixtureStatus } from "../../../lib/coreui/format";
 import { getLeagueDirectory } from "../../../lib/coreui/read";
-import { getPersonalizationSnapshot, sortCompetitionsByPersonalization } from "../../../lib/personalization";
-import styles from "../../../components/coreui/styles.module.css";
+import styles from "../../../components/coreui/competition-pages.module.css";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
+  const dictionary = getDictionary(locale);
+
   return buildPageMetadata(
     locale,
-    getDictionary(locale).metaLeaguesTitle,
-    getDictionary(locale).metaLeaguesDescription,
+    dictionary.metaLeaguesTitle,
+    dictionary.metaLeaguesDescription,
     "/leagues"
   );
 }
 
 export default async function LeaguesPage({ params }) {
   const { locale } = await params;
-  const dictionary = getDictionary(locale);
-  const [leagues, personalization] = await Promise.all([
-    getLeagueDirectory(),
-    getPersonalizationSnapshot(),
-  ]);
-  const prioritizedLeagues = sortCompetitionsByPersonalization(
-    leagues,
-    personalization,
-    (left, right) => left.name.localeCompare(right.name)
-  );
+  const leagues = await getLeagueDirectory();
 
   return (
-    <section className={styles.section}>
-      <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>{dictionary.leagues}</h1>
+    <section className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <p className={styles.eyebrow}>Competitions</p>
+          <h1 className={styles.title}>Football leagues</h1>
+          <p className={styles.lead}>
+            Browse current football competitions, then open a league page for upcoming fixtures and recent results.
+          </p>
+        </div>
+
         <div className={styles.sectionTools}>
-          <span className={styles.badge}>{prioritizedLeagues.length}</span>
+          <span className={styles.badge}>{leagues.length} leagues</span>
         </div>
       </header>
-      {prioritizedLeagues.length ? (
-        <div className={styles.leagueGrid}>
-          {prioritizedLeagues.map((league) => (
-            <article key={league.id} className={styles.leagueCard}>
-              <div className={styles.cardHeader}>
-                <div>
-                  <p className={styles.eyebrow}>{league.country || dictionary.international}</p>
-                  <h2 className={styles.cardTitle}>
-                    <Link href={`/${locale}/leagues/${league.code}`}>{league.name}</Link>
-                  </h2>
-                </div>
-                <div className={styles.inlineBadgeRow}>
-                  <span className={styles.badge}>{league.teams.length}</span>
-                  <FavoriteToggle
-                    itemId={`competition:${league.code}`}
-                    locale={locale}
-                    compact
-                    label={league.name}
-                    metadata={{
-                      country: league.country || null,
-                    }}
-                    surface="leagues-directory"
-                  />
-                </div>
-              </div>
-              <p className={styles.metaRow}>
-                {league.fixtures[0]?.status
-                  ? formatFixtureStatus(league.fixtures[0].status, locale)
-                  : dictionary.noData}
+
+      {leagues.length ? (
+        <div className={styles.directoryGrid}>
+          {leagues.map((league) => (
+            <Link key={league.id} href={`/${locale}/leagues/${league.code}`} className={styles.directoryCard}>
+              <p className={styles.eyebrow}>{league.country || "International"}</p>
+              <h2 className={styles.cardTitle}>{league.name}</h2>
+              <p className={styles.cardMeta}>
+                {league.teams.length} teams
+                {league.fixtures[0]?.status ? ` • ${league.fixtures[0].status.toLowerCase()}` : ""}
               </p>
-            </article>
+            </Link>
           ))}
         </div>
       ) : (
-        <div className={styles.emptyState}>{dictionary.noData}</div>
+        <div className={styles.emptyState}>No football leagues are available right now.</div>
       )}
     </section>
   );

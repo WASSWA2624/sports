@@ -1,7 +1,6 @@
 import { Barlow_Condensed, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "../components/coreui/store-provider";
-import { BettingSlipsDock } from "../components/coreui/betting-slips-dock";
 import StyledComponentsRegistry from "../lib/styled-components/registry";
 import {
   DEFAULT_LOCALE,
@@ -61,7 +60,6 @@ export default async function RootLayout({ children }) {
     locale: DEFAULT_LOCALE,
     theme: DEFAULT_THEME,
   }));
-  const dictionary = getDictionary(preferences.locale);
 
   return (
     <html
@@ -74,8 +72,7 @@ export default async function RootLayout({ children }) {
       <body>
         <StyledComponentsRegistry>
           <StoreProvider>
-            <div className="app-shell-with-dock">{children}</div>
-            <BettingSlipsDock defaultLocale={preferences.locale} dictionary={dictionary} />
+            {children}
           </StoreProvider>
         </StyledComponentsRegistry>
       </body>

@@ -1,0 +1,347 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(135deg, rgba(45, 211, 111, 0.14), rgba(45, 211, 111, 0.03)),
+    rgba(10, 20, 15, 0.88);
+  box-shadow: 0 30px 64px rgba(0, 0, 0, 0.2);
+}
+
+.heroCopy {
+  max-width: 42rem;
+}
+
+.eyebrow,
+.groupCountry {
+  margin-bottom: 0.35rem;
+  color: rgba(228, 240, 231, 0.66);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  font-size: clamp(2.3rem, 4vw, 4rem);
+  line-height: 0.95;
+}
+
+.lead {
+  margin-top: 0.6rem;
+  color: rgba(233, 242, 235, 0.78);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.heroBadge,
+.datePill,
+.notice {
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(193, 218, 201, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.heroBadge,
+.datePill {
+  color: rgba(245, 248, 245, 0.9);
+  font-size: 0.88rem;
+}
+
+.commandDeck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 1.35rem;
+  background: rgba(9, 18, 13, 0.82);
+}
+
+.dateRail,
+.filterRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.commandButton,
+.filterChip,
+.filterChipActive,
+.rowSideAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(235, 242, 237, 0.82);
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.commandButton:hover,
+.filterChip:hover,
+.rowSideAction:hover {
+  transform: translateY(-1px);
+  border-color: rgba(45, 211, 111, 0.24);
+  background: rgba(45, 211, 111, 0.08);
+}
+
+.filterChip strong,
+.filterChipActive strong {
+  font-size: 0.82rem;
+}
+
+.filterChipActive {
+  border-color: rgba(45, 211, 111, 0.34);
+  background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.06));
+  color: #ffffff;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 1.3rem;
+  background: rgba(9, 18, 13, 0.82);
+}
+
+.summaryCard span {
+  color: rgba(228, 239, 231, 0.66);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.summaryCard strong {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 2rem;
+}
+
+.notice {
+  color: rgba(241, 246, 242, 0.88);
+  line-height: 1.5;
+}
+
+.groupStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.groupCard {
+  border: 1px solid rgba(193, 218, 201, 0.08);
+  border-radius: 1.5rem;
+  background: rgba(10, 19, 14, 0.84);
+  overflow: hidden;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid rgba(193, 218, 201, 0.08);
+}
+
+.groupTitle {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.groupSummary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.groupSummary span,
+.statusChip,
+.statusLive,
+.statusFinished {
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.groupSummary span,
+.statusChip {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(235, 242, 237, 0.7);
+}
+
+.statusLive {
+  background: rgba(45, 211, 111, 0.18);
+  color: #98f5b7;
+}
+
+.statusFinished {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(241, 244, 242, 0.84);
+}
+
+.matchList {
+  display: flex;
+  flex-direction: column;
+}
+
+.matchRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.9rem 1.1rem;
+  border-top: 1px solid rgba(193, 218, 201, 0.06);
+}
+
+.matchRow:first-child {
+  border-top: 0;
+}
+
+.matchRowMain {
+  display: grid;
+  grid-template-columns: 7.4rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.matchRowState {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.matchRowMeta {
+  color: rgba(225, 236, 229, 0.62);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.matchTeams {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.teamLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.teamName {
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teamScore {
+  min-width: 1.5rem;
+  text-align: right;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.rowSideAction {
+  min-width: 5.25rem;
+}
+
+.emptyState {
+  padding: 2rem 1.25rem;
+  border: 1px dashed rgba(193, 218, 201, 0.16);
+  border-radius: 1.4rem;
+  background: rgba(9, 18, 13, 0.72);
+  color: rgba(233, 241, 235, 0.72);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .groupHeader {
+    flex-direction: column;
+  }
+
+  .groupSummary {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroMeta {
+    justify-content: flex-start;
+  }
+
+  .matchRow {
+    grid-template-columns: 1fr;
+  }
+
+  .rowSideAction {
+    justify-content: flex-start;
+    width: fit-content;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero,
+  .commandDeck,
+  .summaryCard,
+  .groupHeader,
+  .matchRow {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .matchRowMain {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

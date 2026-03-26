@@ -26,6 +26,7 @@ import {
   sortFixturesForLiveFeed,
 } from "./live-detail";
 import { DEFAULT_MARKET_GEO, getGeoLabel, isGeoAllowed, normalizeGeo } from "./route-context";
+import { buildPrimarySportRelationFilter } from "./scope";
 
 const LIVE_STATUS_FILTERS = ["ALL", "LIVE", "FINISHED", "SCHEDULED"];
 const RESULT_STATUS_FILTERS = ["ALL", "FINISHED", "POSTPONED", "CANCELLED"];
@@ -835,6 +836,7 @@ export async function getLiveMatchdayFeed({
       try {
         fixtures = await db.fixture.findMany({
           where: {
+            sport: buildPrimarySportRelationFilter(),
             startsAt: {
               gte: startOfDay(selectedDate),
               lte: endOfDay(selectedDate),
@@ -939,6 +941,7 @@ export async function getResultsFeed({ locale = "en", status, leagueCode } = {})
         () =>
           db.fixture.findMany({
             where: {
+              sport: buildPrimarySportRelationFilter(),
               status: { in: TERMINAL_STATUSES },
               startsAt: { gte: addDays(new Date(), -RESULTS_WINDOW_DAYS) },
             },
@@ -1010,7 +1013,10 @@ export async function getLiveMatchDetail(
       safeDataRead(async () => {
         const fixture = await db.fixture.findFirst({
           where: {
-            OR: [{ id: reference }, { externalRef: reference }],
+            AND: [
+              { OR: [{ id: reference }, { externalRef: reference }] },
+              { sport: buildPrimarySportRelationFilter() },
+            ],
           },
           include: buildFixtureDetailInclude(),
         });
@@ -1026,6 +1032,7 @@ export async function getLiveMatchDetail(
             ? db.fixture.findMany({
                 where: {
                   seasonId: fixture.seasonId,
+                  sport: buildPrimarySportRelationFilter(),
                 },
                 orderBy: [{ startsAt: "asc" }],
                 take: 200,
@@ -1048,6 +1055,7 @@ export async function getLiveMatchDetail(
             ? db.fixture.findMany({
                 where: {
                   id: { not: fixture.id },
+                  sport: buildPrimarySportRelationFilter(),
                   OR: [
                     {
                       homeTeamId: fixture.homeTeamId,

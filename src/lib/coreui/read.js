@@ -23,6 +23,7 @@ import {
   buildSportHref,
   buildTeamHref,
 } from "./routes";
+import { buildPrimarySportRelationFilter, PRIMARY_SPORT_CODE } from "./scope";
 import { SPORTS_STRIP } from "./config";
 
 function fixtureInclude({ includeOdds = true, oddsTake = 2, includeBroadcast = false } = {}) {
@@ -359,25 +360,38 @@ const getHomeSnapshotCached = unstable_cache(
       const now = new Date();
       const [liveFixtures, upcomingFixtures, recentResults, leagues] = await Promise.all([
         db.fixture.findMany({
-          where: { status: "LIVE" },
+          where: {
+            status: "LIVE",
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: { startsAt: "asc" },
           take: 6,
           include: fixtureInclude(),
         }),
         db.fixture.findMany({
-          where: { status: "SCHEDULED", startsAt: { gte: now } },
+          where: {
+            status: "SCHEDULED",
+            startsAt: { gte: now },
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: { startsAt: "asc" },
           take: 6,
           include: fixtureInclude(),
         }),
         db.fixture.findMany({
-          where: { status: { in: ["FINISHED", "POSTPONED", "CANCELLED"] } },
+          where: {
+            status: { in: ["FINISHED", "POSTPONED", "CANCELLED"] },
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: { startsAt: "desc" },
           take: 6,
           include: fixtureInclude(),
         }),
         db.league.findMany({
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: [{ name: "asc" }],
           take: 6,
           include: {
@@ -421,7 +435,10 @@ const getLiveFixturesCached = unstable_cache(
     safeDataRead(
       async () => {
         const fixtures = await db.fixture.findMany({
-          where: { status: "LIVE" },
+          where: {
+            status: "LIVE",
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: [{ startsAt: "asc" }],
           take: 24,
           include: fixtureInclude(),
@@ -449,7 +466,11 @@ const getUpcomingFixturesCached = unstable_cache(
     safeDataRead(
       async () => {
         const fixtures = await db.fixture.findMany({
-          where: { status: "SCHEDULED", startsAt: { gte: new Date() } },
+          where: {
+            status: "SCHEDULED",
+            startsAt: { gte: new Date() },
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: [{ startsAt: "asc" }],
           take: 36,
           include: fixtureInclude(),
@@ -477,7 +498,10 @@ const getRecentResultsCached = unstable_cache(
     safeDataRead(
       async () => {
         const fixtures = await db.fixture.findMany({
-          where: { status: { in: ["FINISHED", "POSTPONED", "CANCELLED"] } },
+          where: {
+            status: { in: ["FINISHED", "POSTPONED", "CANCELLED"] },
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: [{ startsAt: "desc" }],
           take: 36,
           include: fixtureInclude(),
@@ -505,7 +529,10 @@ const getTablesOverviewCached = unstable_cache(
     safeDataRead(
       async () => {
         const tables = await db.league.findMany({
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: { name: "asc" },
           take: 16,
           include: {
@@ -547,7 +574,10 @@ const getLeagueDirectoryCached = unstable_cache(
     safeDataRead(
       async () => {
         const leagues = await db.league.findMany({
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: [{ country: "asc" }, { name: "asc" }],
           take: 60,
           include: {
@@ -589,7 +619,10 @@ const getShellSnapshotCached = unstable_cache(
 
       const [leagues, teams, sports, fixtures, shellChrome] = await Promise.all([
         db.league.findMany({
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            sport: buildPrimarySportRelationFilter(),
+          },
           orderBy: [{ country: "asc" }, { name: "asc" }],
           take: 48,
           select: {
@@ -614,6 +647,13 @@ const getShellSnapshotCached = unstable_cache(
           },
         }),
         db.team.findMany({
+          where: {
+            league: {
+              is: {
+                sport: buildPrimarySportRelationFilter(),
+              },
+            },
+          },
           orderBy: [{ name: "asc" }],
           take: 48,
           select: {
@@ -630,7 +670,10 @@ const getShellSnapshotCached = unstable_cache(
           },
         }),
         db.sport.findMany({
-          where: { isEnabled: true },
+          where: {
+            isEnabled: true,
+            code: PRIMARY_SPORT_CODE,
+          },
           orderBy: [{ name: "asc" }],
           select: {
             id: true,
@@ -641,6 +684,7 @@ const getShellSnapshotCached = unstable_cache(
         }),
         db.fixture.findMany({
           where: {
+            sport: buildPrimarySportRelationFilter(),
             startsAt: {
               gte: fixtureWindowStart,
               lte: fixtureWindowEnd,
@@ -1126,10 +1170,12 @@ export async function getLeagueDetail(
       const recentWindow = new Date();
       recentWindow.setUTCDate(recentWindow.getUTCDate() - 1);
 
-      const baseLeague = await withDataAccessTimeout(
+          const baseLeague = await withDataAccessTimeout(
         () =>
           db.league.findFirst({
-            where: referenceWhere,
+            where: {
+              AND: [referenceWhere, { sport: buildPrimarySportRelationFilter() }],
+            },
             include: {
               sport: true,
               countryRecord: true,
@@ -1213,6 +1259,7 @@ export async function getLeagueDetail(
                 db.fixture.findMany({
                   where: {
                     seasonId: selectedSeasonSummary.id,
+                    sport: buildPrimarySportRelationFilter(),
                   },
                   orderBy: [{ startsAt: "asc" }],
                   take: 160,
@@ -1228,6 +1275,7 @@ export async function getLeagueDetail(
             db.fixture.findMany({
               where: {
                 leagueId: baseLeague.id,
+                sport: buildPrimarySportRelationFilter(),
                 OR: [{ status: "LIVE" }, { startsAt: { gte: recentWindow } }],
               },
               orderBy: [{ startsAt: "asc" }],
@@ -1325,7 +1373,9 @@ export async function getLeagueMetadataSummary(reference) {
   return safeDataRead(
     () =>
       db.league.findFirst({
-        where: referenceWhere,
+        where: {
+          AND: [referenceWhere, { sport: buildPrimarySportRelationFilter() }],
+        },
         select: {
           id: true,
           code: true,
@@ -1357,6 +1407,13 @@ const getTeamDirectoryCached = unstable_cache(
     safeDataRead(
       async () => {
         const teams = await db.team.findMany({
+          where: {
+            league: {
+              is: {
+                sport: buildPrimarySportRelationFilter(),
+              },
+            },
+          },
           orderBy: [{ name: "asc" }],
           take: 100,
           include: {
@@ -1750,7 +1807,10 @@ export async function getFixtureDetail(
         () => {
           return db.fixture.findFirst({
             where: {
-              OR: [{ id: reference }, { externalRef: reference }],
+              AND: [
+                { OR: [{ id: reference }, { externalRef: reference }] },
+                { sport: buildPrimarySportRelationFilter() },
+              ],
             },
             include: {
               league: true,
