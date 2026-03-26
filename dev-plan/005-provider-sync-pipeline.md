@@ -5,7 +5,7 @@ Build the provider abstraction and sync pipeline needed for fixtures, live score
 
 ## Build
 1. Define provider interfaces for taxonomy, fixtures, live states, final results, and key match events.
-2. Implement the first football adapter with SportsMonks or the selected primary provider while keeping provider selection env-driven through `SPORTS_DATA_PROVIDER`.
+2. Implement the soccer adapter with SportsMonks or the selected primary provider while keeping provider selection env-driven through `SPORTS_DATA_PROVIDER`.
 3. Create scheduled sync jobs for static reference data, daily fixture updates, and high-frequency live refresh windows.
 4. Normalize provider payloads into stable internal read models used by the homepage board, match detail pages, and competition pages.
 5. Store sync metadata, stale markers, failure details, and provider capability notes needed for operational visibility.

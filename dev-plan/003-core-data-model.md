@@ -4,7 +4,7 @@
 Implement the core schema for a minimal matches and results platform.
 
 ## Build
-1. Model the taxonomy needed for the MVP: Sport, Country, Competition, Season, Stage, and Round or Matchday.
+1. Model the taxonomy needed for the MVP around soccer only: Country, Competition, Season, Stage, and Round or Matchday. If a `Sport` entity remains for provider compatibility, keep it fixed to a single `soccer` value.
 2. Model participants required for the shipped UI: Team and Venue, with room for officials or player data only if the feed makes them trivial to carry.
 3. Model match data: Fixture, home and away participants, kickoff time, MatchStatus, ScoreSnapshot, and Event.
 4. Model provider linkage through normalized external references, source-provider codes, and enough metadata to support provider swaps without changing the core read model.

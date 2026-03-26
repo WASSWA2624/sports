@@ -1,12 +1,12 @@
 # Sports App
 
-Baseline Next.js App Router project for the sports platform roadmap.
+Baseline Next.js App Router project for the soccer matches and results roadmap.
 
 ## Scope Source Of Truth
 
 The active product contract is locked in [docs/mvp-scope.md](docs/mvp-scope.md).
 
-That scope freezes the app as a Flashscore-style public web product with monetization, affiliate conversion, Telegram/WhatsApp funnel entry, geo-aware betting-adjacent compliance, and provider-agnostic feed architecture. It also explicitly retires marketplace, creator, subscription, and community-product directions.
+That scope now freezes the app as a minimal FotMob-style public web product for soccer matches and results only. It explicitly removes news, betting-adjacent features, ads, auth, favorites, and all non-soccer coverage from the active MVP contract.
 
 ## Quick Start
 
@@ -79,7 +79,7 @@ Tune the related caps with:
 - `SPORTS_SYNC_BACKPRESSURE_LIVE_THRESHOLD`
 - `SPORTS_SYNC_STALE_LIVE_GRACE_MINUTES`
 
-Prepared provider expansion slots:
+Prepared but out-of-scope provider slots currently present in config:
 
 - `SPORTSMONKS_BASKETBALL`
 - `SPORTSMONKS_TENNIS`

@@ -1,4 +1,4 @@
-# Sports Matches and Results Product and Technical Specification
+# Soccer Matches and Results Product and Technical Specification
 
 **Reference product: FotMob web experience**
 
@@ -14,7 +14,7 @@
 
 ## 2. Executive Summary
 
-This application is a **minimal matches and results website**.
+This application is a **minimal soccer matches and results website**.
 
 The product exists to help a user do three things quickly:
 
@@ -30,7 +30,7 @@ It is not a news product, betting product, community product, or general sports 
 
 The scope in this repository should now be treated as:
 
-- public scores home with date navigation
+- soccer-only public scores home with date navigation
 - live, scheduled, and finished filters
 - grouped competitions or leagues
 - compact match rows with kickoff time, live status, and score
@@ -90,6 +90,10 @@ Primary flows should take 1 to 2 interactions:
 ### 4.7 Scope Discipline
 
 If a feature does not help users find, scan, or understand matches and results, it is out of scope.
+
+### 4.8 Soccer Only
+
+The sport scope is fixed to soccer. Other sports are out of scope for this product direction.
 
 ---
 
@@ -238,7 +242,7 @@ There are no registered-user features in the minimal scope.
 
 ### 9.1 Taxonomy
 
-- Sport
+- Sport scope fixed to soccer
 - Country
 - Competition
 - Season
@@ -313,7 +317,7 @@ src/
 ## 11. Data Provider Strategy
 
 - provider-agnostic architecture is acceptable, but the product scope stays minimal
-- prioritize reliable football fixtures, live scores, and final results
+- prioritize reliable soccer fixtures, live scores, and final results
 - richer feeds such as news, odds, standings, transfers, or social content are not required
 
 ---
@@ -364,6 +368,7 @@ Out of scope for this write-up:
 - comments, chat, community slips, or social features
 - broad CMS or admin product ambitions beyond basic operational sync control
 - multi-surface SEO expansion beyond the core matches and results pages
+- coverage for sports other than soccer
 
 ---
 
@@ -371,7 +376,7 @@ Out of scope for this write-up:
 
 ### Phase 1
 
-- football matches homepage
+- soccer matches homepage
 - date navigation
 - live, scheduled, and finished filters
 - competition grouping
@@ -385,7 +390,7 @@ Out of scope for this write-up:
 
 ### Phase 3
 
-- optional expansion to more sports or richer match detail, only if it does not break the minimal product focus
+- optional expansion to richer soccer match detail or deeper competition coverage, only if it does not break the minimal product focus
 
 ---
 
@@ -393,7 +398,7 @@ Out of scope for this write-up:
 
 This product should be treated as:
 
-> a **minimal FotMob-style matches and results site**
+> a **minimal FotMob-style soccer matches and results site**
 
 Success is defined by:
 

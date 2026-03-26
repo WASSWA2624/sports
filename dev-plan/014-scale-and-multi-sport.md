@@ -1,4 +1,4 @@
-# 014-scale-and-multi-sport
+# 014-scale-and-soccer-coverage
 
 ## Goal
 Harden the minimal matches and results platform for live traffic while keeping future expansion optional.
@@ -6,7 +6,7 @@ Harden the minimal matches and results platform for live traffic while keeping f
 ## Build
 1. Add caching and backpressure controls tuned for active live-match windows and high-frequency homepage refreshes.
 2. Add observability for latency, sync lag, stale-data rates, cache hit rates, and page errors on the core public routes.
-3. Keep provider expansion patterns ready for additional sports or backup feeds, but ship football first by default.
+3. Keep provider expansion patterns ready for backup soccer feeds or deeper soccer data, but do not plan product expansion into other sports.
 4. Distinguish configured providers from implemented adapters so unsafe source switches are caught early.
 5. Keep asset and CDN handling focused on team and competition logos plus any other media the minimal UI truly needs.
 6. Run failure drills for provider outage, delayed live feed, stale homepage data, and cache invalidation issues.
