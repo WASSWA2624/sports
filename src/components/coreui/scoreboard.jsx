@@ -261,6 +261,21 @@ function getLeagueShortcutStyle(league) {
   };
 }
 
+function buildLeagueChipLabel(league) {
+  const labels = {
+    EPL: "Premier",
+    UCL: "UCL",
+    LL: "LaLiga",
+    SA: "Serie A",
+    BL1: "Bundes",
+    MLS: "MLS",
+    L1: "Ligue 1",
+    TPL: "Bara",
+  };
+
+  return labels[league.code] || league.name;
+}
+
 function buildScorelineText(fixture) {
   if (isScoreVisible(fixture)) {
     return `${fixture.resultSnapshot.homeScore} - ${fixture.resultSnapshot.awayScore}`;
@@ -482,7 +497,7 @@ export function Scoreboard({ locale, feed }) {
             </Link>
             <span className={styles.datePill}>
               <span className={styles.datePillPrimary}>{selectedRangeLabel}</span>
-              <span className={styles.datePillSecondary}>{compactToolbarSummary}</span>
+              <span className={styles.datePillMeta}>{compactToolbarSummary}</span>
             </span>
             <Link
               href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.next)}
@@ -502,17 +517,14 @@ export function Scoreboard({ locale, feed }) {
                     league.code === feed.selectedLeague ? styles.leagueShortcutActive : styles.leagueShortcut
                   }
                   style={getLeagueShortcutStyle(league)}
-                  aria-label={`${league.name}${league.isLocaleLeague ? " local league" : ""}`}
+                  aria-label={`${league.name}${league.isLocaleLeague ? " local league" : ""}, ${league.count} matches`}
+                  title={league.name}
                 >
                   <span className={styles.leagueShortcutIcon} aria-hidden="true">
                     {league.iconText}
                   </span>
                   <span className={styles.leagueShortcutCopy}>
-                    <span className={styles.leagueShortcutLabel}>{league.name}</span>
-                    <span className={styles.leagueShortcutMeta}>
-                      {league.isLocaleLeague ? <span className={styles.localeBadge}>Local</span> : null}
-                      <span>{league.count} matches</span>
-                    </span>
+                    <span className={styles.leagueShortcutLabel}>{buildLeagueChipLabel(league)}</span>
                   </span>
                 </Link>
               ))}
@@ -527,32 +539,36 @@ export function Scoreboard({ locale, feed }) {
             <input type="hidden" name="endTime" value="23:59" />
 
             <label className={styles.dateRangeField}>
-              <span className={styles.searchLabel}>From</span>
+              <span className={styles.srOnly}>From</span>
               <input
                 type="date"
                 name="startDate"
                 defaultValue={feed.selectedStartDate}
-                className={styles.searchInput}
+                className={`${styles.searchInput} ${styles.dateRangeInput}`}
+                aria-label="Start date"
               />
             </label>
 
             <label className={styles.dateRangeField}>
-              <span className={styles.searchLabel}>To</span>
+              <span className={styles.srOnly}>To</span>
               <input
                 type="date"
                 name="endDate"
                 defaultValue={feed.selectedEndDate}
-                className={styles.searchInput}
+                className={`${styles.searchInput} ${styles.dateRangeInput}`}
+                aria-label="End date"
               />
             </label>
 
-            <button type="submit" className={styles.searchSubmit}>
-              Apply range
+            <button type="submit" className={`${styles.searchSubmit} ${styles.compactActionButton} ${feed.rangeIsDefault ? styles.fullWidthAction : ""}`}>
+              Apply
             </button>
 
-            <Link href={rangeResetHref} className={styles.rangeResetLink}>
-              Reset
-            </Link>
+            {!feed.rangeIsDefault ? (
+              <Link href={rangeResetHref} className={`${styles.rangeResetLink} ${styles.compactActionButton}`}>
+                Reset
+              </Link>
+            ) : null}
           </form>
         </div>
       </section>

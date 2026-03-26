@@ -127,7 +127,7 @@
 .presetRail {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.45rem;
+  gap: 0.28rem;
 }
 
 .toolbarTop {
@@ -139,9 +139,9 @@
 .filterRail,
 .presetRail {
   align-items: center;
-  padding: 0.26rem;
+  padding: 0.12rem;
   border: 1px solid rgba(169, 191, 255, 0.08);
-  border-radius: 1rem;
+  border-radius: 0.78rem;
   background: rgba(255, 255, 255, 0.025);
   overflow-x: auto;
   scrollbar-width: none;
@@ -163,13 +163,13 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  gap: 0.3rem;
-  min-height: 2.1rem;
-  padding: 0.44rem 0.78rem;
+  gap: 0.22rem;
+  min-height: 1.65rem;
+  padding: 0.24rem 0.52rem;
   border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  font-size: 0.78rem;
+  font-size: 0.66rem;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -198,9 +198,9 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
     rgba(255, 255, 255, 0.02);
   font-weight: 700;
-  flex: 1 1 12rem;
+  flex: 1 1 9rem;
   max-width: min(100%, 26rem);
-  white-space: normal;
+  white-space: nowrap;
   text-align: center;
 }
 
@@ -222,36 +222,36 @@
 .toolbar {
   position: relative;
   display: grid;
-  gap: 0.45rem;
-  padding: 0.56rem;
+  gap: 0.28rem;
+  padding: 0.36rem;
 }
 
 .toolbarBar {
   display: grid;
-  gap: 0.42rem;
+  gap: 0.28rem;
   min-width: 0;
 }
 
 .toolbarActions {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.28rem;
 }
 
 .dateRangeForm,
 .toolbarUtilityRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
+  gap: 0.28rem;
 }
 
 .featuredLeagueRail {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(8.75rem, 1fr);
-  gap: 0.4rem;
-  padding: 0.22rem;
+  grid-auto-columns: max-content;
+  gap: 0.24rem;
+  padding: 0.12rem;
   border: 1px solid rgba(169, 191, 255, 0.08);
-  border-radius: 1rem;
+  border-radius: 0.78rem;
   background: rgba(255, 255, 255, 0.025);
   overflow-x: auto;
   scrollbar-width: none;
@@ -266,12 +266,12 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.32rem;
   min-width: 0;
-  min-height: 3.1rem;
-  padding: 0.5rem 0.62rem;
+  min-height: 2rem;
+  padding: 0.24rem 0.34rem;
   border: 1px solid rgba(169, 191, 255, 0.1);
-  border-radius: 0.9rem;
+  border-radius: 999px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
     rgba(8, 18, 35, 0.72);
@@ -300,71 +300,78 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 0.7rem;
+  width: 1.28rem;
+  height: 1.28rem;
+  border-radius: 999px;
   background:
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), transparent 56%),
     var(--league-accent-soft);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: var(--league-accent);
-  font-size: 0.64rem;
+  font-size: 0.44rem;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
 
 .leagueShortcutCopy {
-  display: grid;
-  gap: 0.16rem;
+  display: block;
   min-width: 0;
 }
 
 .leagueShortcutLabel {
   overflow: hidden;
   color: inherit;
-  font-size: 0.72rem;
+  display: block;
+  font-size: 0.56rem;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.leagueShortcutMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.22rem;
-  color: rgba(225, 234, 255, 0.66);
-  font-size: 0.56rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.localeBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 1.2rem;
-  padding: 0.08rem 0.34rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  font-weight: 700;
-}
-
 .dateRangeField {
   display: grid;
-  gap: 0.28rem;
+  gap: 0;
+}
+
+.dateRangeInput {
+  min-height: 1.95rem;
+  padding: 0.26rem 0.5rem;
+  border-radius: 0.72rem;
+  font-size: 0.76rem;
+}
+
+.compactActionButton {
+  min-height: 1.95rem;
+  padding: 0.28rem 0.56rem;
+  border-radius: 0.72rem;
+  font-size: 0.76rem;
+}
+
+.fullWidthAction {
+  grid-column: 1 / -1;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .rangeResetLink {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.85rem;
-  padding: 0.62rem 0.95rem;
+  min-height: 1.95rem;
+  padding: 0.28rem 0.56rem;
   border: 1px solid rgba(169, 191, 255, 0.12);
-  border-radius: 0.85rem;
+  border-radius: 0.72rem;
   background: rgba(255, 255, 255, 0.04);
   color: rgba(235, 242, 237, 0.84);
   font-weight: 600;
@@ -447,22 +454,22 @@
 }
 
 .datePillPrimary,
-.datePillSecondary {
-  display: block;
+.datePillMeta {
+  display: inline;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .datePillPrimary {
-  font-size: 0.82rem;
+  font-size: 0.68rem;
   white-space: nowrap;
 }
 
-.datePillSecondary {
-  margin-top: 0.08rem;
+.datePillMeta {
+  margin-left: 0.22rem;
   color: rgba(225, 234, 255, 0.66);
-  font-size: 0.63rem;
+  font-size: 0.52rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   white-space: nowrap;
