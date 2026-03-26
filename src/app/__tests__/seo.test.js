@@ -1,27 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const SITE_ORIGIN = "https://sports.example";
-const db = {
-  sport: {
-    findMany: vi.fn(),
-  },
-  league: {
-    findMany: vi.fn(),
-  },
-  team: {
-    findMany: vi.fn(),
-  },
-  fixture: {
-    findMany: vi.fn(),
-  },
-  newsArticle: {
-    findMany: vi.fn(),
-  },
-};
-
-vi.mock("../../lib/db", () => ({
-  db,
-}));
 
 vi.mock("../../lib/coreui/preferences", () => ({
   SUPPORTED_LOCALES: ["en", "fr", "sw"],
@@ -35,11 +14,7 @@ vi.mock("../../lib/coreui/site", () => ({
   },
 }));
 
-const {
-  buildNewsArticleStructuredData,
-  buildPageMetadata,
-  buildWebsiteSearchStructuredData,
-} = await import("../../lib/coreui/metadata.js");
+const { buildPageMetadata } = await import("../../lib/coreui/metadata.js");
 const sitemapModule = await import("../sitemap.js");
 const robotsModule = await import("../robots.js");
 
@@ -48,36 +23,34 @@ describe("SEO surfaces", () => {
     vi.clearAllMocks();
   });
 
-  it("builds noindex metadata with localized alternates", () => {
-    const metadata = buildPageMetadata("fr", "Recherche", "Page de recherche", "/search", {
+  it("builds localized noindex metadata", () => {
+    const metadata = buildPageMetadata("fr", "Leagues", "Football competitions", "/leagues", {
       noIndex: true,
       keywords: ["football"],
     });
 
     expect(metadata.alternates).toEqual({
-      canonical: "/fr/search",
+      canonical: "/fr/leagues",
       languages: {
-        en: "/en/search",
-        fr: "/fr/search",
-        sw: "/sw/search",
+        en: "/en/leagues",
+        fr: "/fr/leagues",
+        sw: "/sw/leagues",
       },
     });
     expect(metadata.robots).toEqual({
       index: false,
       follow: true,
     });
-    expect(metadata.openGraph.url).toBe("https://sports.example/fr/search");
+    expect(metadata.openGraph.url).toBe("https://sports.example/fr/leagues");
   });
 
-  it("returns crawl rules and sitemap location", () => {
-    const robots = robotsModule.default();
-
-    expect(robots).toEqual({
+  it("returns crawl rules for the slim public app", () => {
+    expect(robotsModule.default()).toEqual({
       rules: [
         {
           userAgent: "*",
           allow: "/",
-          disallow: ["/api/", "/profile", "/en/search", "/fr/search", "/sw/search"],
+          disallow: ["/api/"],
         },
       ],
       sitemap: "https://sports.example/sitemap.xml",
@@ -85,124 +58,27 @@ describe("SEO surfaces", () => {
     });
   });
 
-  it("builds website search structured data for localized search", () => {
-    const data = buildWebsiteSearchStructuredData({
-      locale: "en",
-      name: "Sports Portal",
-      description: "Search the sports directory",
-    });
-
-    expect(data).toEqual({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      name: "Sports Portal",
-      description: "Search the sports directory",
-      url: "https://sports.example/en",
-      potentialAction: {
-        "@type": "SearchAction",
-        target: "https://sports.example/en/search?q={search_term_string}",
-        "query-input": "required name=search_term_string",
-      },
-    });
-  });
-
-  it("builds article structured data with sponsor and about entities", () => {
-    const data = buildNewsArticleStructuredData({
-      path: "/en/news/arsenal-title-race",
-      title: "Arsenal title race",
-      description: "An update from the title race.",
-      publishedAt: "2026-03-24T10:00:00.000Z",
-      updatedAt: "2026-03-24T11:00:00.000Z",
-      image: "/hero.png",
-      section: "Premier League",
-      sponsored: true,
-      sponsor: "PulseBook",
-      about: [
-        {
-          type: "SportsOrganization",
-          name: "Premier League",
-          path: "/en/leagues/EPL",
-        },
-      ],
-    });
-
-    expect(data).toMatchObject({
-      "@type": "NewsArticle",
-      headline: "Arsenal title race",
-      isAccessibleForFree: true,
-      sponsor: {
-        "@type": "Organization",
-        name: "PulseBook",
-      },
-      about: [
-        {
-          "@type": "SportsOrganization",
-          name: "Premier League",
-          url: "https://sports.example/en/leagues/EPL",
-        },
-      ],
-    });
-  });
-
-  it("falls back to static localized routes when sitemap data is unavailable", async () => {
-    db.sport.findMany.mockRejectedValue(new Error("DB offline"));
-    db.league.findMany.mockResolvedValue([]);
-    db.team.findMany.mockResolvedValue([]);
-    db.fixture.findMany.mockResolvedValue([]);
-    db.newsArticle.findMany.mockResolvedValue([]);
-
-    const entries = await sitemapModule.default();
-
-    expect(entries).toHaveLength(24);
-    expect(entries).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ url: "https://sports.example/en" }),
-        expect.objectContaining({ url: "https://sports.example/fr/news" }),
-        expect.objectContaining({ url: "https://sports.example/sw/teams" }),
-      ])
-    );
-  });
-
-  it("adds dynamic entities to the sitemap when data is available", async () => {
-    db.sport.findMany.mockResolvedValue([
-      { slug: "football", updatedAt: new Date("2026-03-24T10:00:00.000Z") },
-    ]);
-    db.league.findMany.mockResolvedValue([
-      {
-        code: "EPL",
-        updatedAt: new Date("2026-03-24T10:00:00.000Z"),
-        sport: { slug: "football" },
-        countryRecord: { slug: "england" },
-      },
-    ]);
-    db.team.findMany.mockResolvedValue([
-      { id: "team-1", updatedAt: new Date("2026-03-24T10:00:00.000Z") },
-    ]);
-    db.fixture.findMany.mockResolvedValue([
-      {
-        id: "fixture-1",
-        externalRef: "fx-1",
-        updatedAt: new Date("2026-03-24T10:00:00.000Z"),
-      },
-    ]);
-    db.newsArticle.findMany.mockResolvedValue([
-      {
-        slug: "arsenal-title-race",
-        updatedAt: new Date("2026-03-24T10:00:00.000Z"),
-      },
-    ]);
-
+  it("publishes only football board routes, leagues, and matches in the sitemap", async () => {
     const entries = await sitemapModule.default();
     const urls = entries.map((entry) => entry.url);
 
     expect(urls).toEqual(
       expect.arrayContaining([
-        "https://sports.example/en/sports/football",
+        "https://sports.example/en",
+        "https://sports.example/en/live",
+        "https://sports.example/en/fixtures",
+        "https://sports.example/en/results",
+        "https://sports.example/en/leagues",
         "https://sports.example/en/leagues/EPL",
-        "https://sports.example/en/sports/football/countries/england",
-        "https://sports.example/en/teams/team-1",
-        "https://sports.example/en/match/fx-1",
-        "https://sports.example/en/news/arsenal-title-race",
+        "https://sports.example/en/match/epl-live-ars-che",
+      ])
+    );
+    expect(urls).not.toEqual(
+      expect.arrayContaining([
+        "https://sports.example/en/search",
+        "https://sports.example/en/news",
+        "https://sports.example/en/predictions",
+        "https://sports.example/en/teams",
       ])
     );
   });

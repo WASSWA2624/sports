@@ -1,0 +1,131 @@
+.section {
+  display: grid;
+  gap: 0.9rem;
+  padding-bottom: 1.5rem;
+}
+
+.pageHeader,
+.emptyState,
+.fixtureCard {
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 1.35rem;
+  background: rgba(8, 17, 13, 0.84);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.18);
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.eyebrow {
+  color: rgba(228, 240, 231, 0.66);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.pageTitle {
+  margin-top: 0.35rem;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(1.85rem, 9vw, 2.5rem);
+  line-height: 0.94;
+}
+
+.emptyState {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  color: rgba(233, 241, 235, 0.78);
+  line-height: 1.55;
+}
+
+.actionButton {
+  width: fit-content;
+  min-height: 2.8rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(45, 211, 111, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.08));
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.skeletonHeaderStack,
+.fixtureGrid,
+.filterRow {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.filterRow {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.fixtureGrid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.fixtureCard {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.skeletonBlock,
+.skeletonBlockTall,
+.skeletonPill,
+.skeletonPillShort,
+.skeletonPillWide,
+.skeletonTitle {
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.12));
+}
+
+.skeletonBlock,
+.skeletonBlockTall,
+.skeletonTitle {
+  border-radius: 1rem;
+}
+
+.skeletonBlockTall {
+  height: 5rem;
+}
+
+.skeletonBlock {
+  height: 1.1rem;
+}
+
+.skeletonRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.skeletonPill {
+  height: 2.3rem;
+}
+
+.skeletonPillShort {
+  height: 2.3rem;
+  width: 5rem;
+}
+
+.skeletonPillWide {
+  height: 2.3rem;
+  grid-column: span 2;
+}
+
+.skeletonTitle {
+  height: 2.4rem;
+  width: min(20rem, 100%);
+}
+
+@media (max-width: 640px) {
+  .filterRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
