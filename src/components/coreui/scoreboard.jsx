@@ -87,6 +87,7 @@ export function MatchRow({ fixture, locale }) {
   const matchHref = buildMatchHref(locale, fixture);
   const competitionHref = fixture.league?.code ? buildCompetitionHref(locale, fixture.league) : null;
   const scoreAvailable = isScoreAvailable(fixture.resultSnapshot);
+  const showScore = scoreAvailable && fixture.status !== "SCHEDULED";
   const metaLabel =
     fixture.status === "SCHEDULED"
       ? new Intl.DateTimeFormat(locale, {
@@ -107,13 +108,13 @@ export function MatchRow({ fixture, locale }) {
           <div className={styles.teamLine}>
             <span className={styles.teamName}>{fixture.homeTeam?.shortName || fixture.homeTeam?.name}</span>
             <strong className={styles.teamScore}>
-              {scoreAvailable ? fixture.resultSnapshot.homeScore : fixture.status === "SCHEDULED" ? "" : "-"}
+              {showScore ? fixture.resultSnapshot.homeScore : fixture.status === "SCHEDULED" ? "" : "-"}
             </strong>
           </div>
           <div className={styles.teamLine}>
             <span className={styles.teamName}>{fixture.awayTeam?.shortName || fixture.awayTeam?.name}</span>
             <strong className={styles.teamScore}>
-              {scoreAvailable ? fixture.resultSnapshot.awayScore : fixture.status === "SCHEDULED" ? "" : "-"}
+              {showScore ? fixture.resultSnapshot.awayScore : fixture.status === "SCHEDULED" ? "" : "-"}
             </strong>
           </div>
         </div>
