@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
 import { buildMatchBoardHref } from "../../lib/coreui/minimal-routes";
-import { buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
+import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
 import { TeamBadge } from "./team-badge";
@@ -322,23 +322,66 @@ function buildKickoffCardLabel(fixture, locale) {
   };
 }
 
+function getTeamResultTone(fixture, side) {
+  const score = fixture.resultSnapshot;
+
+  if (!isScoreVisible(fixture) || !score) {
+    return "neutral";
+  }
+
+  if (score.homeScore === score.awayScore) {
+    return "draw";
+  }
+
+  const isHomeWinner = score.homeScore > score.awayScore;
+
+  if (side === "home") {
+    return isHomeWinner ? "winner" : "loser";
+  }
+
+  return isHomeWinner ? "loser" : "winner";
+}
+
 export function MatchRow({ fixture, locale }) {
   const homeStyle = getTeamStyle(fixture.homeTeam);
   const awayStyle = getTeamStyle(fixture.awayTeam);
   const matchDateLabel = buildMatchCardDateLabel(fixture, locale);
   const kickoffLabel = buildKickoffCardLabel(fixture, locale);
   const matchHref = buildMatchHref(locale, fixture);
+  const leagueHref = buildCompetitionHref(locale, fixture.league);
   const matchStatusLabel = fixture.status === "SCHEDULED" ? "" : buildMatchStatusLabel(fixture, locale);
+  const homeTone = getTeamResultTone(fixture, "home");
+  const awayTone = getTeamResultTone(fixture, "away");
   const matchStatusClassName =
     fixture.status === "LIVE"
       ? `${styles.matchStatusPill} ${styles.matchStatusPillLive}`
       : `${styles.matchStatusPill} ${styles.matchStatusPillFinished}`;
+  const homeTeamClassName = [
+    styles.teamSide,
+    styles.teamSideHome,
+    homeTone === "winner" ? styles.teamSideWinner : "",
+    homeTone === "loser" ? styles.teamSideLoser : "",
+    homeTone === "draw" ? styles.teamSideDraw : "",
+  ].filter(Boolean).join(" ");
+  const awayTeamClassName = [
+    styles.teamSide,
+    styles.teamSideAway,
+    awayTone === "winner" ? styles.teamSideWinner : "",
+    awayTone === "loser" ? styles.teamSideLoser : "",
+    awayTone === "draw" ? styles.teamSideDraw : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <article className={styles.matchRow}>
       <div className={styles.matchRowCard}>
         <div className={styles.matchRowHeader}>
-          <span className={styles.matchLeague}>{fixture.league.name}</span>
+          <Link
+            href={leagueHref}
+            className={styles.matchLeagueLink}
+            aria-label={`${fixture.league.name} league page`}
+          >
+            <span className={styles.matchLeague}>{fixture.league.name}</span>
+          </Link>
           {matchStatusLabel ? (
             <Link
               href={matchHref}
@@ -353,7 +396,7 @@ export function MatchRow({ fixture, locale }) {
         <div className={styles.matchRowMain}>
           <Link
             href={buildTeamHref(locale, fixture.homeTeam)}
-            className={`${styles.teamSide} ${styles.teamSideHome}`}
+            className={homeTeamClassName}
             aria-label={`${fixture.homeTeam.name} team details`}
           >
             <div className={styles.teamCopy}>
@@ -386,7 +429,7 @@ export function MatchRow({ fixture, locale }) {
 
           <Link
             href={buildTeamHref(locale, fixture.awayTeam)}
-            className={`${styles.teamSide} ${styles.teamSideAway}`}
+            className={awayTeamClassName}
             aria-label={`${fixture.awayTeam.name} team details`}
           >
             <TeamBadge team={fixture.awayTeam} teamStyle={awayStyle} />

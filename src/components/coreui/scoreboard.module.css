@@ -511,15 +511,29 @@
 }
 
 .matchRowHeader {
-  display: grid;
-  justify-items: start;
-  gap: 0.08rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
   min-width: 0;
 }
 
+.matchLeagueLink,
 .matchLeague,
 .matchStatusLink {
   min-width: 0;
+}
+
+.matchLeagueLink {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border-radius: 999px;
+}
+
+.matchLeagueLink:hover .matchLeague,
+.matchLeagueLink:focus-visible .matchLeague {
+  color: #e8f0ff;
 }
 
 .matchLeague {
@@ -536,7 +550,8 @@
 
 .matchStatusLink {
   display: flex;
-  justify-self: start;
+  justify-self: end;
+  flex: 0 0 auto;
 }
 
 .matchStatusPill,
@@ -563,7 +578,8 @@
 }
 
 .matchStatusPillLive {
-  color: #8cc7ff;
+  color: #ff6363;
+  text-shadow: 0 0 10px rgba(255, 99, 99, 0.22);
 }
 
 .matchStatusPillFinished {
@@ -594,6 +610,33 @@
   border-radius: 0.65rem;
   color: #f3f7ff;
   transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.teamSideWinner {
+  color: #ffffff;
+}
+
+.teamSideWinner .teamName {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.teamSideLoser {
+  color: rgba(188, 199, 229, 0.58);
+}
+
+.teamSideLoser .teamName {
+  color: rgba(188, 199, 229, 0.58);
+  font-weight: 600;
+}
+
+.teamSideDraw {
+  color: #dfe7fb;
+}
+
+.teamSideDraw .teamName {
+  color: #dfe7fb;
+  font-weight: 650;
 }
 
 .teamSide:hover,
