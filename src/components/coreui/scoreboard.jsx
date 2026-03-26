@@ -386,6 +386,7 @@ export function Scoreboard({ locale, feed }) {
   ]
     .filter(Boolean)
     .join(" · ");
+  const compactToolbarSummary = toolbarSummary.replaceAll("\u00c2", "").replaceAll("\u00b7", "|");
   const refinementPreview = [
     ...(feed.query ? [{ key: "query", label: feed.query }] : []),
     ...(hasLeagueFilter ? [{ key: "league", label: selectedLeagueLabel }] : []),
@@ -412,7 +413,7 @@ export function Scoreboard({ locale, feed }) {
             </Link>
             <span className={styles.datePill}>
               <span className={styles.datePillPrimary}>{selectedRangeLabel}</span>
-              <span className={styles.datePillSecondary}>{toolbarSummary}</span>
+              <span className={styles.datePillSecondary}>{compactToolbarSummary}</span>
             </span>
             <Link
               href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.next)}

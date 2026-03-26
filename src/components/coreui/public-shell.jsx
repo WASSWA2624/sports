@@ -56,6 +56,7 @@ function buildShellNav(locale) {
 
 function ShellFrame({ children, locale, dictionary, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
+  const activeNavItem = navItems.find((item) => item.isActive(pathname, searchParams)) || navItems[0];
 
   return (
     <div className={styles.shell}>
@@ -77,6 +78,27 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
                 <span className={styles.headerUtilityDot} aria-hidden="true" />
                 Matchday
               </span>
+
+              <details className={styles.mobileNavMenu}>
+                <summary className={styles.mobileNavToggle}>
+                  <span className={styles.mobileNavLabel}>Browse</span>
+                  <strong>{activeNavItem.label}</strong>
+                </summary>
+
+                <nav className={styles.mobileNavPanel} aria-label="Primary menu">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className={
+                        item.isActive(pathname, searchParams) ? styles.mobileNavLinkActive : styles.mobileNavLink
+                      }
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              </details>
             </div>
           </div>
 

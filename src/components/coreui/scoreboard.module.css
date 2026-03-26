@@ -223,13 +223,13 @@
 .toolbar {
   position: relative;
   display: grid;
-  gap: 0.55rem;
-  padding: 0.7rem;
+  gap: 0.45rem;
+  padding: 0.56rem;
 }
 
 .toolbarBar {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.42rem;
   min-width: 0;
 }
 
@@ -250,9 +250,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
-  min-height: 2.4rem;
+  min-height: 2.16rem;
   width: 100%;
-  padding: 0.5rem 0.78rem;
+  padding: 0.4rem 0.72rem;
   border: 1px solid rgba(193, 218, 201, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
@@ -275,6 +275,12 @@
 
 .compactToggle strong {
   font-size: 0.8rem;
+}
+
+.toolbarMenu[open] > .compactToggle,
+.refinePanel[open] > .compactToggle {
+  border-color: rgba(45, 211, 111, 0.24);
+  background: rgba(45, 211, 111, 0.08);
 }
 
 .menuPanel {
@@ -301,6 +307,28 @@
   gap: 0.7rem;
   max-height: min(78vh, 34rem);
   overflow: auto;
+}
+
+.datePillPrimary,
+.datePillSecondary {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.datePillPrimary {
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.datePillSecondary {
+  margin-top: 0.08rem;
+  color: rgba(228, 240, 231, 0.66);
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .menuList {
@@ -675,18 +703,13 @@
 }
 
 @media (min-width: 700px) {
-  .toolbarTop {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .refineToggle {
-    grid-template-columns: auto minmax(0, 1fr);
+  .toolbarBar {
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
   }
 
-  .refineSummary {
-    justify-content: flex-end;
+  .toolbarActions {
+    width: fit-content;
   }
 
   .groupHeader {
@@ -694,7 +717,7 @@
   }
 
   .dateRail {
-    width: fit-content;
+    width: 100%;
   }
 
   .rangePanel {
