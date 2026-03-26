@@ -74,7 +74,6 @@
 .commandButton,
 .filterChip,
 .filterChipActive,
-.rowSideAction,
 .groupSummary span,
 .statusChip,
 .statusLive,
@@ -100,16 +99,14 @@
 
 .commandButton,
 .filterChip,
-.rowSideAction {
+.groupSummary span {
   color: rgba(235, 242, 237, 0.82);
 }
 
 .commandButton:hover,
 .filterChip:hover,
-.rowSideAction:hover,
 .commandButton:focus-visible,
-.filterChip:focus-visible,
-.rowSideAction:focus-visible {
+.filterChip:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(45, 211, 111, 0.24);
   background: rgba(45, 211, 111, 0.08);
@@ -205,10 +202,7 @@
   line-height: 1;
 }
 
-.groupSummary span,
-.statusChip,
-.statusLive,
-.statusFinished {
+.groupSummary span {
   min-height: 2rem;
   padding: 0.42rem 0.72rem;
   font-size: 0.74rem;
@@ -216,86 +210,190 @@
   letter-spacing: 0.12em;
 }
 
-.groupSummary span,
-.statusChip {
+.groupSummary span {
   color: rgba(235, 242, 237, 0.7);
-}
-
-.statusLive {
-  border-color: rgba(45, 211, 111, 0.18);
-  background: rgba(45, 211, 111, 0.18);
-  color: #98f5b7;
-}
-
-.statusFinished {
-  color: rgba(241, 244, 242, 0.84);
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .matchList {
   display: grid;
+  gap: 0.9rem;
+  padding: 0.95rem;
 }
 
 .matchRow {
-  display: grid;
-  gap: 0.75rem;
-  padding: 0.95rem 1rem;
-  border-top: 1px solid rgba(193, 218, 201, 0.06);
-}
-
-.matchRow:first-child {
-  border-top: 0;
+  min-width: 0;
 }
 
 .matchRowMain {
+  display: block;
+}
+
+.matchRowMain:hover .matchRowCard,
+.matchRowMain:focus-visible .matchRowCard {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 20px 44px rgba(4, 10, 7, 0.22);
+}
+
+.matchRowCard {
   display: grid;
+  grid-template-areas:
+    "state"
+    "home"
+    "score"
+    "away";
+  gap: 0.95rem;
+  padding: 1rem;
+  border: 1px solid rgba(223, 228, 223, 0.12);
+  border-radius: 1.55rem;
+  background:
+    linear-gradient(180deg, rgba(253, 253, 251, 0.98), rgba(245, 247, 243, 0.95)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.78), transparent 60%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 16px 36px rgba(2, 8, 5, 0.16);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.teamSide {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 0.8rem;
-}
-
-.matchRowState {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
   align-items: center;
+  min-width: 0;
+  color: var(--team-accent-contrast);
 }
 
-.matchRowMeta {
-  color: rgba(225, 236, 229, 0.62);
-  font-size: 0.82rem;
-  line-height: 1.4;
+.teamSideHome {
+  grid-area: home;
 }
 
-.matchTeams {
+.teamSideAway {
+  grid-area: away;
+}
+
+.teamCopy {
   display: grid;
-  gap: 0.45rem;
-}
-
-.teamLine {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.8rem;
-  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .teamName {
   min-width: 0;
-  font-size: 0.98rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.teamScore {
-  min-width: 1.4rem;
-  text-align: right;
+  color: currentColor;
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: 1.6rem;
+  font-size: clamp(1.05rem, 5vw, 1.45rem);
+  font-weight: 700;
   line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
 }
 
-.rowSideAction {
-  width: fit-content;
+.teamBadge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.15rem;
+  aspect-ratio: 1;
+  border-radius: 1.05rem;
+  background:
+    radial-gradient(circle at 26% 24%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.95), var(--team-accent-soft));
+  border: 1px solid rgba(12, 18, 23, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 20px rgba(15, 23, 42, 0.12);
+}
+
+.teamBadgeInner {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: linear-gradient(145deg, var(--team-accent), rgba(255, 255, 255, 0.92));
+  color: var(--team-accent-contrast);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 6px 12px rgba(15, 23, 42, 0.12);
+}
+
+.scoreColumn {
+  grid-area: score;
+  display: grid;
+  gap: 0.28rem;
+  justify-items: center;
+  align-content: center;
+  padding-block: 0.1rem;
+  text-align: center;
+}
+
+.scoreline {
+  color: #11161b;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(2.15rem, 12vw, 4.75rem);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+}
+
+.scoreMeta,
+.matchRowMeta {
+  color: rgba(36, 47, 55, 0.6);
+  font-size: 0.74rem;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.matchRowState {
+  grid-area: state;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.stateStack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.statusChip,
+.statusLive,
+.statusFinished {
+  min-height: 2rem;
+  padding: 0.45rem 0.72rem;
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(36, 47, 55, 0.7);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.statusLive {
+  border-color: rgba(220, 67, 86, 0.18);
+  background: rgba(220, 67, 86, 0.1);
+  color: #c53950;
+}
+
+.statusFinished {
+  background: rgba(25, 38, 49, 0.06);
+  color: rgba(30, 41, 51, 0.78);
+}
+
+.stateValue {
+  color: #11161b;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(1.15rem, 5vw, 1.7rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .emptyState {
@@ -319,6 +417,14 @@
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
   }
+
+  .matchList {
+    padding: 1rem;
+  }
+
+  .matchRowCard {
+    padding: 1.2rem 1.3rem;
+  }
 }
 
 @media (min-width: 860px) {
@@ -327,13 +433,27 @@
     align-items: end;
   }
 
-  .matchRow {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .matchRowCard {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+    grid-template-areas: "home score away state";
     align-items: center;
+    gap: 1.1rem;
   }
 
-  .matchRowMain {
-    grid-template-columns: 7rem minmax(0, 1fr);
-    align-items: center;
+  .teamSideAway {
+    justify-self: stretch;
+  }
+
+  .matchRowState {
+    justify-items: end;
+    text-align: right;
+  }
+
+  .stateStack {
+    justify-content: flex-end;
+  }
+
+  .scoreColumn {
+    min-width: 8rem;
   }
 }
