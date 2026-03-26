@@ -34,7 +34,7 @@ function statusLabel(value) {
   }
 
   if (normalized === "SCHEDULED") {
-    return "Upcoming";
+    return "Fixtures";
   }
 
   if (normalized === "FINISHED") {
@@ -49,11 +49,18 @@ function isScoreVisible(fixture) {
 }
 
 export function MatchRow({ fixture, locale }) {
+  const statusClassName =
+    fixture.status === "LIVE"
+      ? styles.statusLive
+      : fixture.status === "FINISHED"
+        ? styles.statusFinished
+        : styles.statusChip;
+
   return (
     <article className={styles.matchRow}>
       <Link href={buildMatchHref(locale, fixture)} className={styles.matchRowMain}>
         <div className={styles.matchRowState}>
-          <span className={fixture.status === "LIVE" ? styles.statusLive : styles.statusChip}>
+          <span className={statusClassName}>
             {buildMatchStatusLabel(fixture, locale)}
           </span>
           <span className={styles.matchRowMeta}>{buildMatchTimeLabel(fixture, locale)}</span>
@@ -83,8 +90,8 @@ export function MatchRow({ fixture, locale }) {
 }
 
 export function Scoreboard({ locale, title, lead, feed }) {
-  const selectedDateLong = new Intl.DateTimeFormat(locale, {
-    weekday: "long",
+  const selectedDateLabel = new Intl.DateTimeFormat(locale, {
+    weekday: "short",
     month: "long",
     day: "numeric",
   }).format(new Date(feed.selectedDate));
@@ -94,6 +101,13 @@ export function Scoreboard({ locale, title, lead, feed }) {
     league: feed.selectedLeague,
     time: feed.selectedTime,
   };
+  const refreshLabel = feed.refresh?.enabled ? "Auto-refresh on" : "Waiting for live matches";
+  const summaryCards = [
+    { key: "ALL", count: feed.summary.total },
+    { key: "LIVE", count: feed.summary.LIVE },
+    { key: "SCHEDULED", count: feed.summary.SCHEDULED },
+    { key: "FINISHED", count: feed.summary.FINISHED },
+  ];
 
   return (
     <section className={styles.page}>
@@ -103,20 +117,21 @@ export function Scoreboard({ locale, title, lead, feed }) {
         until={feed.refresh?.until}
       />
 
-      <header className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Football</p>
+      <header className={styles.boardHeader}>
+        <div className={styles.boardIntro}>
+          <p className={styles.eyebrow}>Match board</p>
           <h1 className={styles.title}>{title}</h1>
-          <p className={styles.lead}>{lead}</p>
+          {lead ? <p className={styles.lead}>{lead}</p> : null}
         </div>
 
-        <div className={styles.heroMeta}>
-          <span className={styles.heroBadge}>{selectedDateLong}</span>
-          <span className={styles.heroBadge}>{feed.summary.total} matches</span>
+        <div className={styles.headerMeta}>
+          <span className={styles.metaChip}>{selectedDateLabel}</span>
+          <span className={styles.metaChip}>{feed.summary.total} matches</span>
+          <span className={styles.metaChip}>{refreshLabel}</span>
         </div>
       </header>
 
-      <section className={styles.commandDeck}>
+      <section className={styles.toolbar}>
         <div className={styles.dateRail}>
           <Link
             href={buildBoardHref(locale, {
@@ -127,7 +142,7 @@ export function Scoreboard({ locale, title, lead, feed }) {
           >
             Previous day
           </Link>
-          <span className={styles.datePill}>{selectedDateLong}</span>
+          <span className={styles.datePill}>{selectedDateLabel}</span>
           <Link
             href={buildBoardHref(locale, {
               date: shiftDate(feed.selectedDate, 1),
@@ -154,7 +169,7 @@ export function Scoreboard({ locale, title, lead, feed }) {
           ))}
         </div>
 
-        <form action={`/${locale}`} className={styles.searchForm}>
+        <form action={`/${locale}`} className={styles.refineGrid}>
           <input type="hidden" name="date" value={feed.selectedDate} />
           {feed.selectedStatus !== "ALL" ? (
             <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
@@ -199,12 +214,7 @@ export function Scoreboard({ locale, title, lead, feed }) {
       </section>
 
       <section className={styles.summaryGrid}>
-        {[
-          { key: "ALL", count: feed.summary.total },
-          { key: "LIVE", count: feed.summary.LIVE },
-          { key: "SCHEDULED", count: feed.summary.SCHEDULED },
-          { key: "FINISHED", count: feed.summary.FINISHED },
-        ].map((entry) => (
+        {summaryCards.map((entry) => (
           <article key={entry.key} className={styles.summaryCard}>
             <span>{statusLabel(entry.key)}</span>
             <strong>{entry.count}</strong>
@@ -226,7 +236,7 @@ export function Scoreboard({ locale, title, lead, feed }) {
 
                 <div className={styles.groupSummary}>
                   <span>{group.summary.LIVE || 0} live</span>
-                  <span>{group.summary.SCHEDULED || 0} upcoming</span>
+                  <span>{group.summary.SCHEDULED || 0} fixtures</span>
                   <span>{group.summary.FINISHED || 0} results</span>
                 </div>
               </div>

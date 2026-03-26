@@ -1,4 +1,4 @@
-import styles from "./styles.module.css";
+import styles from "./route-feedback.module.css";
 
 function SkeletonCard() {
   return (

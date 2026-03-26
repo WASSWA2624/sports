@@ -1,109 +1,154 @@
 .page {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  gap: 0.85rem;
+  padding-bottom: 1.5rem;
 }
 
-.hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.5rem;
+.boardHeader,
+.toolbar,
+.summaryCard,
+.groupCard,
+.emptyState {
   border: 1px solid rgba(193, 218, 201, 0.1);
-  border-radius: 1.75rem;
-  background:
-    linear-gradient(135deg, rgba(45, 211, 111, 0.14), rgba(45, 211, 111, 0.03)),
-    rgba(10, 20, 15, 0.88);
-  box-shadow: 0 30px 64px rgba(0, 0, 0, 0.2);
+  border-radius: 1.35rem;
+  background: rgba(8, 17, 13, 0.84);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.18);
 }
 
-.heroCopy {
-  max-width: 42rem;
+.boardHeader {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.boardIntro {
+  display: grid;
+  gap: 0.35rem;
 }
 
 .eyebrow,
-.groupCountry {
-  margin-bottom: 0.35rem;
+.groupCountry,
+.searchLabel,
+.summaryCard span {
   color: rgba(228, 240, 231, 0.66);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
 
 .title {
-  font-size: clamp(2.3rem, 4vw, 4rem);
-  line-height: 0.95;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(1.85rem, 9vw, 2.7rem);
+  line-height: 0.94;
 }
 
 .lead {
-  margin-top: 0.6rem;
-  color: rgba(233, 242, 235, 0.78);
-  font-size: 1rem;
-  line-height: 1.6;
+  max-width: 42rem;
+  color: rgba(233, 242, 235, 0.76);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
-.heroMeta {
+.headerMeta,
+.dateRail,
+.filterRail,
+.groupSummary {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.6rem;
-}
-
-.heroBadge,
-.datePill,
-.notice {
-  padding: 0.8rem 1rem;
-  border: 1px solid rgba(193, 218, 201, 0.12);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.heroBadge,
-.datePill {
-  color: rgba(245, 248, 245, 0.9);
-  font-size: 0.88rem;
-}
-
-.commandDeck {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  padding: 1rem;
-  border: 1px solid rgba(193, 218, 201, 0.08);
-  border-radius: 1.35rem;
-  background: rgba(9, 18, 13, 0.82);
+  gap: 0.5rem;
 }
 
 .dateRail,
 .filterRail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.searchForm {
+.dateRail::-webkit-scrollbar,
+.filterRail::-webkit-scrollbar {
+  display: none;
+}
+
+.metaChip,
+.datePill,
+.commandButton,
+.filterChip,
+.filterChipActive,
+.rowSideAction,
+.groupSummary span,
+.statusChip,
+.statusLive,
+.statusFinished {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+  min-height: 2.55rem;
+  padding: 0.72rem 0.95rem;
+  border: 1px solid rgba(193, 218, 201, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.86rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.metaChip,
+.datePill {
+  color: rgba(245, 248, 245, 0.88);
+}
+
+.commandButton,
+.filterChip,
+.rowSideAction {
+  color: rgba(235, 242, 237, 0.82);
+}
+
+.commandButton:hover,
+.filterChip:hover,
+.rowSideAction:hover,
+.commandButton:focus-visible,
+.filterChip:focus-visible,
+.rowSideAction:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(45, 211, 111, 0.24);
+  background: rgba(45, 211, 111, 0.08);
+}
+
+.datePill {
+  font-weight: 700;
+}
+
+.filterChip strong,
+.filterChipActive strong {
+  font-size: 0.8rem;
+}
+
+.filterChipActive {
+  color: #ffffff;
+  border-color: rgba(45, 211, 111, 0.34);
+  background: linear-gradient(135deg, rgba(45, 211, 111, 0.2), rgba(45, 211, 111, 0.06));
+}
+
+.toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) repeat(2, minmax(0, 1fr)) auto;
+  gap: 0.8rem;
+  padding: 0.9rem;
+}
+
+.refineGrid {
+  display: grid;
   gap: 0.75rem;
 }
 
 .searchField {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 0.35rem;
 }
 
-.searchLabel {
-  color: rgba(228, 239, 231, 0.68);
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
 .searchInput {
-  min-height: 3rem;
-  padding: 0.8rem 1rem;
+  min-height: 2.95rem;
+  padding: 0.78rem 0.95rem;
   border: 1px solid rgba(193, 218, 201, 0.1);
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.03);
@@ -111,157 +156,90 @@
 }
 
 .searchSubmit {
-  align-self: end;
-  min-height: 3rem;
+  min-height: 2.95rem;
   padding: 0.8rem 1rem;
   border: 1px solid rgba(45, 211, 111, 0.28);
   border-radius: 1rem;
   background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.08));
   color: #ffffff;
+  font-weight: 600;
   cursor: pointer;
-}
-
-.commandButton,
-.filterChip,
-.filterChipActive,
-.rowSideAction {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  padding: 0.8rem 1rem;
-  border: 1px solid rgba(193, 218, 201, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(235, 242, 237, 0.82);
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-}
-
-.commandButton:hover,
-.filterChip:hover,
-.rowSideAction:hover {
-  transform: translateY(-1px);
-  border-color: rgba(45, 211, 111, 0.24);
-  background: rgba(45, 211, 111, 0.08);
-}
-
-.filterChip strong,
-.filterChipActive strong {
-  font-size: 0.82rem;
-}
-
-.filterChipActive {
-  border-color: rgba(45, 211, 111, 0.34);
-  background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.06));
-  color: #ffffff;
 }
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
 }
 
 .summaryCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid rgba(193, 218, 201, 0.08);
-  border-radius: 1.3rem;
-  background: rgba(9, 18, 13, 0.82);
-}
-
-.summaryCard span {
-  color: rgba(228, 239, 231, 0.66);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.85rem 0.9rem;
 }
 
 .summaryCard strong {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: 2rem;
-}
-
-.notice {
-  color: rgba(241, 246, 242, 0.88);
-  line-height: 1.5;
+  font-size: 1.7rem;
+  line-height: 1;
 }
 
 .groupStack {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  gap: 0.85rem;
 }
 
 .groupCard {
-  border: 1px solid rgba(193, 218, 201, 0.08);
-  border-radius: 1.5rem;
-  background: rgba(10, 19, 14, 0.84);
   overflow: hidden;
 }
 
 .groupHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.15rem 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
   border-bottom: 1px solid rgba(193, 218, 201, 0.08);
 }
 
 .groupTitle {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   line-height: 1;
-}
-
-.groupSummary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem;
 }
 
 .groupSummary span,
 .statusChip,
 .statusLive,
 .statusFinished {
-  padding: 0.42rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.76rem;
+  min-height: 2rem;
+  padding: 0.42rem 0.72rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 
 .groupSummary span,
 .statusChip {
-  background: rgba(255, 255, 255, 0.06);
   color: rgba(235, 242, 237, 0.7);
 }
 
 .statusLive {
+  border-color: rgba(45, 211, 111, 0.18);
   background: rgba(45, 211, 111, 0.18);
   color: #98f5b7;
 }
 
 .statusFinished {
-  background: rgba(255, 255, 255, 0.08);
   color: rgba(241, 244, 242, 0.84);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .matchList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
 }
 
 .matchRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
-  align-items: center;
-  padding: 0.9rem 1.1rem;
+  padding: 0.95rem 1rem;
   border-top: 1px solid rgba(193, 218, 201, 0.06);
 }
 
@@ -271,26 +249,24 @@
 
 .matchRowMain {
   display: grid;
-  grid-template-columns: 7.4rem minmax(0, 1fr);
-  gap: 1rem;
-  align-items: center;
+  gap: 0.8rem;
 }
 
 .matchRowState {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
 }
 
 .matchRowMeta {
   color: rgba(225, 236, 229, 0.62);
-  font-size: 0.84rem;
-  line-height: 1.45;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .matchTeams {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 0.45rem;
 }
 
@@ -303,7 +279,7 @@
 
 .teamName {
   min-width: 0;
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -311,84 +287,53 @@
 }
 
 .teamScore {
-  min-width: 1.5rem;
+  min-width: 1.4rem;
   text-align: right;
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: 1.65rem;
+  font-size: 1.6rem;
   line-height: 1;
 }
 
 .rowSideAction {
-  min-width: 5.25rem;
+  width: fit-content;
 }
 
 .emptyState {
-  padding: 2rem 1.25rem;
-  border: 1px dashed rgba(193, 218, 201, 0.16);
-  border-radius: 1.4rem;
-  background: rgba(9, 18, 13, 0.72);
+  padding: 1.35rem 1rem;
   color: rgba(233, 241, 235, 0.72);
   text-align: center;
+  line-height: 1.5;
 }
 
-@media (max-width: 900px) {
-  .summaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (min-width: 700px) {
+  .boardHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
   }
 
-  .searchForm {
-    grid-template-columns: 1fr 1fr;
+  .summaryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .groupHeader {
-    flex-direction: column;
-  }
-
-  .groupSummary {
-    justify-content: flex-start;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
   }
 }
 
-@media (max-width: 720px) {
-  .hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .heroMeta {
-    justify-content: flex-start;
+@media (min-width: 860px) {
+  .refineGrid {
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
+    align-items: end;
   }
 
   .matchRow {
-    grid-template-columns: 1fr;
-  }
-
-  .searchForm {
-    grid-template-columns: 1fr;
-  }
-
-  .rowSideAction {
-    justify-content: flex-start;
-    width: fit-content;
-  }
-}
-
-@media (max-width: 560px) {
-  .hero,
-  .commandDeck,
-  .summaryCard,
-  .groupHeader,
-  .matchRow {
-    padding-left: 0.9rem;
-    padding-right: 0.9rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
   }
 
   .matchRowMain {
-    grid-template-columns: 1fr;
-    gap: 0.85rem;
-  }
-
-  .summaryGrid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    align-items: center;
   }
 }

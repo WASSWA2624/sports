@@ -8,7 +8,7 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/profile", "/en/search", "/fr/search", "/sw/search"],
+        disallow: ["/api/"],
       },
     ],
     sitemap: `${siteOrigin}/sitemap.xml`,

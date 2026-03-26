@@ -24,8 +24,8 @@ export default async function LocaleHomePage({ params, searchParams }) {
   return (
     <Scoreboard
       locale={locale}
-      title="Football match board"
-      lead="Track live scores, upcoming fixtures, and recent results. Search by league, team, or kickoff time."
+      title="Football scores"
+      lead="Live matches, fixtures, and results in one fast board."
       feed={feed}
     />
   );
