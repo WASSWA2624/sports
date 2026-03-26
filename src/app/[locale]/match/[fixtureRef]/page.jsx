@@ -8,6 +8,7 @@ import {
   getMatchByReference,
 } from "../../../../lib/coreui/match-data";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
+import { buildTeamHref } from "../../../../lib/coreui/routes";
 
 function scoreline(fixture) {
   if (!Number.isFinite(fixture.resultSnapshot?.homeScore)) {
@@ -66,10 +67,10 @@ export default async function MatchDetailPage({ params }) {
         <h1 className={styles.title}>{fixture.homeTeam.name} vs {fixture.awayTeam.name}</h1>
 
         <div className={styles.scoreline}>
-          <div className={styles.teamCard}>
+          <Link href={buildTeamHref(locale, fixture.homeTeam)} className={styles.teamCard}>
             <span>Home</span>
             <strong>{fixture.homeTeam.name}</strong>
-          </div>
+          </Link>
 
           <div className={styles.centerScore}>
             <strong className={styles.scoreValue}>{scoreline(fixture)}</strong>
@@ -79,10 +80,10 @@ export default async function MatchDetailPage({ params }) {
             </div>
           </div>
 
-          <div className={styles.teamCard}>
+          <Link href={buildTeamHref(locale, fixture.awayTeam)} className={styles.teamCard}>
             <span>Away</span>
             <strong>{fixture.awayTeam.name}</strong>
-          </div>
+          </Link>
         </div>
       </header>
 

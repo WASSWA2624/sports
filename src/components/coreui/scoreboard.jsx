@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
 import { buildMatchBoardHref } from "../../lib/coreui/minimal-routes";
-import { buildMatchHref } from "../../lib/coreui/routes";
+import { buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
 import { TeamBadge } from "./team-badge";
+
+const META_SEPARATOR = " \u00b7 ";
 
 const TEAM_PALETTE_FALLBACKS = [
   {
@@ -325,42 +327,92 @@ function buildMatchCardDateLabel(fixture, locale) {
   return new Intl.DateTimeFormat(locale, formatOptions).format(kickoff);
 }
 
+function buildKickoffCardLabel(fixture, locale) {
+  const kickoff = new Date(fixture.startsAt);
+
+  if (Number.isNaN(kickoff.getTime())) {
+    return { primary: "", suffix: "" };
+  }
+
+  const formatted = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(kickoff);
+  const match = /^(.*?)(?:\s([A-Za-z]{2}))?$/.exec(formatted.trim());
+
+  return {
+    primary: match?.[1] || formatted,
+    suffix: match?.[2] || "",
+  };
+}
+
 export function MatchRow({ fixture, locale }) {
-  const matchStateClassName =
-    fixture.status === "LIVE"
-      ? `${styles.matchState} ${styles.matchStateLive}`
-      : fixture.status === "FINISHED"
-        ? `${styles.matchState} ${styles.matchStateFinished}`
-        : styles.matchState;
   const homeStyle = getTeamStyle(fixture.homeTeam);
   const awayStyle = getTeamStyle(fixture.awayTeam);
   const matchDateLabel = buildMatchCardDateLabel(fixture, locale);
+  const kickoffLabel = buildKickoffCardLabel(fixture, locale);
+  const matchHref = buildMatchHref(locale, fixture);
+  const matchStatusLabel = fixture.status === "SCHEDULED" ? "" : buildMatchStatusLabel(fixture, locale);
+  const matchStatusClassName =
+    fixture.status === "LIVE"
+      ? `${styles.matchStatusPill} ${styles.matchStatusPillLive}`
+      : `${styles.matchStatusPill} ${styles.matchStatusPillFinished}`;
 
   return (
     <article className={styles.matchRow}>
-      <Link href={buildMatchHref(locale, fixture)} className={styles.matchRowMain}>
-        <div className={styles.matchRowCard}>
-          <div className={styles.teamSide} style={homeStyle}>
-            <TeamBadge team={fixture.homeTeam} teamStyle={homeStyle} />
-            <div className={styles.teamCopy}>
-              <span className={styles.teamName}>{fixture.homeTeam.name}</span>
-            </div>
-          </div>
-
-          <div className={styles.matchCenter}>
-            <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
-            <span className={matchStateClassName}>{buildMatchStatusLabel(fixture, locale)}</span>
-            {matchDateLabel ? <span className={styles.matchDate}>{matchDateLabel}</span> : null}
-          </div>
-
-          <div className={`${styles.teamSide} ${styles.teamSideAway}`} style={awayStyle}>
-            <div className={styles.teamCopy}>
-              <span className={styles.teamName}>{fixture.awayTeam.name}</span>
-            </div>
-            <TeamBadge team={fixture.awayTeam} teamStyle={awayStyle} />
-          </div>
+      <div className={styles.matchRowCard}>
+        <div className={styles.matchStatusRail}>
+          {matchStatusLabel ? (
+            <Link
+              href={matchHref}
+              className={matchStatusClassName}
+              aria-label={`${fixture.homeTeam.name} vs ${fixture.awayTeam.name} match details`}
+            >
+              {matchStatusLabel}
+            </Link>
+          ) : (
+            <span className={styles.matchStatusSpacer} aria-hidden="true" />
+          )}
         </div>
-      </Link>
+
+        <Link
+          href={buildTeamHref(locale, fixture.homeTeam)}
+          className={`${styles.teamSide} ${styles.teamSideHome}`}
+          aria-label={`${fixture.homeTeam.name} team details`}
+        >
+          <div className={styles.teamCopy}>
+            <span className={styles.teamName}>{fixture.homeTeam.name}</span>
+          </div>
+          <TeamBadge team={fixture.homeTeam} teamStyle={homeStyle} />
+        </Link>
+
+        <Link
+          href={matchHref}
+          className={styles.matchCenterLink}
+          aria-label={`${fixture.homeTeam.name} vs ${fixture.awayTeam.name} match details`}
+        >
+          {isScoreVisible(fixture) ? (
+            <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
+          ) : (
+            <span className={styles.kickoffStack}>
+              <strong className={styles.kickoffPrimary}>{kickoffLabel.primary}</strong>
+              {kickoffLabel.suffix ? <span className={styles.kickoffSuffix}>{kickoffLabel.suffix}</span> : null}
+            </span>
+          )}
+          {matchDateLabel ? <span className={styles.matchDate}>{matchDateLabel}</span> : null}
+        </Link>
+
+        <Link
+          href={buildTeamHref(locale, fixture.awayTeam)}
+          className={`${styles.teamSide} ${styles.teamSideAway}`}
+          aria-label={`${fixture.awayTeam.name} team details`}
+        >
+          <TeamBadge team={fixture.awayTeam} teamStyle={awayStyle} />
+          <div className={styles.teamCopy}>
+            <span className={styles.teamName}>{fixture.awayTeam.name}</span>
+          </div>
+        </Link>
+      </div>
     </article>
   );
 }
@@ -403,7 +455,7 @@ export function Scoreboard({ locale, feed }) {
   ]
     .filter(Boolean)
     .join(" · ");
-  const compactToolbarSummary = toolbarSummary.replaceAll("\u00c2", "").replaceAll("\u00b7", "|");
+  const compactToolbarSummary = toolbarSummary.replaceAll("\u00c2\u00b7", META_SEPARATOR.trim());
   const refinementPreview = [
     ...(feed.query ? [{ key: "query", label: feed.query }] : []),
     ...(hasLeagueFilter ? [{ key: "league", label: selectedLeagueLabel }] : []),
@@ -624,7 +676,7 @@ export function Scoreboard({ locale, feed }) {
         {feed.groups.length ? (
           feed.groups.map((group) => {
             const groupLabel = buildTimeGroupLabel(group, locale, !singleDayRange);
-            const groupMeta = buildTimeGroupMeta(group);
+            const groupMeta = buildTimeGroupMeta(group).replaceAll("\u00c2", "").replaceAll("\u00b7", "·");
 
             return (
               <section key={group.key} className={styles.groupCard}>
@@ -632,7 +684,7 @@ export function Scoreboard({ locale, feed }) {
                   <h2 className={styles.groupTitle}>{groupLabel}</h2>
 
                   {groupMeta ? (
-                    <p className={styles.groupMeta}>{groupMeta}</p>
+                    <p className={styles.groupMeta}>{groupMeta.replaceAll("\u00c2\u00b7", META_SEPARATOR.trim())}</p>
                   ) : null}
                 </div>
 

@@ -517,78 +517,134 @@
   min-width: 0;
 }
 
-.matchRowMain {
-  display: block;
-}
-
-.matchRowMain:hover .matchRowCard,
-.matchRowMain:focus-visible .matchRowCard {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.24);
-  box-shadow: 0 16px 30px rgba(3, 9, 26, 0.2);
-}
-
 .matchRowCard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.42rem;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid rgba(220, 226, 221, 0.18);
-  border-radius: 1rem;
-  background:
-    linear-gradient(180deg, rgba(252, 252, 250, 0.985), rgba(247, 248, 244, 0.96)),
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.6), transparent 58%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 8px 18px rgba(2, 8, 24, 0.14);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  gap: 0.55rem;
+  min-height: 4rem;
+  padding: 0.56rem 0.72rem;
+  border: 1px solid rgba(169, 191, 255, 0.08);
+  border-radius: 1.05rem;
+  background: linear-gradient(180deg, rgba(18, 27, 50, 0.92), rgba(11, 19, 38, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.matchStatusRail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+}
+
+.matchStatusPill,
+.matchStatusPillLive,
+.matchStatusPillFinished,
+.matchStatusSpacer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0 0.42rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.matchStatusPillLive,
+.matchStatusPillFinished {
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.matchStatusPillLive {
+  border: 1px solid rgba(92, 142, 255, 0.24);
+  background: linear-gradient(135deg, rgba(92, 142, 255, 0.3), rgba(92, 142, 255, 0.14));
+  color: #eef4ff;
+}
+
+.matchStatusPillFinished {
+  border: 1px solid rgba(169, 191, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(232, 239, 255, 0.68);
+}
+
+.matchStatusPillLive:hover,
+.matchStatusPillLive:focus-visible,
+.matchStatusPillFinished:hover,
+.matchStatusPillFinished:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(92, 142, 255, 0.12);
+}
+
+.matchStatusSpacer {
+  opacity: 0;
 }
 
 .teamSide {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.28rem;
+  gap: 0.42rem;
   align-items: center;
   min-width: 0;
-  color: var(--team-accent-contrast);
+  padding: 0.18rem 0.2rem;
+  border-radius: 0.9rem;
+  color: #f3f7ff;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.teamSideAway {
+.teamSide:hover,
+.teamSide:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.teamSideHome {
   grid-template-columns: minmax(0, 1fr) auto;
   text-align: right;
 }
 
+.teamSideAway {
+  grid-template-columns: auto minmax(0, 1fr);
+  text-align: left;
+}
+
 .teamCopy {
   display: grid;
+  gap: 0.08rem;
   min-width: 0;
 }
 
-.teamSideAway .teamCopy {
+.teamSideHome .teamCopy {
   justify-items: end;
+}
+
+.teamSideAway .teamCopy {
+  justify-items: start;
 }
 
 .teamName {
   min-width: 0;
   color: currentColor;
-  font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(0.72rem, 2vw, 0.96rem);
-  font-weight: 700;
-  line-height: 1;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: clamp(0.8rem, 2.2vw, 0.98rem);
+  font-weight: 600;
+  line-height: 1.08;
   letter-spacing: 0;
-  white-space: nowrap;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .teamBadge {
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(1.5rem, 4vw, 2rem);
+  width: clamp(1.35rem, 3.4vw, 1.7rem);
   aspect-ratio: 1;
-  border-radius: 0.55rem 0.55rem 0.72rem 0.72rem;
+  border-radius: 999px;
   background:
     radial-gradient(circle at 26% 24%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0) 38%),
     linear-gradient(150deg, rgba(255, 255, 255, 0.95), var(--team-accent-soft));
@@ -601,12 +657,12 @@
 .teamBadgeInner {
   display: grid;
   place-items: center;
-  width: clamp(1rem, 2.5vw, 1.3rem);
+  width: clamp(0.9rem, 2.2vw, 1.08rem);
   aspect-ratio: 1;
   border-radius: 999px;
   background: linear-gradient(145deg, var(--team-accent), rgba(255, 255, 255, 0.92));
   color: var(--team-accent-contrast);
-  font-size: clamp(0.42rem, 0.9vw, 0.52rem);
+  font-size: clamp(0.38rem, 0.82vw, 0.46rem);
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -618,9 +674,9 @@
 .teamBadgeLogoWrap {
   display: grid;
   place-items: center;
-  width: clamp(1rem, 2.5vw, 1.3rem);
+  width: clamp(0.9rem, 2.2vw, 1.08rem);
   aspect-ratio: 1;
-  padding: clamp(0.08rem, 0.25vw, 0.14rem);
+  padding: clamp(0.06rem, 0.22vw, 0.12rem);
   border-radius: 999px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.94);
@@ -635,59 +691,62 @@
   object-fit: contain;
 }
 
-.matchCenter {
+.matchCenterLink {
   display: grid;
   justify-items: center;
   gap: 0.14rem;
   min-width: 3.4rem;
+  padding: 0.18rem 0.3rem;
+  border-radius: 0.9rem;
   text-align: center;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.matchCenterLink:hover,
+.matchCenterLink:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .scoreline {
-  color: #11161b;
+  color: #f3f7ff;
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(1rem, 3.4vw, 1.58rem);
+  font-size: clamp(1.08rem, 3.6vw, 1.56rem);
   line-height: 0.9;
   letter-spacing: -0.05em;
   white-space: nowrap;
 }
 
-.matchState {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 1.12rem;
-  padding: 0.1rem 0.36rem;
-  border-radius: 999px;
-  background: rgba(17, 22, 27, 0.08);
-  color: #11161b;
+.kickoffStack {
+  display: grid;
+  justify-items: center;
+  line-height: 0.9;
+  color: #f3f7ff;
+}
+
+.kickoffPrimary {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(0.58rem, 1.8vw, 0.7rem);
+  font-size: clamp(0.98rem, 3vw, 1.26rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.kickoffSuffix {
+  color: rgba(225, 234, 255, 0.7);
+  font-size: 0.62rem;
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .matchDate {
-  color: rgba(17, 22, 27, 0.58);
+  color: rgba(225, 234, 255, 0.6);
   font-size: clamp(0.52rem, 1.6vw, 0.64rem);
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.matchStateLive {
-  background: rgba(197, 57, 80, 0.12);
-  color: #c53950;
-}
-
-.matchStateFinished {
-  background: rgba(30, 41, 51, 0.08);
-  color: rgba(30, 41, 51, 0.8);
 }
 
 .emptyState {

@@ -1,0 +1,226 @@
+.page {
+  display: grid;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+}
+
+.hero,
+.panel,
+.summaryCard,
+.competitionLink,
+.playerCard,
+.emptyState {
+  border: 1px solid rgba(169, 191, 255, 0.1);
+  border-radius: 1.2rem;
+  background:
+    linear-gradient(180deg, rgba(10, 18, 36, 0.96), rgba(6, 13, 27, 0.92)),
+    radial-gradient(circle at top left, rgba(92, 142, 255, 0.08), transparent 48%);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.hero,
+.panel,
+.emptyState {
+  padding: 0.9rem 0.95rem;
+}
+
+.hero {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.heroTop {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.chipRow,
+.sectionTools,
+.formRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.eyebrow,
+.summaryLabel,
+.sectionEyebrow {
+  color: rgba(225, 234, 255, 0.62);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(1.7rem, 7vw, 2.6rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+}
+
+.lead {
+  max-width: 46rem;
+  color: rgba(229, 236, 255, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.badge,
+.badgeLink,
+.formChip,
+.formChipWin,
+.formChipDraw,
+.formChipLoss,
+.sectionCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.38rem 0.72rem;
+  border: 1px solid rgba(169, 191, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(239, 244, 255, 0.86);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.badgeLink:hover,
+.badgeLink:focus-visible {
+  border-color: rgba(92, 142, 255, 0.22);
+  background: rgba(92, 142, 255, 0.08);
+}
+
+.formChip,
+.formChipWin,
+.formChipDraw,
+.formChipLoss {
+  min-width: 2rem;
+  padding-inline: 0.65rem;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+}
+
+.formChipWin {
+  border-color: rgba(92, 142, 255, 0.28);
+  background: rgba(92, 142, 255, 0.18);
+  color: #eef4ff;
+}
+
+.formChipDraw {
+  border-color: rgba(169, 191, 255, 0.16);
+  color: rgba(232, 239, 255, 0.74);
+}
+
+.formChipLoss {
+  border-color: rgba(255, 116, 140, 0.2);
+  background: rgba(255, 116, 140, 0.12);
+  color: #ffd8df;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.82rem 0.88rem;
+}
+
+.summaryValue {
+  color: #f3f7ff;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 1.18rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.summaryMeta {
+  color: rgba(225, 234, 255, 0.68);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.panel {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.sectionTitle {
+  font-size: 1.02rem;
+}
+
+.fixtureStack {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.competitionGrid,
+.playerGrid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.competitionGrid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.competitionLink,
+.playerCard {
+  padding: 0.8rem 0.85rem;
+}
+
+.competitionMeta,
+.playerMeta {
+  margin-top: 0.2rem;
+  color: rgba(225, 234, 255, 0.68);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.playerGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.playerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.playerName {
+  font-size: 0.92rem;
+}
+
+.playerNumber {
+  color: rgba(225, 234, 255, 0.64);
+  font-size: 0.8rem;
+}
+
+.emptyState {
+  color: rgba(229, 236, 255, 0.72);
+  line-height: 1.4;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .summaryGrid,
+  .playerGrid {
+    grid-template-columns: 1fr;
+  }
+}

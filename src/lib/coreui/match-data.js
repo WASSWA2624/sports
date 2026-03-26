@@ -1,4 +1,4 @@
-import { buildMockTeamLogoUrl } from "./team-branding";
+import { buildMockTeamLogoUrl, buildTeamSlug } from "./team-branding";
 
 const LEAGUES = [
   { code: "EPL", name: "Premier League", country: "England", season: "2025/2026" },
@@ -449,6 +449,8 @@ function buildLineup(players = [], formation = null) {
 function buildFixture(baseDate, config) {
   const league = getLeague(config.leagueCode);
   const startsAt = setTime(addDays(baseDate, config.dayOffset || 0), config.hour, config.minute);
+  const homeTeamSlug = buildTeamSlug(config.homeTeam.name);
+  const awayTeamSlug = buildTeamSlug(config.awayTeam.name);
 
   return {
     id: config.id,
@@ -462,13 +464,15 @@ function buildFixture(baseDate, config) {
     startsAt: startsAt.toISOString(),
     status: config.status,
     homeTeam: {
-      id: `${config.id}-home`,
+      id: homeTeamSlug,
+      slug: homeTeamSlug,
       name: config.homeTeam.name,
       shortName: config.homeTeam.shortName,
       logoUrl: buildMockTeamLogoUrl(config.homeTeam.name),
     },
     awayTeam: {
-      id: `${config.id}-away`,
+      id: awayTeamSlug,
+      slug: awayTeamSlug,
       name: config.awayTeam.name,
       shortName: config.awayTeam.shortName,
       logoUrl: buildMockTeamLogoUrl(config.awayTeam.name),
@@ -1084,6 +1088,162 @@ export function getLeagueDetail(leagueCode) {
     seasons: [{ id: league.season, name: league.season }],
     selectedSeason: { id: league.season, name: league.season },
     archiveSeasons: [{ id: league.season, name: league.season, fixtureCount: league.fixtures.length }],
+  };
+}
+
+function getFixtureTeamSide(fixture, teamSlug) {
+  if (fixture.homeTeam.slug === teamSlug) {
+    return "home";
+  }
+
+  if (fixture.awayTeam.slug === teamSlug) {
+    return "away";
+  }
+
+  return null;
+}
+
+function getTeamScoreline(fixture, side) {
+  if (!Number.isFinite(fixture.resultSnapshot?.homeScore) || !side) {
+    return null;
+  }
+
+  return side === "home"
+    ? {
+        goalsFor: fixture.resultSnapshot.homeScore,
+        goalsAgainst: fixture.resultSnapshot.awayScore,
+      }
+    : {
+        goalsFor: fixture.resultSnapshot.awayScore,
+        goalsAgainst: fixture.resultSnapshot.homeScore,
+      };
+}
+
+function buildTeamResultLabel(fixture, side) {
+  const scoreline = getTeamScoreline(fixture, side);
+
+  if (!scoreline) {
+    return null;
+  }
+
+  if (scoreline.goalsFor > scoreline.goalsAgainst) {
+    return "W";
+  }
+
+  if (scoreline.goalsFor < scoreline.goalsAgainst) {
+    return "L";
+  }
+
+  return "D";
+}
+
+function collectTeamPlayers(fixtures, teamSlug) {
+  const players = [];
+  const seen = new Set();
+
+  [...fixtures]
+    .sort((left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime())
+    .forEach((fixture) => {
+      const side = getFixtureTeamSide(fixture, teamSlug);
+      const starters = side ? fixture.lineups?.[side]?.starters || [] : [];
+
+      starters.forEach((player) => {
+        const key = `${player.name}-${player.jerseyNumber}`;
+
+        if (seen.has(key)) {
+          return;
+        }
+
+        seen.add(key);
+        players.push(player);
+      });
+    });
+
+  return players.slice(0, 10);
+}
+
+export function getTeamDetail(teamSlug) {
+  const normalizedSlug = buildTeamSlug(teamSlug);
+  const fixtures = buildFixtures().filter((fixture) => getFixtureTeamSide(fixture, normalizedSlug));
+
+  if (!fixtures.length) {
+    return null;
+  }
+
+  const latestFixture = [...fixtures].sort(
+    (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+  )[0];
+  const latestSide = getFixtureTeamSide(latestFixture, normalizedSlug);
+  const team = latestSide === "home" ? latestFixture.homeTeam : latestFixture.awayTeam;
+  const leagues = [...new Map(
+    fixtures.map((fixture) => [fixture.league.code, fixture.league])
+  ).values()].sort((left, right) => left.name.localeCompare(right.name));
+  const activeFixtures = [...fixtures]
+    .filter((fixture) => fixture.status !== "FINISHED")
+    .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime());
+  const recentResults = [...fixtures]
+    .filter((fixture) => fixture.status === "FINISHED")
+    .sort((left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime())
+    .slice(0, 5);
+  const finishedFixtures = fixtures.filter((fixture) => fixture.status === "FINISHED");
+  const record = finishedFixtures.reduce((summary, fixture) => {
+    const side = getFixtureTeamSide(fixture, normalizedSlug);
+    const scoreline = getTeamScoreline(fixture, side);
+
+    if (!scoreline) {
+      return summary;
+    }
+
+    if (scoreline.goalsFor > scoreline.goalsAgainst) {
+      summary.wins += 1;
+    } else if (scoreline.goalsFor < scoreline.goalsAgainst) {
+      summary.losses += 1;
+    } else {
+      summary.draws += 1;
+    }
+
+    summary.played += 1;
+    summary.goalsFor += scoreline.goalsFor;
+    summary.goalsAgainst += scoreline.goalsAgainst;
+
+    if (scoreline.goalsAgainst === 0) {
+      summary.cleanSheets += 1;
+    }
+
+    return summary;
+  }, {
+    played: 0,
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    cleanSheets: 0,
+  });
+  const form = [...finishedFixtures]
+    .sort((left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime())
+    .slice(0, 5)
+    .map((fixture) => ({
+      fixtureId: fixture.id,
+      result: buildTeamResultLabel(fixture, getFixtureTeamSide(fixture, normalizedSlug)),
+    }))
+    .filter((entry) => entry.result);
+
+  return {
+    ...team,
+    slug: normalizedSlug,
+    country: leagues[0]?.country || null,
+    leagues,
+    venue:
+      fixtures.find((fixture) => getFixtureTeamSide(fixture, normalizedSlug) === "home" && fixture.venue)?.venue ||
+      latestFixture.venue ||
+      null,
+    fixtureSummary: summarize(fixtures),
+    activeFixtures,
+    recentResults,
+    record,
+    form,
+    playerPreview: collectTeamPlayers(fixtures, normalizedSlug),
   };
 }
 

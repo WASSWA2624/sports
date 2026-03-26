@@ -6,6 +6,8 @@ import styles from "../../../../components/coreui/competition-pages.module.css";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
 import { getLeagueDetail } from "../../../../lib/coreui/match-data";
 
+const META_SEPARATOR = " \u00b7 ";
+
 function buildGroupedFixtures(fixtures) {
   return fixtures.reduce((groups, fixture) => {
     const key = fixture.round || new Date(fixture.startsAt).toISOString().slice(0, 10);
@@ -110,21 +112,23 @@ export default async function LeagueDetailPage({ params, searchParams }) {
 
       {grouped.length ? (
         <div className={styles.fixtureGroups}>
-          {grouped.map((group) => (
-            <section key={group.key} className={boardStyles.groupCard}>
-              <div className={boardStyles.groupHeader}>
-                <div className={boardStyles.groupHeading}>
-                  <p className={boardStyles.groupCountry}>{league.country}</p>
+          {grouped.map((group) => {
+            const groupMeta = [league.country, `${group.fixtures.length} matches`].join(META_SEPARATOR);
+
+            return (
+              <section key={group.key} className={boardStyles.groupCard}>
+                <div className={boardStyles.groupHeader}>
                   <h2 className={boardStyles.groupTitle}>{group.label}</h2>
+                  <p className={boardStyles.groupMeta}>{groupMeta}</p>
                 </div>
-              </div>
-              <div className={boardStyles.matchList}>
-                {group.fixtures.map((fixture) => (
-                  <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
-                ))}
-              </div>
-            </section>
-          ))}
+                <div className={boardStyles.matchList}>
+                  {group.fixtures.map((fixture) => (
+                    <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       ) : (
         <div className={styles.emptyState}>No matches match this competition view right now.</div>

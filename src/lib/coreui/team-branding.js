@@ -173,12 +173,16 @@ function normalizeSlug(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+export function buildTeamSlug(teamName) {
+  return getTeamLogoSlug(teamName) || normalizeSlug(teamName) || "team";
+}
+
 export function getTeamLogoSlug(teamName) {
   return TEAM_NAME_TO_SLUG[normalizeKey(teamName)] || null;
 }
 
 export function buildMockTeamLogoUrl(teamName) {
-  const slug = getTeamLogoSlug(teamName);
+  const slug = buildTeamSlug(teamName);
   return slug ? `/team-logo/${slug}` : null;
 }
 

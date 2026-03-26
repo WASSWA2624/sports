@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getMatchdayFeed } from "../match-data";
+import { getMatchdayFeed, getTeamDetail } from "../match-data";
 
 function toDateKey(date) {
   const year = date.getFullYear();
@@ -101,5 +101,17 @@ describe("matchday feed date-time filters", () => {
     expect(feed.fixtures.map((fixture) => fixture.id)).toEqual(["epl-live-ars-che"]);
     expect(feed.groups).toHaveLength(1);
     expect(feed.groups[0].leagueNames).toEqual(["Premier League"]);
+  });
+
+  it("builds team detail snapshots from the shared fixture dataset", () => {
+    const arsenal = getTeamDetail("arsenal");
+    const dortmund = getTeamDetail("borussia-dortmund");
+
+    expect(arsenal?.name).toBe("Arsenal");
+    expect(arsenal?.activeFixtures.map((fixture) => fixture.id)).toContain("epl-live-ars-che");
+    expect(arsenal?.playerPreview.map((player) => player.name)).toContain("David Raya");
+
+    expect(dortmund?.recentResults.map((fixture) => fixture.id)).toContain("bl1-finished-bvb-rbl");
+    expect(dortmund?.form[0]?.result).toBe("W");
   });
 });
