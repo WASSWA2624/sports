@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MatchRow } from "../../../../components/coreui/scoreboard";
 import boardStyles from "../../../../components/coreui/scoreboard.module.css";
@@ -99,13 +100,13 @@ export default async function LeagueDetailPage({ params, searchParams }) {
             { key: "scheduled", label: "Upcoming" },
             { key: "finished", label: "Results" },
           ].map((item) => (
-            <a
+            <Link
               key={item.key}
               href={`/${locale}/leagues/${league.code}${item.key === "all" ? "" : `?view=${item.key}`}`}
               className={item.key === view ? styles.tabChipActive : styles.tabChip}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </div>
       </section>

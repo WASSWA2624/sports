@@ -37,6 +37,7 @@ The scope in this repository should now be treated as:
 - minimal match detail page with scoreline, status, and essential events
 - competition pages focused on fixtures and results only
 - mobile-first, responsive delivery
+- local in-repo match data source with no database dependency in the shipped public experience
 
 Everything else should be considered removed from scope unless it is added back explicitly later.
 
@@ -272,11 +273,10 @@ Only data that directly supports listing matches or explaining results is requir
 ### Stack
 
 - Next.js App Router
-- Prisma
-- MySQL
 - React
-- CSS Modules or the existing styling system
-- provider sync jobs for fixtures and scores
+- CSS Modules
+- local fixture feed stored in the repository
+- optional future adapter layer only if a live provider is reintroduced deliberately
 
 ### Frontend Responsibilities
 
@@ -307,42 +307,45 @@ src/
     competitions/
 ```
 
-### Backend Responsibilities
+### Data Source Responsibilities
 
-- ingest fixture and result data from provider APIs
-- normalize competition, team, match, and event data
-- cache or persist match lists for fast reads
-- refresh live matches on a tighter schedule than scheduled or finished matches
+- provide a stable local match shape for homepage, competition pages, and match detail
+- expose leagues, fixtures, scores, kickoff times, and essential events only
+- keep sample or seed-like match data easy to edit during UI work
+- preserve the current read model so a future adapter can swap in later without changing the UI
 
 ---
 
 ## 11. Data Provider Strategy
 
-- provider-agnostic architecture is acceptable, but the product scope stays minimal
-- prioritize reliable soccer fixtures, live scores, and final results
+- the shipped product runs without a database and without scheduled provider sync jobs
+- local fixture data is acceptable for the current UI-first product scope
+- if a provider is added later, it must map into the same minimal soccer read model
 - richer feeds such as news, odds, standings, transfers, or social content are not required
 
 ---
 
 ## 12. API Design
 
-Includes only the endpoints needed for the minimal product:
+The shipped product does not require a database-backed API surface.
+
+If an API is added later, keep it limited to:
 
 - match lists by date and state
 - match detail
 - competition fixtures and results
-- health and status endpoints
+- health and status endpoints only if a remote feed exists
 
 ---
 
 ## 13. Route Map
 
 ```txt
-/
-/?date=YYYY-MM-DD&state=all|live|finished|scheduled
-/matches/[matchId]
-/competitions/[competitionSlug]
-/competitions/[competitionSlug]?date=YYYY-MM-DD
+/{locale}
+/{locale}?date=YYYY-MM-DD&status=all|live|finished|scheduled&league=CODE&time=all|night|morning|afternoon|evening&q=search
+/{locale}/match/[matchId]
+/{locale}/leagues
+/{locale}/leagues/[competitionCode]
 ```
 
 ---
@@ -353,7 +356,7 @@ Includes only the endpoints needed for the minimal product:
 - automatic live updates
 - stable layout with low shift
 - responsive across supported viewports
-- graceful degraded mode when provider data is delayed
+- graceful degraded mode when local match data is empty or a future adapter is delayed
 - accessible contrast and touch targets
 - clear empty and error states
 
@@ -371,6 +374,7 @@ Out of scope for this write-up:
 - broad CMS or admin product ambitions beyond basic operational sync control
 - multi-surface SEO expansion beyond the core matches and results pages
 - coverage for sports other than soccer
+- a required database for the shipped public product
 
 ---
 

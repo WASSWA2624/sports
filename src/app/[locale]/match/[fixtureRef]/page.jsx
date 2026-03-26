@@ -17,6 +17,10 @@ function scoreline(fixture) {
   return `${fixture.resultSnapshot.homeScore} - ${fixture.resultSnapshot.awayScore}`;
 }
 
+function getRefreshUntil(fixture) {
+  return new Date(new Date(fixture.startsAt).getTime() + 3 * 60 * 60 * 1000).toISOString();
+}
+
 export async function generateMetadata({ params }) {
   const { locale, fixtureRef } = await params;
   const fixture = getMatchByReference(fixtureRef);
@@ -44,7 +48,7 @@ export default async function MatchDetailPage({ params }) {
       <LiveRefresh
         enabled={fixture.status === "LIVE"}
         intervalMs={fixture.status === "LIVE" ? 30000 : 0}
-        until={fixture.status === "LIVE" ? new Date(Date.now() + 30 * 60 * 1000).toISOString() : null}
+        until={fixture.status === "LIVE" ? getRefreshUntil(fixture) : null}
       />
 
       <header className={styles.hero}>

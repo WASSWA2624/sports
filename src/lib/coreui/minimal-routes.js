@@ -3,7 +3,7 @@ export function buildMatchBoardHref(locale, filters = {}, forced = {}) {
   const merged = { ...filters, ...forced };
 
   for (const [key, value] of Object.entries(merged)) {
-    if (!value || value === "all") {
+    if (!value || value === "all" || value === "ALL") {
       continue;
     }
 

@@ -105,6 +105,7 @@ function buildFixture(baseDate, config) {
             capturedAt: new Date().toISOString(),
           }
         : null,
+    clockMinute: config.clockMinute || null,
     venue: config.venue || null,
     referee: config.referee || null,
     statistics: config.statistics || [],
@@ -124,6 +125,7 @@ function buildFixtures() {
       hour: 19,
       minute: 0,
       status: "LIVE",
+      clockMinute: 61,
       round: "Matchday 30",
       homeTeam: { name: "Arsenal", shortName: "ARS" },
       awayTeam: { name: "Chelsea", shortName: "CHE" },
@@ -170,6 +172,7 @@ function buildFixtures() {
       hour: 22,
       minute: 0,
       status: "LIVE",
+      clockMinute: 48,
       round: "Quarter-final",
       homeTeam: { name: "Real Madrid", shortName: "RMA" },
       awayTeam: { name: "Bayern Munich", shortName: "BAY" },
@@ -640,6 +643,10 @@ export function getMatchdayFeed({
 
 export function buildMatchStatusLabel(fixture, locale = "en") {
   if (fixture.status === "LIVE") {
+    if (Number.isFinite(fixture.clockMinute)) {
+      return `${fixture.clockMinute}'`;
+    }
+
     const diffMs = Date.now() - new Date(fixture.startsAt).getTime();
     const minute = Math.max(1, Math.floor(diffMs / 60000));
     return `${Math.min(minute, 90)}'`;

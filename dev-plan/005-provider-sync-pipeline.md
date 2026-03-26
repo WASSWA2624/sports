@@ -1,20 +1,20 @@
 # 005-provider-sync-pipeline
 
 ## Goal
-Build the provider abstraction and sync pipeline needed for fixtures, live scores, results, and essential events.
+Define the lightweight match-feed layer needed for fixtures, live scores, results, and essential events without a database.
 
 ## Build
-1. Define provider interfaces for taxonomy, fixtures, live states, final results, and key match events.
-2. Implement the soccer adapter with SportsMonks or the selected primary provider while keeping provider selection env-driven through `SPORTS_DATA_PROVIDER`.
-3. Create scheduled sync jobs for static reference data, daily fixture updates, and high-frequency live refresh windows.
-4. Normalize provider payloads into stable internal read models used by the homepage board, match detail pages, and competition pages.
-5. Store sync metadata, stale markers, failure details, and provider capability notes needed for operational visibility.
-6. Make provider credentials, auth headers, auth schemes, base URLs, timeouts, fallback chains, and remote asset hosts env-driven.
-7. Add cache and revalidation strategy for hot routes such as the homepage board, active match pages, and competition result pages.
-8. Design degraded behavior so delayed or partial provider data produces clear empty or stale states instead of broken screens.
+1. Build a local match-feed module that returns leagues, fixtures, score snapshots, timelines, and lineups in one stable shape.
+2. Support live, scheduled, and finished match states from the same read model used by the homepage board, match detail pages, and competition pages.
+3. Include deterministic sample data for today, previous results, and upcoming fixtures so the UI can be verified without remote dependencies.
+4. Expose filter-ready values for date, league, text query, and kickoff time windows.
+5. Provide refresh metadata so live pages can poll safely even when the underlying source is local for now.
+6. Keep any future remote provider adapter optional and isolated behind the same feed shape.
+7. Avoid credentials, sync jobs, checkpoints, or stale-data persistence in the shipped MVP.
+8. Design empty and degraded behavior so a missing local feed or future adapter issue still produces a readable screen.
 
 ## Done When
-- Fixtures, live states, results, and essential events ingest successfully.
-- Sync failures are visible, retryable, and do not crash public pages.
-- The platform can change supported providers without rewriting the main product model.
-- Asset host and provider readiness checks can run before release promotion.
+- Fixtures, live states, results, and essential events render from the local feed successfully.
+- Homepage filters, league pages, and match pages all read the same shared feed shape.
+- The app can stay useful with zero database setup and zero external provider configuration.
+- A future adapter could replace the local source without rewriting the main product model.

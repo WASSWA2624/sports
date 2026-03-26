@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import styles from "./public-shell.module.css";
 
 function buildShellNav(locale) {
@@ -49,9 +50,7 @@ function buildShellNav(locale) {
   ];
 }
 
-export function PublicShell({ children, locale, dictionary, shellData }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+function ShellFrame({ children, locale, dictionary, shellData, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
   const topCompetitions = shellData?.featuredCompetitions || [];
   const countryGroups = shellData?.countryGroups || [];
@@ -135,5 +134,20 @@ export function PublicShell({ children, locale, dictionary, shellData }) {
         <main className={styles.content}>{children}</main>
       </div>
     </div>
+  );
+}
+
+function HookedShellFrame(props) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  return <ShellFrame {...props} pathname={pathname} searchParams={searchParams} />;
+}
+
+export function PublicShell(props) {
+  return (
+    <Suspense fallback={<ShellFrame {...props} />}>
+      <HookedShellFrame {...props} />
+    </Suspense>
   );
 }
