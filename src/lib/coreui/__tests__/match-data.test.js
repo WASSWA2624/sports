@@ -84,15 +84,18 @@ describe("matchday feed date-time filters", () => {
   it("groups today's matches by kickoff time in chronological order", () => {
     const feed = getMatchdayFeed();
 
-    expect(feed.competitionCount).toBe(5);
+    expect(feed.competitionCount).toBe(8);
     expect(feed.groups.map((group) => group.fixtures[0].id)).toEqual([
+      "mls-upcoming-mia-lafc",
       "bl1-finished-bvb-rbl",
+      "tpl-live-simba-yanga",
       "epl-live-ars-che",
+      "l1-finished-psg-mon",
       "sa-upcoming-int-laz",
       "ucl-live-rma-bay",
       "ll-upcoming-bar-sev",
     ]);
-    expect(feed.groups[0].leagueNames).toEqual(["Bundesliga"]);
+    expect(feed.groups[0].leagueNames).toEqual(["Major League Soccer"]);
   });
 
   it("supports league-name search while keeping time-grouped results", () => {

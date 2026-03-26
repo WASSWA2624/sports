@@ -234,8 +234,146 @@
 
 .toolbarActions {
   display: grid;
+  gap: 0.45rem;
+}
+
+.dateRangeForm,
+.toolbarUtilityRow {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
+}
+
+.featuredLeagueRail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(8.75rem, 1fr);
+  gap: 0.4rem;
+  padding: 0.22rem;
+  border: 1px solid rgba(169, 191, 255, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.featuredLeagueRail::-webkit-scrollbar {
+  display: none;
+}
+
+.leagueShortcut,
+.leagueShortcutActive {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  min-height: 3.1rem;
+  padding: 0.5rem 0.62rem;
+  border: 1px solid rgba(169, 191, 255, 0.1);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    rgba(8, 18, 35, 0.72);
+  color: rgba(245, 248, 245, 0.88);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.leagueShortcut:hover,
+.leagueShortcut:focus-visible,
+.leagueShortcutActive:hover,
+.leagueShortcutActive:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(92, 142, 255, 0.24);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
+}
+
+.leagueShortcutActive {
+  border-color: rgba(169, 191, 255, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 58%),
+    linear-gradient(135deg, var(--league-accent-soft), rgba(255, 255, 255, 0.03));
+  color: #ffffff;
+}
+
+.leagueShortcutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.7rem;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), transparent 56%),
+    var(--league-accent-soft);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--league-accent);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.leagueShortcutCopy {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.leagueShortcutLabel {
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leagueShortcutMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.22rem;
+  color: rgba(225, 234, 255, 0.66);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.localeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.2rem;
+  padding: 0.08rem 0.34rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.dateRangeField {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.rangeResetLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  padding: 0.62rem 0.95rem;
+  border: 1px solid rgba(169, 191, 255, 0.12);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(235, 242, 237, 0.84);
+  font-weight: 600;
+}
+
+.rangeResetLink:hover,
+.rangeResetLink:focus-visible {
+  border-color: rgba(92, 142, 255, 0.24);
+  background: rgba(92, 142, 255, 0.08);
 }
 
 .toolbarMenu,
@@ -832,12 +970,22 @@
 
 @media (min-width: 700px) {
   .toolbarBar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
   }
 
   .toolbarActions {
-    width: fit-content;
+    width: 100%;
+  }
+
+  .dateRangeForm {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .toolbarUtilityRow {
+    width: min(100%, 26rem);
+    justify-self: end;
   }
 
   .groupHeader {

@@ -1,12 +1,87 @@
 import { buildMockTeamLogoUrl, buildTeamSlug } from "./team-branding";
 
 const LEAGUES = [
-  { code: "EPL", name: "Premier League", country: "England", season: "2025/2026" },
-  { code: "UCL", name: "UEFA Champions League", country: "Europe", season: "2025/2026" },
-  { code: "LL", name: "LaLiga", country: "Spain", season: "2025/2026" },
-  { code: "SA", name: "Serie A", country: "Italy", season: "2025/2026" },
-  { code: "BL1", name: "Bundesliga", country: "Germany", season: "2025/2026" },
+  {
+    code: "EPL",
+    name: "Premier League",
+    country: "England",
+    season: "2025/2026",
+    iconText: "PL",
+    accent: "#74f2c0",
+    accentSoft: "rgba(116, 242, 192, 0.18)",
+  },
+  {
+    code: "UCL",
+    name: "UEFA Champions League",
+    country: "Europe",
+    season: "2025/2026",
+    iconText: "CL",
+    accent: "#9dc6ff",
+    accentSoft: "rgba(90, 137, 255, 0.18)",
+  },
+  {
+    code: "LL",
+    name: "LaLiga",
+    country: "Spain",
+    season: "2025/2026",
+    iconText: "LL",
+    accent: "#ff9b8c",
+    accentSoft: "rgba(255, 113, 82, 0.18)",
+  },
+  {
+    code: "SA",
+    name: "Serie A",
+    country: "Italy",
+    season: "2025/2026",
+    iconText: "SA",
+    accent: "#8fd9ff",
+    accentSoft: "rgba(66, 166, 255, 0.18)",
+  },
+  {
+    code: "BL1",
+    name: "Bundesliga",
+    country: "Germany",
+    season: "2025/2026",
+    iconText: "BL",
+    accent: "#ff8a97",
+    accentSoft: "rgba(255, 83, 108, 0.18)",
+  },
+  {
+    code: "MLS",
+    name: "Major League Soccer",
+    country: "United States",
+    season: "2025",
+    iconText: "US",
+    accent: "#ffb86f",
+    accentSoft: "rgba(255, 184, 111, 0.18)",
+  },
+  {
+    code: "L1",
+    name: "Ligue 1",
+    country: "France",
+    season: "2025/2026",
+    iconText: "FR",
+    accent: "#9ef0ff",
+    accentSoft: "rgba(95, 226, 255, 0.18)",
+  },
+  {
+    code: "TPL",
+    name: "Ligi Kuu Bara",
+    country: "Tanzania",
+    season: "2025/2026",
+    iconText: "TZ",
+    accent: "#ffd66b",
+    accentSoft: "rgba(255, 214, 107, 0.18)",
+  },
 ];
+
+const GLOBAL_FEATURED_LEAGUE_CODES = ["EPL", "UCL", "LL", "SA", "BL1"];
+
+const LOCALE_LEAGUE_BY_LOCALE = {
+  en: "MLS",
+  fr: "L1",
+  sw: "TPL",
+};
 
 const TIME_FILTERS = [
   { value: "all", label: "Any time" },
@@ -194,6 +269,10 @@ function normalizePreset(value) {
 
 function getPresetDefinition(value) {
   return RANGE_PRESETS.find((entry) => entry.value === value) || null;
+}
+
+function getLocaleLeagueCode(locale) {
+  return LOCALE_LEAGUE_BY_LOCALE[String(locale || "").trim().toLowerCase()] || LOCALE_LEAGUE_BY_LOCALE.en;
 }
 
 function buildPresetRange(preset, now = new Date()) {
@@ -878,6 +957,75 @@ function buildFixtures() {
         away: buildLineup([], "3-4-2-1"),
       },
     }),
+    buildFixture(today, {
+      id: "mls-upcoming-mia-lafc",
+      leagueCode: "MLS",
+      dayOffset: 0,
+      hour: 3,
+      minute: 30,
+      status: "SCHEDULED",
+      round: "Week 8",
+      homeTeam: { name: "Inter Miami", shortName: "MIA" },
+      awayTeam: { name: "Los Angeles FC", shortName: "LAFC" },
+      venue: "Chase Stadium",
+      referee: "Ismail Elfath",
+      lineups: {
+        home: buildLineup([], "4-3-3"),
+        away: buildLineup([], "4-3-3"),
+      },
+    }),
+    buildFixture(today, {
+      id: "l1-finished-psg-mon",
+      leagueCode: "L1",
+      dayOffset: 0,
+      hour: 20,
+      minute: 0,
+      status: "FINISHED",
+      round: "Journee 28",
+      homeTeam: { name: "Paris Saint-Germain", shortName: "PSG" },
+      awayTeam: { name: "Monaco", shortName: "MON" },
+      score: { home: 2, away: 0 },
+      venue: "Parc des Princes",
+      referee: "Clement Turpin",
+      timeline: [
+        { minute: 27, title: "Goal", actor: "Ousmane Dembele", description: "PSG break the line and score first.", featured: true },
+        { minute: 74, title: "Goal", actor: "Goncalo Ramos", description: "PSG seal the points late on.", featured: true },
+      ],
+      statistics: [
+        { key: "possession", label: "Possession", home: "61%", away: "39%", homeShare: 61, awayShare: 39 },
+        { key: "shots", label: "Shots", home: "15", away: "7", homeShare: 68, awayShare: 32 },
+      ],
+      lineups: {
+        home: buildLineup([], "4-3-3"),
+        away: buildLineup([], "4-4-2"),
+      },
+    }),
+    buildFixture(today, {
+      id: "tpl-live-simba-yanga",
+      leagueCode: "TPL",
+      dayOffset: 0,
+      hour: 18,
+      minute: 0,
+      status: "LIVE",
+      clockMinute: 29,
+      round: "Matchday 24",
+      homeTeam: { name: "Simba SC", shortName: "SIM" },
+      awayTeam: { name: "Young Africans", shortName: "YNG" },
+      score: { home: 1, away: 0 },
+      venue: "Benjamin Mkapa Stadium",
+      referee: "Abdulkadir Artan",
+      timeline: [
+        { minute: 18, title: "Goal", actor: "Jean Baleke", description: "Simba score from a fast transition.", featured: true },
+      ],
+      statistics: [
+        { key: "possession", label: "Possession", home: "47%", away: "53%", homeShare: 47, awayShare: 53 },
+        { key: "shots", label: "Shots", home: "6", away: "8", homeShare: 43, awayShare: 57 },
+      ],
+      lineups: {
+        home: buildLineup([], "4-2-3-1"),
+        away: buildLineup([], "4-3-3"),
+      },
+    }),
   ].sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime());
 }
 
@@ -1252,6 +1400,7 @@ export function getMatchByReference(reference) {
 }
 
 export function getMatchdayFeed({
+  locale = "en",
   date,
   preset,
   startDate,
@@ -1285,6 +1434,8 @@ export function getMatchdayFeed({
     selectedStatus === "ALL"
       ? baseFiltered
       : baseFiltered.filter((fixture) => fixture.status === selectedStatus);
+  const localeLeagueCode = getLocaleLeagueCode(locale);
+  const featuredLeagueCodes = [...GLOBAL_FEATURED_LEAGUE_CODES, localeLeagueCode];
   const orderedFixtures = [...visibleFixtures].sort((left, right) => {
     const statusDifference = fixtureSortWeight(left) - fixtureSortWeight(right);
     if (statusDifference !== 0) {
@@ -1332,6 +1483,19 @@ export function getMatchdayFeed({
       code: league.code,
       name: league.name,
     }))],
+    featuredLeagueOptions: featuredLeagueCodes
+      .map((code) => LEAGUES.find((league) => league.code === code))
+      .filter(Boolean)
+      .map((league) => ({
+        code: league.code,
+        name: league.name,
+        country: league.country,
+        iconText: league.iconText,
+        accent: league.accent,
+        accentSoft: league.accentSoft,
+        isLocaleLeague: league.code === localeLeagueCode,
+        count: baseFiltered.filter((fixture) => fixture.league.code === league.code).length,
+      })),
     timeOptions: TIME_FILTERS,
     refresh: {
       enabled: orderedFixtures.some((fixture) => fixture.status === "LIVE"),

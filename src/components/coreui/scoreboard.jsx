@@ -124,24 +124,6 @@ const TEAM_PALETTE_OVERRIDES = {
   },
 };
 
-function statusLabel(value) {
-  const normalized = String(value || "").toUpperCase();
-
-  if (normalized === "ALL") {
-    return "All";
-  }
-
-  if (normalized === "SCHEDULED") {
-    return "Fixtures";
-  }
-
-  if (normalized === "FINISHED") {
-    return "Results";
-  }
-
-  return "Live";
-}
-
 function isSameDay(left, right) {
   return (
     left.getFullYear() === right.getFullYear() &&
@@ -208,14 +190,6 @@ function buildRangeLabel(feed, locale) {
   return `${dateTimeFormatter.format(start)} - ${dateTimeFormatter.format(end)}`;
 }
 
-function buildRangeModeLabel(feed) {
-  if (feed.selectedPreset !== "custom") {
-    return feed.selectedPresetLabel;
-  }
-
-  return hasFullDayWindow(feed) ? "Custom date range" : "Custom date-time range";
-}
-
 function buildTimeGroupMeta(group) {
   const leagueLabel =
     group.leagueCount === 1 ? group.leagueNames[0] : `${group.leagueCount} leagues`;
@@ -277,6 +251,13 @@ function getTeamStyle(team) {
     "--team-accent": palette.accent,
     "--team-accent-soft": palette.soft,
     "--team-accent-contrast": palette.contrast,
+  };
+}
+
+function getLeagueShortcutStyle(league) {
+  return {
+    "--league-accent": league.accent || "#9dc6ff",
+    "--league-accent-soft": league.accentSoft || "rgba(90, 137, 255, 0.18)",
   };
 }
 
@@ -445,48 +426,42 @@ export function MatchRow({ fixture, locale }) {
 
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
-  const selectedRangeModeLabel = buildRangeModeLabel(feed);
   const rangeQuery = buildRangeQuery(feed);
   const liveCount = feed.summary.LIVE || 0;
   const currentFilters = {
     ...rangeQuery,
-    q: feed.query,
     league: feed.selectedLeague,
-    time: feed.selectedTime,
     status: feed.selectedStatus === "ALL" ? "" : feed.selectedStatus.toLowerCase(),
   };
   const hasLeagueFilter = Boolean(
     feed.selectedLeague && String(feed.selectedLeague).toLowerCase() !== "all"
   );
-  const hasTimeFilter = Boolean(feed.selectedTime && String(feed.selectedTime).toLowerCase() !== "all");
-  const rangeFilterActive = !feed.rangeIsDefault;
   const selectedLeagueLabel =
     feed.leagueOptions.find((option) => option.code === feed.selectedLeague)?.name || "All leagues";
-  const selectedTimeLabel =
-    feed.timeOptions.find((option) => option.value === feed.selectedTime)?.label || "Any time";
-  const activeFilterCount = [
-    rangeFilterActive,
-    Boolean(feed.query),
-    hasLeagueFilter,
-    hasTimeFilter,
-  ].filter(Boolean).length;
-  const hasRefinements = activeFilterCount > 0;
-  const selectedStatusOption =
-    feed.statusOptions.find((option) => option.value === feed.selectedStatus) || feed.statusOptions[0];
   const toolbarSummary = [
     `${feed.summary.total} matches`,
     liveCount ? `${liveCount} live` : null,
-    hasRefinements ? `${activeFilterCount} filters` : null,
+    hasLeagueFilter ? selectedLeagueLabel : null,
   ]
     .filter(Boolean)
     .join(" · ");
   const compactToolbarSummary = toolbarSummary.replaceAll("\u00c2\u00b7", META_SEPARATOR.trim());
-  const refinementPreview = [
-    ...(feed.query ? [{ key: "query", label: feed.query }] : []),
-    ...(hasLeagueFilter ? [{ key: "league", label: selectedLeagueLabel }] : []),
-    ...(hasTimeFilter ? [{ key: "time", label: selectedTimeLabel }] : []),
-    ...(rangeFilterActive ? [{ key: "range", label: selectedRangeModeLabel }] : []),
-  ];
+  const featuredLeagueOptions = Array.isArray(feed.featuredLeagueOptions) ? feed.featuredLeagueOptions : [];
+  const rangeResetHref = buildMatchBoardHref(
+    locale,
+    {
+      league: feed.selectedLeague,
+      status: currentFilters.status,
+    },
+    {
+      preset: "",
+      startDate: "",
+      startTime: "",
+      endDate: "",
+      endTime: "",
+      date: "",
+    }
+  );
 
   return (
     <section className={styles.page}>
@@ -518,182 +493,67 @@ export function Scoreboard({ locale, feed }) {
           </div>
 
           <div className={styles.toolbarActions}>
-            <details className={styles.toolbarMenu}>
-              <summary className={styles.compactToggle}>
-                <span className={styles.compactToggleLabel}>View</span>
-                <strong>
-                  {statusLabel(feed.selectedStatus)} {selectedStatusOption?.count ?? feed.summary.total}
-                </strong>
-              </summary>
-
-              <div className={`${styles.menuPanel} ${styles.statusMenuPanel}`}>
-                <div className={styles.menuList}>
-                  {feed.statusOptions.map((option) => (
-                    <Link
-                      key={option.value}
-                      href={buildMatchBoardHref(locale, currentFilters, { status: option.value.toLowerCase() })}
-                      className={option.value === feed.selectedStatus ? styles.menuLinkActive : styles.menuLink}
-                    >
-                      <span>{statusLabel(option.value)}</span>
-                      <strong>{option.count}</strong>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </details>
-        
-            <details className={`${styles.toolbarMenu} ${styles.refinePanel}`}>
-              <summary className={styles.compactToggle}>
-                <span className={styles.compactToggleLabel}>Filters</span>
-                <strong>{hasRefinements ? `${activeFilterCount} active` : "Optional"}</strong>
-              </summary>
-
-              <div className={`${styles.menuPanel} ${styles.refineMenu}`}>
-                {refinementPreview.length ? (
-                  <div className={styles.refineSummaryInline}>
-                    {refinementPreview.map((item) => (
-                      <span key={item.key} className={styles.refinePreviewChip}>
-                        {item.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={styles.refineHint}>Search teams, pick a league, or narrow the time window.</p>
-                )}
-
-                <div className={styles.refineBody}>
-                  <div className={styles.refineSection}>
-                    <span className={styles.searchLabel}>Quick range</span>
-                    <div className={styles.presetRail}>
-                      {feed.quickPresetOptions.map((option) => (
-                        <Link
-                          key={option.value}
-                          href={buildMatchBoardHref(
-                            locale,
-                            currentFilters,
-                            {
-                              preset: option.value,
-                              startDate: "",
-                              startTime: "",
-                              endDate: "",
-                              endTime: "",
-                              date: "",
-                            }
-                          )}
-                          className={option.value === feed.selectedPreset ? styles.filterChipActive : styles.filterChip}
-                        >
-                          <span>{option.label}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  <form action={`/${locale}`} className={styles.refineGrid}>
-                    {feed.selectedStatus !== "ALL" ? (
-                      <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
-                    ) : null}
-                    <label className={`${styles.searchField} ${styles.searchFieldWide}`}>
-                      <span className={styles.searchLabel}>Search</span>
-                      <input
-                        type="search"
-                        name="q"
-                        defaultValue={feed.query}
-                        placeholder="Search leagues, teams, or kickoff time"
-                        className={styles.searchInput}
-                      />
-                    </label>
-
-                    <label className={styles.searchField}>
-                      <span className={styles.searchLabel}>League</span>
-                      <select name="league" defaultValue={feed.selectedLeague} className={styles.searchInput}>
-                        {feed.leagueOptions.map((option) => (
-                          <option key={option.code} value={option.code}>
-                            {option.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className={styles.searchField}>
-                      <span className={styles.searchLabel}>Time</span>
-                      <select name="time" defaultValue={feed.selectedTime} className={styles.searchInput}>
-                        {feed.timeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className={styles.searchField}>
-                      <span className={styles.searchLabel}>Range preset</span>
-                      <select name="preset" defaultValue={feed.selectedPreset} className={styles.searchInput}>
-                        {feed.presetOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <span className={styles.fieldHint}>Use a preset for speed, then fine-tune with exact dates only if you need to.</span>
-                    </label>
-
-                    <div className={styles.rangePanel}>
-                      <div className={styles.rangePanelHeader}>
-                        <span className={styles.searchLabel}>Custom window</span>
-                        <span className={styles.fieldHint}>Exact start and end boundaries help when you want a very specific match slice.</span>
-                      </div>
-
-                      <div className={styles.rangeFields}>
-                        <label className={styles.searchField}>
-                          <span className={styles.searchLabel}>Start date</span>
-                          <input
-                            type="date"
-                            name="startDate"
-                            defaultValue={feed.selectedStartDate}
-                            className={styles.searchInput}
-                          />
-                        </label>
-
-                        <label className={styles.searchField}>
-                          <span className={styles.searchLabel}>Start time</span>
-                          <input
-                            type="time"
-                            name="startTime"
-                            defaultValue={feed.selectedStartTime}
-                            className={styles.searchInput}
-                          />
-                        </label>
-
-                        <label className={styles.searchField}>
-                          <span className={styles.searchLabel}>End date</span>
-                          <input
-                            type="date"
-                            name="endDate"
-                            defaultValue={feed.selectedEndDate}
-                            className={styles.searchInput}
-                          />
-                        </label>
-
-                        <label className={styles.searchField}>
-                          <span className={styles.searchLabel}>End time</span>
-                          <input
-                            type="time"
-                            name="endTime"
-                            defaultValue={feed.selectedEndTime}
-                            className={styles.searchInput}
-                          />
-                        </label>
-                      </div>
-                    </div>
-
-                    <button type="submit" className={styles.searchSubmit}>
-                      Apply filters
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </details>
+            <div className={styles.featuredLeagueRail} aria-label="Featured leagues">
+              {featuredLeagueOptions.map((league) => (
+                <Link
+                  key={league.code}
+                  href={buildMatchBoardHref(locale, currentFilters, { league: league.code })}
+                  className={
+                    league.code === feed.selectedLeague ? styles.leagueShortcutActive : styles.leagueShortcut
+                  }
+                  style={getLeagueShortcutStyle(league)}
+                  aria-label={`${league.name}${league.isLocaleLeague ? " local league" : ""}`}
+                >
+                  <span className={styles.leagueShortcutIcon} aria-hidden="true">
+                    {league.iconText}
+                  </span>
+                  <span className={styles.leagueShortcutCopy}>
+                    <span className={styles.leagueShortcutLabel}>{league.name}</span>
+                    <span className={styles.leagueShortcutMeta}>
+                      {league.isLocaleLeague ? <span className={styles.localeBadge}>Local</span> : null}
+                      <span>{league.count} matches</span>
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
+
+          <form action={`/${locale}`} className={styles.dateRangeForm}>
+            {currentFilters.status ? <input type="hidden" name="status" value={currentFilters.status} /> : null}
+            {hasLeagueFilter ? <input type="hidden" name="league" value={feed.selectedLeague} /> : null}
+            <input type="hidden" name="preset" value="custom" />
+            <input type="hidden" name="startTime" value="00:00" />
+            <input type="hidden" name="endTime" value="23:59" />
+
+            <label className={styles.dateRangeField}>
+              <span className={styles.searchLabel}>From</span>
+              <input
+                type="date"
+                name="startDate"
+                defaultValue={feed.selectedStartDate}
+                className={styles.searchInput}
+              />
+            </label>
+
+            <label className={styles.dateRangeField}>
+              <span className={styles.searchLabel}>To</span>
+              <input
+                type="date"
+                name="endDate"
+                defaultValue={feed.selectedEndDate}
+                className={styles.searchInput}
+              />
+            </label>
+
+            <button type="submit" className={styles.searchSubmit}>
+              Apply range
+            </button>
+
+            <Link href={rangeResetHref} className={styles.rangeResetLink}>
+              Reset
+            </Link>
+          </form>
         </div>
       </section>
 
@@ -708,7 +568,7 @@ export function Scoreboard({ locale, feed }) {
           </section>
         ) : (
           <div className={styles.emptyState}>
-            No matches match this search. Try another date-time range, preset window, league, or kickoff bucket.
+            No matches fit this date range right now. Try another span or switch leagues.
           </div>
         )}
       </div>
