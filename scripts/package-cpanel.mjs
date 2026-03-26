@@ -19,6 +19,15 @@ function requirePath(pathname, label) {
   }
 }
 
+async function ensureEmptyDirectory(pathname) {
+  await mkdir(pathname, { recursive: true });
+  const entries = await readdir(pathname, { withFileTypes: true });
+
+  for (const entry of entries) {
+    await rm(resolve(pathname, entry.name), { force: true, recursive: true });
+  }
+}
+
 async function readPackageVersion() {
   const packageJson = JSON.parse(await readFile(resolve(ROOT_DIR, "package.json"), "utf8"));
   return packageJson.version || "0.0.0";
@@ -34,6 +43,15 @@ function buildAppEntrypoint() {
     "process.env.NODE_ENV = process.env.NODE_ENV || 'production';",
     "process.env.HOSTNAME = process.env.HOSTNAME || '0.0.0.0';",
     "require('./server.js');",
+    "",
+  ].join("\n");
+}
+
+function buildHtaccessPlaceholder() {
+  return [
+    "# cPanel/Passenger placeholder file for the Node.js application root.",
+    "# Some cPanel actions expect this file to exist.",
+    "# If your host generates Passenger directives automatically, keep their version.",
     "",
   ].join("\n");
 }
@@ -70,8 +88,7 @@ async function main() {
   const version = await readPackageVersion();
   const releaseStamp = buildReleaseStamp();
 
-  await rm(OUTPUT_DIR, { force: true, recursive: true });
-  await mkdir(OUTPUT_DIR, { recursive: true });
+  await ensureEmptyDirectory(OUTPUT_DIR);
   await cp(STANDALONE_DIR, OUTPUT_DIR, { recursive: true });
   await mkdir(resolve(OUTPUT_DIR, ".next"), { recursive: true });
   await cp(STATIC_DIR, resolve(OUTPUT_DIR, ".next", "static"), { recursive: true });
@@ -94,6 +111,8 @@ async function main() {
 
   await mkdir(resolve(OUTPUT_DIR, "tmp"), { recursive: true });
   await mkdir(resolve(OUTPUT_DIR, "logs"), { recursive: true });
+  await writeFile(resolve(OUTPUT_DIR, ".htaccess"), buildHtaccessPlaceholder(), "utf8");
+  await writeFile(resolve(OUTPUT_DIR, "tmp", "restart.txt"), "", "utf8");
   await writeFile(resolve(OUTPUT_DIR, "app.js"), buildAppEntrypoint(), "utf8");
   await writeFile(
     resolve(OUTPUT_DIR, "DEPLOYMENT.txt"),
