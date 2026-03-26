@@ -8,9 +8,9 @@
 .panel,
 .seasonCard,
 .directoryCard {
-  border: 1px solid rgba(193, 218, 201, 0.08);
+  border: 1px solid rgba(169, 191, 255, 0.08);
   border-radius: 0.95rem;
-  background: rgba(10, 19, 14, 0.84);
+  background: rgba(9, 18, 34, 0.84);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.14);
 }
 
@@ -24,7 +24,7 @@
 
 .eyebrow {
   margin-bottom: 0.2rem;
-  color: rgba(228, 240, 231, 0.66);
+  color: rgba(225, 234, 255, 0.66);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -37,7 +37,7 @@
 
 .lead {
   margin-top: 0.35rem;
-  color: rgba(233, 242, 235, 0.74);
+  color: rgba(229, 236, 255, 0.74);
   font-size: 0.88rem;
   line-height: 1.4;
 }
@@ -62,17 +62,17 @@
   gap: 0.28rem;
   min-height: 1.82rem;
   padding: 0.35rem 0.62rem;
-  border: 1px solid rgba(193, 218, 201, 0.1);
+  border: 1px solid rgba(169, 191, 255, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
-  color: rgba(237, 244, 239, 0.82);
+  color: rgba(233, 239, 255, 0.82);
   font-size: 0.74rem;
 }
 
 .tabChipActive,
 .seasonChipActive {
-  border-color: rgba(45, 211, 111, 0.28);
-  background: linear-gradient(135deg, rgba(45, 211, 111, 0.16), rgba(45, 211, 111, 0.06));
+  border-color: rgba(92, 142, 255, 0.28);
+  background: linear-gradient(135deg, rgba(92, 142, 255, 0.18), rgba(92, 142, 255, 0.06));
   color: #ffffff;
 }
 
@@ -115,16 +115,16 @@
 
 .cardMeta {
   margin-top: 0.2rem;
-  color: rgba(227, 237, 230, 0.68);
+  color: rgba(219, 228, 252, 0.68);
   font-size: 0.82rem;
   line-height: 1.35;
 }
 
 .emptyState {
   padding: 1rem 0.85rem;
-  border: 1px dashed rgba(193, 218, 201, 0.16);
+  border: 1px dashed rgba(169, 191, 255, 0.16);
   border-radius: 0.95rem;
-  color: rgba(233, 241, 235, 0.68);
+  color: rgba(229, 236, 255, 0.68);
   text-align: center;
 }
 

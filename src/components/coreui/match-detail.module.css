@@ -7,9 +7,9 @@
 .panel,
 .timelineItem,
 .lineupCard {
-  border: 1px solid rgba(193, 218, 201, 0.08);
+  border: 1px solid rgba(169, 191, 255, 0.08);
   border-radius: 0.95rem;
-  background: rgba(10, 19, 14, 0.84);
+  background: rgba(9, 18, 34, 0.84);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.14);
 }
 
@@ -37,21 +37,21 @@
   gap: 0.28rem;
   min-height: 1.82rem;
   padding: 0.35rem 0.62rem;
-  border: 1px solid rgba(193, 218, 201, 0.1);
+  border: 1px solid rgba(169, 191, 255, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
-  color: rgba(237, 244, 239, 0.82);
+  color: rgba(233, 239, 255, 0.82);
   font-size: 0.74rem;
 }
 
 .statusLive {
-  background: rgba(45, 211, 111, 0.18);
-  color: #98f5b7;
+  background: rgba(92, 142, 255, 0.18);
+  color: #d7e5ff;
 }
 
 .eyebrow {
   margin-bottom: 0.15rem;
-  color: rgba(228, 240, 231, 0.66);
+  color: rgba(225, 234, 255, 0.66);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -73,14 +73,14 @@
 
 .teamCard {
   padding: 0.65rem 0.72rem;
-  border: 1px solid rgba(193, 218, 201, 0.08);
+  border: 1px solid rgba(169, 191, 255, 0.08);
   border-radius: 0.85rem;
   background: rgba(255, 255, 255, 0.03);
 }
 
 .teamCard span {
   display: block;
-  color: rgba(227, 237, 230, 0.66);
+  color: rgba(219, 228, 252, 0.66);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -127,7 +127,7 @@
 }
 
 .muted {
-  color: rgba(227, 237, 230, 0.68);
+  color: rgba(219, 228, 252, 0.68);
   font-size: 0.84rem;
   line-height: 1.35;
 }
@@ -145,7 +145,7 @@
 }
 
 .minute {
-  color: #98f5b7;
+  color: #8fb8ff;
   font-family: var(--font-display), var(--font-sans), sans-serif;
   font-size: 0.92rem;
 }
@@ -162,7 +162,7 @@
 
 .keyEventCard {
   padding: 1rem;
-  border: 1px solid rgba(193, 218, 201, 0.08);
+  border: 1px solid rgba(169, 191, 255, 0.08);
   border-radius: 1.2rem;
   background: rgba(255, 255, 255, 0.03);
 }
@@ -179,14 +179,14 @@
 
 .statValue {
   width: 2.3rem;
-  color: rgba(240, 245, 241, 0.9);
+  color: rgba(236, 242, 255, 0.9);
   font-weight: 600;
   font-size: 0.84rem;
 }
 
 .statLabel {
   width: 8rem;
-  color: rgba(227, 237, 230, 0.72);
+  color: rgba(219, 228, 252, 0.72);
   font-size: 0.82rem;
 }
 
@@ -208,12 +208,12 @@
 
 .statHome {
   left: 0;
-  background: #2dd36f;
+  background: #5c8eff;
 }
 
 .statAway {
   right: 0;
-  background: rgba(233, 242, 235, 0.38);
+  background: rgba(229, 236, 255, 0.38);
 }
 
 .lineupGrid {
@@ -229,7 +229,7 @@
 .lineupRow {
   justify-content: space-between;
   padding: 0.4rem 0;
-  border-top: 1px solid rgba(193, 218, 201, 0.08);
+  border-top: 1px solid rgba(169, 191, 255, 0.08);
 }
 
 .lineupRow:first-child {
@@ -239,10 +239,10 @@
 
 .emptyState {
   padding: 0.95rem 0.8rem;
-  border: 1px dashed rgba(193, 218, 201, 0.16);
+  border: 1px dashed rgba(169, 191, 255, 0.16);
   border-radius: 0.85rem;
   text-align: center;
-  color: rgba(233, 241, 235, 0.68);
+  color: rgba(229, 236, 255, 0.68);
 }
 
 .timelinePanel,

@@ -4,9 +4,9 @@
   padding: 0.5rem;
   overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(45, 211, 111, 0.16), transparent 18rem),
-    radial-gradient(circle at 88% 6%, rgba(39, 113, 78, 0.22), transparent 16rem),
-    linear-gradient(180deg, #04100c 0%, #06140f 38%, #04100c 100%);
+    radial-gradient(circle at top left, rgba(92, 142, 255, 0.18), transparent 18rem),
+    radial-gradient(circle at 88% 6%, rgba(38, 78, 170, 0.24), transparent 16rem),
+    linear-gradient(180deg, #050d1b 0%, #08162d 38%, #050d1b 100%);
   color: #f4f7f4;
 }
 
@@ -25,7 +25,7 @@
   width: 18rem;
   height: 18rem;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(45, 211, 111, 0.16), transparent 68%);
+  background: radial-gradient(circle, rgba(92, 142, 255, 0.18), transparent 68%);
   filter: blur(8px);
 }
 
@@ -35,7 +35,7 @@
   width: 22rem;
   height: 22rem;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(18, 63, 45, 0.3), transparent 70%);
+  background: radial-gradient(circle, rgba(20, 48, 110, 0.32), transparent 70%);
   filter: blur(18px);
 }
 
@@ -58,11 +58,11 @@
   display: grid;
   gap: 0.55rem;
   padding: 0.58rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
+  border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 1.2rem;
   background:
-    linear-gradient(180deg, rgba(10, 21, 16, 0.96), rgba(7, 16, 12, 0.88)),
-    radial-gradient(circle at top left, rgba(45, 211, 111, 0.08), transparent 55%);
+    linear-gradient(180deg, rgba(10, 18, 36, 0.96), rgba(7, 14, 28, 0.88)),
+    radial-gradient(circle at top left, rgba(92, 142, 255, 0.08), transparent 55%);
   backdrop-filter: blur(18px);
   box-shadow:
     0 22px 50px rgba(0, 0, 0, 0.24),
@@ -92,15 +92,15 @@
   border-radius: 0.78rem;
   background:
     radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.26), transparent 42%),
-    linear-gradient(145deg, #31de77, #158047);
-  color: #06120c;
+    linear-gradient(145deg, #6aa6ff, #356fff);
+  color: #04101f;
   font-family: var(--font-display), var(--font-sans), sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 10px 22px rgba(45, 211, 111, 0.16);
+    0 10px 22px rgba(92, 142, 255, 0.18);
 }
 
 .brandBlock {
@@ -120,7 +120,7 @@
 .brandTag,
 .leagueRailEyebrow,
 .leagueChip span {
-  color: rgba(231, 240, 234, 0.62);
+  color: rgba(225, 234, 255, 0.62);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -144,10 +144,10 @@
   gap: 0.45rem;
   min-height: 1.9rem;
   padding: 0.36rem 0.62rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
+  border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(244, 247, 244, 0.86);
+  color: rgba(239, 244, 255, 0.86);
   font-size: 0.72rem;
   font-weight: 600;
 }
@@ -156,8 +156,8 @@
   width: 0.48rem;
   height: 0.48rem;
   border-radius: 999px;
-  background: #2dd36f;
-  box-shadow: 0 0 0 0.24rem rgba(45, 211, 111, 0.14);
+  background: #5c8eff;
+  box-shadow: 0 0 0 0.24rem rgba(92, 142, 255, 0.16);
 }
 
 .nav,
@@ -176,7 +176,7 @@
 .nav {
   display: none;
   padding: 0.22rem;
-  border: 1px solid rgba(187, 214, 196, 0.08);
+  border: 1px solid rgba(169, 191, 255, 0.08);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.035);
 }
@@ -194,10 +194,10 @@
   min-height: 1.9rem;
   min-width: 0;
   padding: 0.36rem 0.66rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
+  border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(244, 247, 244, 0.88);
+  color: rgba(239, 244, 255, 0.88);
   cursor: pointer;
   list-style: none;
 }
@@ -207,7 +207,7 @@
 }
 
 .mobileNavLabel {
-  color: rgba(231, 240, 234, 0.62);
+  color: rgba(225, 234, 255, 0.62);
   font-size: 0.64rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -227,11 +227,11 @@
   gap: 0.35rem;
   width: min(13.5rem, calc(100vw - 1rem));
   padding: 0.5rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
+  border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 1rem;
   background:
-    linear-gradient(180deg, rgba(10, 21, 16, 0.98), rgba(7, 16, 12, 0.94)),
-    rgba(7, 16, 12, 0.94);
+    linear-gradient(180deg, rgba(10, 18, 36, 0.98), rgba(7, 14, 28, 0.94)),
+    rgba(7, 14, 28, 0.94);
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
 }
 
@@ -241,17 +241,17 @@
   align-items: center;
   min-height: 2.15rem;
   padding: 0.5rem 0.7rem;
-  border: 1px solid rgba(187, 214, 196, 0.1);
+  border: 1px solid rgba(169, 191, 255, 0.1);
   border-radius: 0.82rem;
   background: rgba(255, 255, 255, 0.035);
-  color: rgba(234, 240, 236, 0.78);
+  color: rgba(229, 236, 255, 0.78);
   font-size: 0.8rem;
   font-weight: 700;
 }
 
 .mobileNavLinkActive {
-  border-color: rgba(45, 211, 111, 0.18);
-  background: rgba(45, 211, 111, 0.1);
+  border-color: rgba(92, 142, 255, 0.2);
+  background: rgba(92, 142, 255, 0.12);
   color: #ffffff;
 }
 
@@ -272,28 +272,28 @@
 .navLinkActive {
   min-height: 2.35rem;
   padding: 0.55rem 0.92rem;
-  border: 1px solid rgba(187, 214, 196, 0.1);
+  border: 1px solid rgba(169, 191, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(234, 240, 236, 0.72);
+  color: rgba(229, 236, 255, 0.72);
   font-size: 0.82rem;
   font-weight: 700;
 }
 
 .navLink:hover,
 .navLink:focus-visible {
-  background: rgba(45, 211, 111, 0.08);
-  border-color: rgba(45, 211, 111, 0.18);
+  background: rgba(92, 142, 255, 0.08);
+  border-color: rgba(92, 142, 255, 0.18);
   color: #ffffff;
   transform: translateY(-1px);
 }
 
 .navLinkActive {
-  border-color: rgba(45, 211, 111, 0.18);
+  border-color: rgba(92, 142, 255, 0.18);
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 58%),
-    linear-gradient(145deg, #31de77, #20b661);
-  color: #06110c;
-  box-shadow: 0 12px 22px rgba(45, 211, 111, 0.2);
+    linear-gradient(145deg, #73b2ff, #3c76ff);
+  color: #04101f;
+  box-shadow: 0 12px 22px rgba(92, 142, 255, 0.2);
 }
 
 .leagueRailHead {
@@ -311,7 +311,7 @@
   width: fit-content;
   min-height: 2.45rem;
   padding: 0.7rem 0.95rem;
-  border: 1px solid rgba(187, 214, 196, 0.12);
+  border: 1px solid rgba(169, 191, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   color: #f4f7f4;
   font-size: 0.86rem;
@@ -321,8 +321,8 @@
 .leagueRailAction:hover,
 .leagueRailAction:focus-visible {
   transform: translateY(-1px);
-  border-color: rgba(45, 211, 111, 0.22);
-  background: rgba(45, 211, 111, 0.08);
+  border-color: rgba(92, 142, 255, 0.22);
+  background: rgba(92, 142, 255, 0.08);
 }
 
 .leagueChip,
@@ -333,7 +333,7 @@
   justify-items: flex-start;
   min-width: 10.5rem;
   padding: 0.9rem 1rem;
-  border: 1px solid rgba(187, 214, 196, 0.1);
+  border: 1px solid rgba(169, 191, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: #f4f7f4;
 }
@@ -341,13 +341,13 @@
 .leagueChip:hover,
 .leagueChip:focus-visible {
   transform: translateY(-1px);
-  border-color: rgba(45, 211, 111, 0.2);
-  background: rgba(45, 211, 111, 0.08);
+  border-color: rgba(92, 142, 255, 0.2);
+  background: rgba(92, 142, 255, 0.08);
 }
 
 .leagueChipActive {
-  border-color: rgba(45, 211, 111, 0.28);
-  background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.05));
+  border-color: rgba(92, 142, 255, 0.28);
+  background: linear-gradient(135deg, rgba(92, 142, 255, 0.2), rgba(92, 142, 255, 0.06));
 }
 
 .leagueChip strong {

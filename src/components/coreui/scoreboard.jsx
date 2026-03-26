@@ -310,6 +310,21 @@ function buildScorelineText(fixture) {
   return "VS";
 }
 
+function buildMatchCardDateLabel(fixture, locale) {
+  const kickoff = new Date(fixture.startsAt);
+
+  if (Number.isNaN(kickoff.getTime())) {
+    return "";
+  }
+
+  const formatOptions =
+    kickoff.getFullYear() === new Date().getFullYear()
+      ? { month: "short", day: "numeric" }
+      : { year: "numeric", month: "short", day: "numeric" };
+
+  return new Intl.DateTimeFormat(locale, formatOptions).format(kickoff);
+}
+
 export function MatchRow({ fixture, locale }) {
   const matchStateClassName =
     fixture.status === "LIVE"
@@ -319,6 +334,7 @@ export function MatchRow({ fixture, locale }) {
         : styles.matchState;
   const homeStyle = getTeamStyle(fixture.homeTeam);
   const awayStyle = getTeamStyle(fixture.awayTeam);
+  const matchDateLabel = buildMatchCardDateLabel(fixture, locale);
 
   return (
     <article className={styles.matchRow}>
@@ -334,6 +350,7 @@ export function MatchRow({ fixture, locale }) {
           <div className={styles.matchCenter}>
             <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
             <span className={matchStateClassName}>{buildMatchStatusLabel(fixture, locale)}</span>
+            {matchDateLabel ? <span className={styles.matchDate}>{matchDateLabel}</span> : null}
           </div>
 
           <div className={`${styles.teamSide} ${styles.teamSideAway}`} style={awayStyle}>

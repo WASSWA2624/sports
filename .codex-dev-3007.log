@@ -1,0 +1,23 @@
+
+> sports@0.1.0 dev
+> next dev --port 3007
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3007
+- Network:       http://10.2.0.2:3007
+- Environments: .env
+✓ Ready in 771ms
+Creating turbopack project { dir: 'D:\\coding\\apps\\sports', testMode: true }
+
+ GET /en 200 in 4.0s (next.js: 1446ms, proxy.ts: 506ms, generate-params: 1076ms, application-code: 2.1s)
+ GET /team-logo/borussia-dortmund 200 in 1482ms (next.js: 1313ms, proxy.ts: 45ms, application-code: 124ms)
+ GET /team-logo/rb-leipzig 200 in 1461ms (next.js: 1306ms, proxy.ts: 35ms, application-code: 120ms)
+ GET /team-logo/barcelona 200 in 1460ms (next.js: 1299ms, proxy.ts: 40ms, application-code: 121ms)
+ GET /team-logo/bayern-munich 200 in 1428ms (next.js: 1268ms, proxy.ts: 38ms, application-code: 121ms)
+ GET /team-logo/sevilla 200 in 1368ms (next.js: 1005ms, proxy.ts: 240ms, application-code: 122ms)
+ GET /team-logo/arsenal 200 in 1364ms (next.js: 1003ms, proxy.ts: 240ms, application-code: 122ms)
+ GET /team-logo/lazio 200 in 114ms (next.js: 76ms, proxy.ts: 29ms, application-code: 9ms)
+ GET /team-logo/real-madrid 200 in 128ms (next.js: 85ms, proxy.ts: 31ms, application-code: 12ms)
+ GET /team-logo/inter 200 in 144ms (next.js: 94ms, proxy.ts: 38ms, application-code: 12ms)
+ GET /team-logo/chelsea 200 in 160ms (next.js: 104ms, proxy.ts: 43ms, application-code: 13ms)
+[?25h
