@@ -172,7 +172,7 @@
 
 .localePicker {
   position: relative;
-  padding-right: 0.34rem;
+  padding: 0;
 }
 
 .localeLabel {
@@ -181,34 +181,85 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+.localeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  min-height: 1.72rem;
+  padding: 0.22rem 0.5rem;
+  list-style: none;
+  cursor: pointer;
 }
 
-.localeSelect {
-  min-width: 3rem;
-  border: 0;
-  background: transparent;
+.localeToggle::-webkit-details-marker {
+  display: none;
+}
+
+.localeValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
   color: inherit;
   font-weight: 700;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
 }
 
-.localeSelect option {
-  color: #04101f;
+.localeFlag {
+  font-size: 0.82rem;
+  line-height: 1;
 }
 
-.localePicker::after {
+.localeText {
+  white-space: nowrap;
+}
+
+.localeToggle::after {
   content: "";
-  width: 0.36rem;
-  height: 0.36rem;
-  border-radius: 999px;
+  width: 0.32rem;
+  height: 0.32rem;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg);
-  margin-top: -0.12rem;
+  margin-top: -0.14rem;
   opacity: 0.7;
-  pointer-events: none;
+}
+
+.localeMenu {
+  position: absolute;
+  top: calc(100% + 0.34rem);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 0.16rem;
+  min-width: 9.5rem;
+  padding: 0.28rem;
+  border: 1px solid rgba(169, 191, 255, 0.12);
+  border-radius: 0.8rem;
+  background:
+    linear-gradient(180deg, rgba(10, 18, 36, 0.98), rgba(7, 14, 28, 0.95)),
+    rgba(7, 14, 28, 0.95);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.localeOption,
+.localeOptionActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  width: 100%;
+  padding: 0.42rem 0.5rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: rgba(239, 244, 255, 0.82);
+  text-align: left;
+  cursor: pointer;
+}
+
+.localeOption:hover,
+.localeOption:focus-visible,
+.localeOptionActive {
+  background: rgba(92, 142, 255, 0.12);
+  color: #ffffff;
 }
 
 .nav,

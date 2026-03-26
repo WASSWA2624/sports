@@ -160,6 +160,7 @@ function buildShellNav(locale) {
 function ShellFrame({ children, locale, dictionary, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
   const router = useRouter();
+  const currentLocaleOption = LOCALE_OPTIONS[locale] || { label: locale.toUpperCase(), flag: "🌐" };
   const [theme, setTheme] = useState(() => {
     if (typeof document === "undefined") {
       return "dark";
@@ -172,7 +173,6 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
       "dark"
     );
   });
-
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", theme);
@@ -181,16 +181,17 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
     document.cookie = `${THEME_COOKIE_NAME}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
   }, [theme]);
 
+  useEffect(() => {
+    document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
+  }, [locale]);
+
   function handleThemeToggle() {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
   }
 
-  function handleLocaleChange(event) {
-    const nextLocale = event.target.value;
+  function handleLocaleChange(nextLocale) {
     const nextHref = buildLocaleHref(pathname, searchParams, nextLocale);
-
-    document.cookie = `${LOCALE_COOKIE_NAME}=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`;
     router.push(nextHref);
   }
 
@@ -223,21 +224,38 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
                 <span>{theme === "light" ? dictionary.themeLight : dictionary.themeDark}</span>
               </button>
 
-              <label className={styles.localePicker}>
-                <span className={styles.localeLabel}>{dictionary.locale}</span>
-                <select
-                  value={locale}
-                  onChange={handleLocaleChange}
-                  className={styles.localeSelect}
-                  aria-label={dictionary.locale}
-                >
-                  {SUPPORTED_LOCALES.map((entry) => (
-                    <option key={entry} value={entry}>
-                      {`${LOCALE_OPTIONS[entry]?.flag || "🌐"} ${LOCALE_OPTIONS[entry]?.label || entry.toUpperCase()}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <details className={styles.localePicker}>
+                <summary className={styles.localeToggle} aria-label={dictionary.locale}>
+                  <span className={styles.localeLabel}>{dictionary.locale}</span>
+                  <span className={styles.localeValue}>
+                    <span className={styles.localeFlag} aria-hidden="true">
+                      {currentLocaleOption.flag}
+                    </span>
+                    <span className={styles.localeText}>{currentLocaleOption.label}</span>
+                  </span>
+                </summary>
+
+                <div className={styles.localeMenu} role="listbox" aria-label={dictionary.locale}>
+                  {SUPPORTED_LOCALES.map((entry) => {
+                    const option = LOCALE_OPTIONS[entry] || { label: entry.toUpperCase(), flag: "🌐" };
+                    return (
+                      <button
+                        key={entry}
+                        type="button"
+                        className={entry === locale ? styles.localeOptionActive : styles.localeOption}
+                        onClick={() => handleLocaleChange(entry)}
+                        role="option"
+                        aria-selected={entry === locale}
+                      >
+                        <span className={styles.localeFlag} aria-hidden="true">
+                          {option.flag}
+                        </span>
+                        <span className={styles.localeText}>{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </details>
             </div>
           </div>
 
