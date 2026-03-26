@@ -24,9 +24,6 @@ export default async function LeaguesPage({ params }) {
         <div>
           <p className={styles.eyebrow}>Competitions</p>
           <h1 className={styles.title}>Football leagues</h1>
-          <p className={styles.lead}>
-            Open any league to see its live matches, upcoming fixtures, and recent results.
-          </p>
         </div>
         <div className={styles.sectionTools}>
           <span className={styles.badge}>{leagues.length} leagues</span>
@@ -38,9 +35,7 @@ export default async function LeaguesPage({ params }) {
           <Link key={league.code} href={`/${locale}/leagues/${league.code}`} className={styles.directoryCard}>
             <p className={styles.eyebrow}>{league.country}</p>
             <h2 className={styles.cardTitle}>{league.name}</h2>
-            <p className={styles.cardMeta}>
-              {league.teams.length} teams • {league.fixtures.length} matches
-            </p>
+            <p className={styles.cardMeta}>{league.teams.length} teams / {league.fixtures.length} matches</p>
           </Link>
         ))}
       </div>

@@ -15,6 +15,11 @@ export default async function LocaleHomePage({ params, searchParams }) {
   const filters = await searchParams;
   const feed = getMatchdayFeed({
     date: filters?.date,
+    preset: filters?.preset,
+    startDate: filters?.startDate,
+    startTime: filters?.startTime,
+    endDate: filters?.endDate,
+    endTime: filters?.endTime,
     status: filters?.status,
     query: filters?.q,
     leagueCode: filters?.league,

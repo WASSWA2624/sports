@@ -63,7 +63,6 @@ export default async function MatchDetailPage({ params }) {
           {fixture.venue ? <span className={styles.badge}>{fixture.venue}</span> : null}
         </div>
 
-        <p className={styles.eyebrow}>Match</p>
         <h1 className={styles.title}>{fixture.homeTeam.name} vs {fixture.awayTeam.name}</h1>
 
         <div className={styles.scoreline}>
@@ -87,11 +86,11 @@ export default async function MatchDetailPage({ params }) {
         </div>
       </header>
 
-      <section className={styles.panel}>
+      <section className={`${styles.panel} ${styles.timelinePanel}`}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>Timeline</p>
-            <h2 className={styles.sectionTitle}>Match events</h2>
+            <h2 className={styles.sectionTitle}>Events</h2>
           </div>
           <span className={styles.badge}>{fixture.timeline.length}</span>
         </div>
@@ -114,11 +113,11 @@ export default async function MatchDetailPage({ params }) {
         )}
       </section>
 
-      <section className={styles.panel}>
+      <section className={`${styles.panel} ${styles.statsPanel}`}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>Stats</p>
-            <h2 className={styles.sectionTitle}>Match statistics</h2>
+            <h2 className={styles.sectionTitle}>Statistics</h2>
           </div>
           <span className={styles.badge}>{fixture.statistics.length}</span>
         </div>
@@ -142,11 +141,11 @@ export default async function MatchDetailPage({ params }) {
         )}
       </section>
 
-      <section className={styles.panel}>
+      <section className={`${styles.panel} ${styles.lineupsPanel}`}>
         <div className={styles.sectionHeader}>
           <div>
             <p className={styles.eyebrow}>Lineups</p>
-            <h2 className={styles.sectionTitle}>Starting lineups</h2>
+            <h2 className={styles.sectionTitle}>Starting elevens</h2>
           </div>
         </div>
 

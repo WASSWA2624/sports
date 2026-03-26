@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
+import { buildMatchBoardHref } from "../../lib/coreui/minimal-routes";
 import { buildMatchHref } from "../../lib/coreui/routes";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
+import { TeamBadge } from "./team-badge";
 
 const TEAM_PALETTE_FALLBACKS = [
   {
@@ -120,28 +122,6 @@ const TEAM_PALETTE_OVERRIDES = {
   },
 };
 
-function buildBoardHref(locale, nextParams = {}, current = {}) {
-  const params = new URLSearchParams();
-  const merged = { ...current, ...nextParams };
-
-  for (const [key, value] of Object.entries(merged)) {
-    if (!value || value === "all" || value === "ALL") {
-      continue;
-    }
-
-    params.set(key, value);
-  }
-
-  const query = params.toString();
-  return `/${locale}${query ? `?${query}` : ""}`;
-}
-
-function shiftDate(dateString, amount) {
-  const next = new Date(`${dateString}T12:00:00.000Z`);
-  next.setUTCDate(next.getUTCDate() + amount);
-  return next.toISOString().slice(0, 10);
-}
-
 function statusLabel(value) {
   const normalized = String(value || "").toUpperCase();
 
@@ -158,6 +138,102 @@ function statusLabel(value) {
   }
 
   return "Live";
+}
+
+function isSameDay(left, right) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function isSameMonth(left, right) {
+  return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth();
+}
+
+function hasFullDayWindow(feed) {
+  return feed.selectedStartTime === "00:00" && feed.selectedEndTime === "23:59";
+}
+
+function buildRangeLabel(feed, locale) {
+  const start = new Date(feed.rangeStart);
+  const end = new Date(feed.rangeEnd);
+  const fullDayWindow = hasFullDayWindow(feed);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return feed.selectedPresetLabel;
+  }
+
+  if (isSameDay(start, end) && fullDayWindow) {
+    return new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      month: "long",
+      day: "numeric",
+    }).format(start);
+  }
+
+  if (isSameDay(start, end)) {
+    const dayFormatter = new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+    const timeFormatter = new Intl.DateTimeFormat(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    return `${dayFormatter.format(start)} | ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
+  }
+
+  if (fullDayWindow && isSameMonth(start, end)) {
+    const boundaryFormatter = new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+    });
+
+    return `${boundaryFormatter.format(start)} - ${boundaryFormatter.format(end)}`;
+  }
+
+  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `${dateTimeFormatter.format(start)} - ${dateTimeFormatter.format(end)}`;
+}
+
+function buildRangeModeLabel(feed) {
+  if (feed.selectedPreset !== "custom") {
+    return feed.selectedPresetLabel;
+  }
+
+  return hasFullDayWindow(feed) ? "Custom date range" : "Custom date-time range";
+}
+
+function buildRangeQuery(feed) {
+  if (feed.selectedPreset && feed.selectedPreset !== "custom") {
+    return {
+      preset: feed.selectedPreset === "today" ? "" : feed.selectedPreset,
+      startDate: "",
+      startTime: "",
+      endDate: "",
+      endTime: "",
+      date: "",
+    };
+  }
+
+  return {
+    preset: "custom",
+    startDate: feed.selectedStartDate,
+    startTime: feed.selectedStartTime,
+    endDate: feed.selectedEndDate,
+    endTime: feed.selectedEndTime,
+    date: "",
+  };
 }
 
 function isScoreVisible(fixture) {
@@ -184,21 +260,6 @@ function getTeamPalette(team) {
   return TEAM_PALETTE_FALLBACKS[hashText(key) % TEAM_PALETTE_FALLBACKS.length];
 }
 
-function getTeamBadgeText(team) {
-  const shortName = String(team?.shortName || "").trim();
-  if (shortName) {
-    return shortName.slice(0, 3).toUpperCase();
-  }
-
-  return String(team?.name || "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 3)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-}
-
 function getTeamStyle(team) {
   const palette = getTeamPalette(team);
 
@@ -209,22 +270,20 @@ function getTeamStyle(team) {
   };
 }
 
-function TeamBadge({ team }) {
-  const teamStyle = getTeamStyle(team);
-
-  return (
-    <span className={styles.teamBadge} style={teamStyle} aria-hidden="true">
-      <span className={styles.teamBadgeInner}>{getTeamBadgeText(team)}</span>
-    </span>
-  );
-}
-
 function buildScorelineText(fixture) {
   if (isScoreVisible(fixture)) {
     return `${fixture.resultSnapshot.homeScore} - ${fixture.resultSnapshot.awayScore}`;
   }
 
   return "VS";
+}
+
+function buildGroupSummaryItems(summary) {
+  return [
+    summary.LIVE ? { key: "live", label: `${summary.LIVE} live` } : null,
+    summary.SCHEDULED ? { key: "scheduled", label: `${summary.SCHEDULED} fixtures` } : null,
+    summary.FINISHED ? { key: "finished", label: `${summary.FINISHED} results` } : null,
+  ].filter(Boolean);
 }
 
 export function MatchRow({ fixture, locale }) {
@@ -242,24 +301,23 @@ export function MatchRow({ fixture, locale }) {
       <Link href={buildMatchHref(locale, fixture)} className={styles.matchRowMain}>
         <div className={styles.matchRowCard}>
           <div className={styles.teamSide} style={homeStyle}>
-            <TeamBadge team={fixture.homeTeam} />
+            <TeamBadge team={fixture.homeTeam} teamStyle={homeStyle} />
             <div className={styles.teamCopy}>
               <span className={styles.teamName}>{fixture.homeTeam.name}</span>
             </div>
           </div>
 
-          <div className={styles.scoreColumn}>
+          <div className={styles.matchCenter}>
             <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
+            <span className={matchStateClassName}>{buildMatchStatusLabel(fixture, locale)}</span>
           </div>
 
           <div className={`${styles.teamSide} ${styles.teamSideAway}`} style={awayStyle}>
-            <TeamBadge team={fixture.awayTeam} />
             <div className={styles.teamCopy}>
               <span className={styles.teamName}>{fixture.awayTeam.name}</span>
             </div>
+            <TeamBadge team={fixture.awayTeam} teamStyle={awayStyle} />
           </div>
-
-          <span className={matchStateClassName}>{buildMatchStatusLabel(fixture, locale)}</span>
         </div>
       </Link>
     </article>
@@ -267,24 +325,33 @@ export function MatchRow({ fixture, locale }) {
 }
 
 export function Scoreboard({ locale, feed }) {
-  const selectedDateLabel = new Intl.DateTimeFormat(locale, {
-    weekday: "short",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(feed.selectedDate));
+  const selectedRangeLabel = buildRangeLabel(feed, locale);
+  const rangeQuery = buildRangeQuery(feed);
   const currentFilters = {
-    date: feed.selectedDate,
+    ...rangeQuery,
     q: feed.query,
     league: feed.selectedLeague,
     time: feed.selectedTime,
+    status: feed.selectedStatus === "ALL" ? "" : feed.selectedStatus.toLowerCase(),
   };
-  const refreshLabel = feed.refresh?.enabled ? "Auto-refresh on" : "Waiting for live matches";
   const hasLeagueFilter = Boolean(
     feed.selectedLeague && String(feed.selectedLeague).toLowerCase() !== "all"
   );
   const hasTimeFilter = Boolean(feed.selectedTime && String(feed.selectedTime).toLowerCase() !== "all");
-  const activeFilterCount = [Boolean(feed.query), hasLeagueFilter, hasTimeFilter].filter(Boolean).length;
+  const rangeFilterActive = !feed.rangeIsDefault;
+  const activeFilterCount = [
+    rangeFilterActive,
+    Boolean(feed.query),
+    hasLeagueFilter,
+    hasTimeFilter,
+  ].filter(Boolean).length;
   const hasRefinements = activeFilterCount > 0;
+  const metaChips = [
+    { key: "window", label: buildRangeModeLabel(feed) },
+    { key: "matches", label: `${feed.summary.total} matches` },
+    ...(feed.refresh?.enabled ? [{ key: "refresh", label: "Live refresh" }] : []),
+    ...(hasRefinements ? [{ key: "filters", label: `${activeFilterCount} filters` }] : []),
+  ];
 
   return (
     <section className={styles.page}>
@@ -298,20 +365,14 @@ export function Scoreboard({ locale, feed }) {
         <div className={styles.toolbarTop}>
           <div className={styles.dateRail}>
             <Link
-              href={buildBoardHref(locale, {
-                date: shiftDate(feed.selectedDate, -1),
-                status: feed.selectedStatus,
-              }, currentFilters)}
+              href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.previous)}
               className={styles.commandButton}
             >
               Prev
             </Link>
-            <span className={styles.datePill}>{selectedDateLabel}</span>
+            <span className={styles.datePill}>{selectedRangeLabel}</span>
             <Link
-              href={buildBoardHref(locale, {
-                date: shiftDate(feed.selectedDate, 1),
-                status: feed.selectedStatus,
-              }, currentFilters)}
+              href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.next)}
               className={styles.commandButton}
             >
               Next
@@ -319,8 +380,11 @@ export function Scoreboard({ locale, feed }) {
           </div>
 
           <div className={styles.headerMeta}>
-            <span className={styles.metaChip}>{feed.summary.total} matches</span>
-            <span className={styles.metaChip}>{refreshLabel}</span>
+            {metaChips.map((item) => (
+              <span key={item.key} className={styles.metaChip}>
+                {item.label}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -328,9 +392,7 @@ export function Scoreboard({ locale, feed }) {
           {feed.statusOptions.map((option) => (
             <Link
               key={option.value}
-              href={buildBoardHref(locale, {
-                status: option.value.toLowerCase(),
-              }, currentFilters)}
+              href={buildMatchBoardHref(locale, currentFilters, { status: option.value.toLowerCase() })}
               className={option.value === feed.selectedStatus ? styles.filterChipActive : styles.filterChip}
             >
               <span>{statusLabel(option.value)}</span>
@@ -339,14 +401,36 @@ export function Scoreboard({ locale, feed }) {
           ))}
         </div>
 
+        <div className={styles.presetRail}>
+          {feed.quickPresetOptions.map((option) => (
+            <Link
+              key={option.value}
+              href={buildMatchBoardHref(
+                locale,
+                currentFilters,
+                {
+                  preset: option.value,
+                  startDate: "",
+                  startTime: "",
+                  endDate: "",
+                  endTime: "",
+                  date: "",
+                }
+              )}
+              className={option.value === feed.selectedPreset ? styles.filterChipActive : styles.filterChip}
+            >
+              <span>{option.label}</span>
+            </Link>
+          ))}
+        </div>
+
         <details className={styles.refinePanel} open={hasRefinements}>
           <summary className={styles.refineToggle}>
-            <span>Filters</span>
+            <span>Refine</span>
             <strong>{hasRefinements ? `${activeFilterCount} active` : "Optional"}</strong>
           </summary>
 
           <form action={`/${locale}`} className={styles.refineGrid}>
-            <input type="hidden" name="date" value={feed.selectedDate} />
             {feed.selectedStatus !== "ALL" ? (
               <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
             ) : null}
@@ -383,6 +467,60 @@ export function Scoreboard({ locale, feed }) {
               </select>
             </label>
 
+            <label className={styles.searchField}>
+              <span className={styles.searchLabel}>Preset</span>
+              <select name="preset" defaultValue={feed.selectedPreset} className={styles.searchInput}>
+                {feed.presetOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <span className={styles.fieldHint}>Quick ranges and exact start/end boundaries can work together.</span>
+            </label>
+
+            <div className={styles.rangeFields}>
+              <label className={styles.searchField}>
+                <span className={styles.searchLabel}>Start date</span>
+                <input
+                  type="date"
+                  name="startDate"
+                  defaultValue={feed.selectedStartDate}
+                  className={styles.searchInput}
+                />
+              </label>
+
+              <label className={styles.searchField}>
+                <span className={styles.searchLabel}>Start time</span>
+                <input
+                  type="time"
+                  name="startTime"
+                  defaultValue={feed.selectedStartTime}
+                  className={styles.searchInput}
+                />
+              </label>
+
+              <label className={styles.searchField}>
+                <span className={styles.searchLabel}>End date</span>
+                <input
+                  type="date"
+                  name="endDate"
+                  defaultValue={feed.selectedEndDate}
+                  className={styles.searchInput}
+                />
+              </label>
+
+              <label className={styles.searchField}>
+                <span className={styles.searchLabel}>End time</span>
+                <input
+                  type="time"
+                  name="endTime"
+                  defaultValue={feed.selectedEndTime}
+                  className={styles.searchInput}
+                />
+              </label>
+            </div>
+
             <button type="submit" className={styles.searchSubmit}>
               Apply
             </button>
@@ -392,33 +530,39 @@ export function Scoreboard({ locale, feed }) {
 
       <div className={styles.groupStack}>
         {feed.groups.length ? (
-          feed.groups.map((group) => (
-            <section key={group.key} className={styles.groupCard}>
-              <div className={styles.groupHeader}>
-                <div>
-                  <p className={styles.groupCountry}>{group.country}</p>
-                  <h2 className={styles.groupTitle}>
-                    <Link href={`/${locale}/leagues/${group.leagueCode}`}>{group.leagueName}</Link>
-                  </h2>
+          feed.groups.map((group) => {
+            const groupSummaryItems = buildGroupSummaryItems(group.summary);
+
+            return (
+              <section key={group.key} className={styles.groupCard}>
+                <div className={styles.groupHeader}>
+                  <div className={styles.groupHeading}>
+                    <p className={styles.groupCountry}>{group.country}</p>
+                    <h2 className={styles.groupTitle}>
+                      <Link href={`/${locale}/leagues/${group.leagueCode}`}>{group.leagueName}</Link>
+                    </h2>
+                  </div>
+
+                  {groupSummaryItems.length ? (
+                    <div className={styles.groupSummary}>
+                      {groupSummaryItems.map((item) => (
+                        <span key={item.key}>{item.label}</span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
-                <div className={styles.groupSummary}>
-                  <span>{group.summary.LIVE || 0} live</span>
-                  <span>{group.summary.SCHEDULED || 0} fixtures</span>
-                  <span>{group.summary.FINISHED || 0} results</span>
+                <div className={styles.matchList}>
+                  {group.fixtures.map((fixture) => (
+                    <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
+                  ))}
                 </div>
-              </div>
-
-              <div className={styles.matchList}>
-                {group.fixtures.map((fixture) => (
-                  <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
-                ))}
-              </div>
-            </section>
-          ))
+              </section>
+            );
+          })
         ) : (
           <div className={styles.emptyState}>
-            No matches match this search. Try another league, time window, or date.
+            No matches match this search. Try another date-time range, preset window, league, or kickoff bucket.
           </div>
         )}
       </div>

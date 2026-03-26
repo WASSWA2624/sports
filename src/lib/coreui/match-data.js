@@ -1,3 +1,5 @@
+import { buildMockTeamLogoUrl } from "./team-branding";
+
 const LEAGUES = [
   { code: "EPL", name: "Premier League", country: "England", season: "2025/2026" },
   { code: "UCL", name: "UEFA Champions League", country: "Europe", season: "2025/2026" },
@@ -14,9 +16,38 @@ const TIME_FILTERS = [
   { value: "evening", label: "18:00 - 23:59" },
 ];
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_START_TIME = "00:00";
+const DEFAULT_END_TIME = "23:59";
+const RANGE_PRESETS = [
+  { value: "today", label: "Today", quick: true, navigation: { unit: "day", amount: 1 } },
+  { value: "tomorrow", label: "Tomorrow", quick: true, navigation: { unit: "day", amount: 1 } },
+  { value: "yesterday", label: "Yesterday", quick: true, navigation: { unit: "day", amount: 1 } },
+  { value: "this-week", label: "This week", quick: true, navigation: { unit: "week", amount: 1 } },
+  { value: "last-week", label: "Last week", quick: true, navigation: { unit: "week", amount: 1 } },
+  { value: "next-week", label: "Next week", quick: true, navigation: { unit: "week", amount: 1 } },
+  { value: "weekend", label: "This weekend", quick: false, navigation: { unit: "week", amount: 1 } },
+  { value: "this-month", label: "This month", quick: true, navigation: { unit: "month", amount: 1 } },
+  { value: "last-month", label: "Last month", quick: true, navigation: { unit: "month", amount: 1 } },
+  { value: "next-month", label: "Next month", quick: true, navigation: { unit: "month", amount: 1 } },
+  { value: "next-7-days", label: "Next 7 days", quick: true, navigation: { unit: "days", amount: 7 } },
+  { value: "next-30-days", label: "Next 30 days", quick: false, navigation: { unit: "days", amount: 30 } },
+  { value: "custom", label: "Custom range", quick: false, navigation: null },
+];
+
+function padNumber(value) {
+  return String(value).padStart(2, "0");
+}
+
 function startOfDay(date) {
   const next = new Date(date);
   next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function endOfDay(date) {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
   return next;
 }
 
@@ -26,23 +57,366 @@ function addDays(date, amount) {
   return next;
 }
 
+function addMonths(date, amount) {
+  const source = new Date(date);
+  const year = source.getFullYear();
+  const month = source.getMonth() + amount;
+  const hours = source.getHours();
+  const minutes = source.getMinutes();
+  const seconds = source.getSeconds();
+  const milliseconds = source.getMilliseconds();
+  const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+
+  return new Date(
+    year,
+    month,
+    Math.min(source.getDate(), lastDayOfMonth),
+    hours,
+    minutes,
+    seconds,
+    milliseconds
+  );
+}
+
 function setTime(date, hour, minute) {
   const next = new Date(date);
   next.setHours(hour, minute, 0, 0);
   return next;
 }
 
+function startOfWeek(date) {
+  const next = startOfDay(date);
+  const offset = (next.getDay() + 6) % 7;
+  next.setDate(next.getDate() - offset);
+  return next;
+}
+
+function endOfWeek(date) {
+  return endOfDay(addDays(startOfWeek(date), 6));
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+}
+
+function endOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+function parseDateKey(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || "").trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText) - 1;
+  const day = Number(dayText);
+  const parsed = new Date(year, month, day, 0, 0, 0, 0);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function parseTimeKey(value) {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(value || "").trim());
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    hour: Number(match[1]),
+    minute: Number(match[2]),
+  };
+}
+
 function toDateKey(value) {
-  return startOfDay(value).toISOString().slice(0, 10);
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`;
+}
+
+function toTimeKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return DEFAULT_START_TIME;
+  }
+
+  return `${padNumber(date.getHours())}:${padNumber(date.getMinutes())}`;
+}
+
+function combineDateAndTime(dateKey, timeValue, fallbackTime = DEFAULT_START_TIME) {
+  const parsedDate = parseDateKey(dateKey);
+  const parsedTime = parseTimeKey(timeValue) || parseTimeKey(fallbackTime);
+
+  if (!parsedDate || !parsedTime) {
+    return null;
+  }
+
+  return setTime(parsedDate, parsedTime.hour, parsedTime.minute);
+}
+
+function normalizeTimeInput(value, fallback = DEFAULT_START_TIME) {
+  const parsedTime = parseTimeKey(value) || parseTimeKey(fallback);
+  return parsedTime ? `${padNumber(parsedTime.hour)}:${padNumber(parsedTime.minute)}` : fallback;
 }
 
 function normalizeDateInput(value) {
-  if (!value) {
-    return toDateKey(new Date());
+  const parsedDate = parseDateKey(value);
+
+  if (parsedDate) {
+    return toDateKey(parsedDate);
   }
 
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? toDateKey(new Date()) : toDateKey(parsed);
+}
+
+function normalizePreset(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return RANGE_PRESETS.some((entry) => entry.value === normalized) ? normalized : "";
+}
+
+function getPresetDefinition(value) {
+  return RANGE_PRESETS.find((entry) => entry.value === value) || null;
+}
+
+function buildPresetRange(preset, now = new Date()) {
+  switch (preset) {
+    case "tomorrow": {
+      const start = addDays(startOfDay(now), 1);
+      return { start, end: endOfDay(start) };
+    }
+    case "yesterday": {
+      const start = addDays(startOfDay(now), -1);
+      return { start, end: endOfDay(start) };
+    }
+    case "this-week": {
+      const start = startOfWeek(now);
+      return { start, end: endOfWeek(now) };
+    }
+    case "last-week": {
+      const start = addDays(startOfWeek(now), -7);
+      return { start, end: endOfWeek(start) };
+    }
+    case "next-week": {
+      const start = addDays(startOfWeek(now), 7);
+      return { start, end: endOfWeek(start) };
+    }
+    case "weekend": {
+      const start = addDays(startOfWeek(now), 5);
+      return { start, end: endOfDay(addDays(start, 1)) };
+    }
+    case "this-month": {
+      const start = startOfMonth(now);
+      return { start, end: endOfMonth(start) };
+    }
+    case "last-month": {
+      const start = startOfMonth(addMonths(now, -1));
+      return { start, end: endOfMonth(start) };
+    }
+    case "next-month": {
+      const start = startOfMonth(addMonths(now, 1));
+      return { start, end: endOfMonth(start) };
+    }
+    case "next-7-days": {
+      const start = startOfDay(now);
+      return { start, end: endOfDay(addDays(start, 6)) };
+    }
+    case "next-30-days": {
+      const start = startOfDay(now);
+      return { start, end: endOfDay(addDays(start, 29)) };
+    }
+    case "today":
+    default: {
+      const start = startOfDay(now);
+      return { start, end: endOfDay(start) };
+    }
+  }
+}
+
+function normalizeRange(range) {
+  if (!range?.start || !range?.end) {
+    return buildPresetRange("today");
+  }
+
+  if (range.start.getTime() <= range.end.getTime()) {
+    return range;
+  }
+
+  return {
+    start: range.end,
+    end: range.start,
+  };
+}
+
+function rangesMatch(left, right) {
+  return (
+    left?.start?.getTime() === right?.start?.getTime() &&
+    left?.end?.getTime() === right?.end?.getTime()
+  );
+}
+
+function getRangeDaySpan(range) {
+  return Math.max(
+    1,
+    Math.round((startOfDay(range.end).getTime() - startOfDay(range.start).getTime()) / DAY_MS) + 1
+  );
+}
+
+function shiftRange(range, direction, presetValue = "custom") {
+  const presetDefinition = getPresetDefinition(presetValue);
+
+  if (presetDefinition?.navigation?.unit === "month") {
+    return {
+      start: addMonths(range.start, direction * presetDefinition.navigation.amount),
+      end: addMonths(range.end, direction * presetDefinition.navigation.amount),
+    };
+  }
+
+  if (presetDefinition?.navigation?.unit === "week") {
+    return {
+      start: addDays(range.start, direction * presetDefinition.navigation.amount * 7),
+      end: addDays(range.end, direction * presetDefinition.navigation.amount * 7),
+    };
+  }
+
+  if (presetDefinition?.navigation?.unit === "days") {
+    return {
+      start: addDays(range.start, direction * presetDefinition.navigation.amount),
+      end: addDays(range.end, direction * presetDefinition.navigation.amount),
+    };
+  }
+
+  const offset = presetDefinition?.navigation?.amount || getRangeDaySpan(range);
+  return {
+    start: addDays(range.start, direction * offset),
+    end: addDays(range.end, direction * offset),
+  };
+}
+
+function buildManualRange(
+  {
+    date,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
+  },
+  now = new Date()
+) {
+  const hasExplicitRangeValues = [date, startDate, startTime, endDate, endTime].some((value) =>
+    String(value || "").trim()
+  );
+
+  if (!hasExplicitRangeValues) {
+    return null;
+  }
+
+  const fallbackDate =
+    toDateKey(parseDateKey(startDate) || parseDateKey(endDate) || parseDateKey(date) || now);
+  const resolvedStartDate = parseDateKey(startDate) ? startDate : fallbackDate;
+  const resolvedEndDate = parseDateKey(endDate) ? endDate : fallbackDate;
+  const resolvedStartTime = normalizeTimeInput(startTime, DEFAULT_START_TIME);
+  const resolvedEndTime = normalizeTimeInput(endTime, DEFAULT_END_TIME);
+  const start = combineDateAndTime(resolvedStartDate, resolvedStartTime, DEFAULT_START_TIME);
+  const end = combineDateAndTime(resolvedEndDate, resolvedEndTime, DEFAULT_END_TIME);
+
+  if (!start || !end) {
+    return null;
+  }
+
+  return normalizeRange({ start, end });
+}
+
+function matchPresetByRange(range, now = new Date()) {
+  return (
+    RANGE_PRESETS.filter((entry) => entry.value !== "custom").find((entry) =>
+      rangesMatch(range, buildPresetRange(entry.value, now))
+    )?.value || "custom"
+  );
+}
+
+function buildRangeParams(range) {
+  return {
+    preset: "custom",
+    startDate: toDateKey(range.start),
+    startTime: toTimeKey(range.start),
+    endDate: toDateKey(range.end),
+    endTime: toTimeKey(range.end),
+    date: "",
+  };
+}
+
+function resolveDateRange(
+  {
+    date,
+    preset,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
+  },
+  now = new Date()
+) {
+  const normalizedPreset = normalizePreset(preset);
+  const presetRange =
+    normalizedPreset && normalizedPreset !== "custom" ? buildPresetRange(normalizedPreset, now) : null;
+  const manualRange = buildManualRange(
+    {
+      date,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+    },
+    now
+  );
+  const activeRange =
+    manualRange && (!presetRange || !rangesMatch(manualRange, presetRange))
+      ? manualRange
+      : presetRange || manualRange || buildPresetRange("today", now);
+  const selectedPreset = matchPresetByRange(activeRange, now);
+  const previousRange = shiftRange(activeRange, -1, selectedPreset);
+  const nextRange = shiftRange(activeRange, 1, selectedPreset);
+
+  return {
+    activeRange,
+    selectedPreset,
+    selectedPresetLabel: getPresetDefinition(selectedPreset)?.label || "Custom range",
+    selectedStartDate: toDateKey(activeRange.start),
+    selectedStartTime: toTimeKey(activeRange.start),
+    selectedEndDate: toDateKey(activeRange.end),
+    selectedEndTime: toTimeKey(activeRange.end),
+    isDefault: selectedPreset === "today",
+    quickPresetOptions: RANGE_PRESETS.filter((entry) => entry.quick).map((entry) => ({
+      value: entry.value,
+      label: entry.label,
+    })),
+    presetOptions: RANGE_PRESETS.map((entry) => ({
+      value: entry.value,
+      label: entry.label,
+    })),
+    navigation: {
+      previous: buildRangeParams(previousRange),
+      next: buildRangeParams(nextRange),
+    },
+  };
 }
 
 function getLeague(code) {
@@ -91,11 +465,13 @@ function buildFixture(baseDate, config) {
       id: `${config.id}-home`,
       name: config.homeTeam.name,
       shortName: config.homeTeam.shortName,
+      logoUrl: buildMockTeamLogoUrl(config.homeTeam.name),
     },
     awayTeam: {
       id: `${config.id}-away`,
       name: config.awayTeam.name,
       shortName: config.awayTeam.shortName,
+      logoUrl: buildMockTeamLogoUrl(config.awayTeam.name),
     },
     resultSnapshot:
       config.score
@@ -351,6 +727,86 @@ function buildFixtures() {
       },
     }),
     buildFixture(today, {
+      id: "epl-finished-tot-avl",
+      leagueCode: "EPL",
+      dayOffset: -7,
+      hour: 18,
+      minute: 0,
+      status: "FINISHED",
+      round: "Matchday 28",
+      homeTeam: { name: "Tottenham Hotspur", shortName: "TOT" },
+      awayTeam: { name: "Aston Villa", shortName: "AVL" },
+      score: { home: 2, away: 1 },
+      venue: "Tottenham Hotspur Stadium",
+      referee: "Jarred Gillett",
+      timeline: [
+        { minute: 22, title: "Goal", actor: "Son Heung-min", description: "Spurs break the deadlock.", featured: true },
+        { minute: 79, title: "Goal", actor: "James Maddison", description: "Late winner in North London.", featured: true },
+      ],
+      statistics: [
+        { key: "possession", label: "Possession", home: "57%", away: "43%", homeShare: 57, awayShare: 43 },
+        { key: "shots", label: "Shots", home: "16", away: "10", homeShare: 62, awayShare: 38 },
+      ],
+      lineups: {
+        home: buildLineup(
+          [
+            { name: "Guglielmo Vicario", number: 13 },
+            { name: "Cristian Romero", number: 17 },
+            { name: "James Maddison", number: 10 },
+          ],
+          "4-2-3-1"
+        ),
+        away: buildLineup(
+          [
+            { name: "Emiliano Martinez", number: 1 },
+            { name: "Ezri Konsa", number: 4 },
+            { name: "Ollie Watkins", number: 11 },
+          ],
+          "4-4-2"
+        ),
+      },
+    }),
+    buildFixture(today, {
+      id: "ucl-finished-psg-ben",
+      leagueCode: "UCL",
+      dayOffset: -30,
+      hour: 22,
+      minute: 0,
+      status: "FINISHED",
+      round: "Round of 16",
+      homeTeam: { name: "Paris Saint-Germain", shortName: "PSG" },
+      awayTeam: { name: "Benfica", shortName: "BEN" },
+      score: { home: 3, away: 1 },
+      venue: "Parc des Princes",
+      referee: "Clement Turpin",
+      timeline: [
+        { minute: 11, title: "Goal", actor: "Kylian Mbappe", description: "PSG start fast from the spot.", featured: true },
+        { minute: 67, title: "Goal", actor: "Goncalo Ramos", description: "Paris pull clear after the break.", featured: true },
+      ],
+      statistics: [
+        { key: "possession", label: "Possession", home: "61%", away: "39%", homeShare: 61, awayShare: 39 },
+        { key: "shots", label: "Shots", home: "18", away: "7", homeShare: 72, awayShare: 28 },
+      ],
+      lineups: {
+        home: buildLineup(
+          [
+            { name: "Gianluigi Donnarumma", number: 99 },
+            { name: "Marquinhos", number: 5 },
+            { name: "Vitinha", number: 17 },
+          ],
+          "4-3-3"
+        ),
+        away: buildLineup(
+          [
+            { name: "Anatoliy Trubin", number: 1 },
+            { name: "Nicolas Otamendi", number: 30 },
+            { name: "Angel Di Maria", number: 11 },
+          ],
+          "4-2-3-1"
+        ),
+      },
+    }),
+    buildFixture(today, {
       id: "ucl-upcoming-psg-int",
       leagueCode: "UCL",
       dayOffset: 1,
@@ -368,6 +824,23 @@ function buildFixtures() {
       },
     }),
     buildFixture(today, {
+      id: "ll-upcoming-val-bet",
+      leagueCode: "LL",
+      dayOffset: 7,
+      hour: 20,
+      minute: 30,
+      status: "SCHEDULED",
+      round: "Matchday 31",
+      homeTeam: { name: "Valencia", shortName: "VAL" },
+      awayTeam: { name: "Real Betis", shortName: "BET" },
+      venue: "Mestalla",
+      referee: "Guillermo Cuadra",
+      lineups: {
+        home: buildLineup([], "4-4-2"),
+        away: buildLineup([], "4-2-3-1"),
+      },
+    }),
+    buildFixture(today, {
       id: "sa-upcoming-mil-nap",
       leagueCode: "SA",
       dayOffset: 1,
@@ -382,6 +855,23 @@ function buildFixtures() {
       lineups: {
         home: buildLineup([], "4-2-3-1"),
         away: buildLineup([], "4-3-3"),
+      },
+    }),
+    buildFixture(today, {
+      id: "bl1-upcoming-lev-fra",
+      leagueCode: "BL1",
+      dayOffset: 32,
+      hour: 18,
+      minute: 30,
+      status: "SCHEDULED",
+      round: "Matchday 33",
+      homeTeam: { name: "Bayer Leverkusen", shortName: "B04" },
+      awayTeam: { name: "Eintracht Frankfurt", shortName: "SGE" },
+      venue: "BayArena",
+      referee: "Deniz Aytekin",
+      lineups: {
+        home: buildLineup([], "3-4-2-1"),
+        away: buildLineup([], "3-4-2-1"),
       },
     }),
   ].sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime());
@@ -488,6 +978,16 @@ function normalizeTimeFilter(value) {
   return TIME_FILTERS.some((entry) => entry.value === normalized) ? normalized : "all";
 }
 
+function matchesDateRange(fixture, range) {
+  const kickoffTime = new Date(fixture.startsAt).getTime();
+
+  if (Number.isNaN(kickoffTime)) {
+    return false;
+  }
+
+  return kickoffTime >= range.start.getTime() && kickoffTime <= range.end.getTime();
+}
+
 function applyBaseFilters(fixtures, { query, leagueCode, time }) {
   return fixtures.filter((fixture) => {
     if (leagueCode && leagueCode !== "all" && fixture.league.code !== leagueCode) {
@@ -581,18 +1081,30 @@ export function getMatchByReference(reference) {
 
 export function getMatchdayFeed({
   date,
+  preset,
+  startDate,
+  startTime,
+  endDate,
+  endTime,
   status,
   query,
   leagueCode,
   time,
 } = {}) {
   const fixtures = buildFixtures();
-  const selectedDate = normalizeDateInput(date);
+  const rangeState = resolveDateRange({
+    date,
+    preset,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
+  });
   const selectedStatus = normalizeStatus(status);
   const selectedLeague = leagueCode && LEAGUES.some((entry) => entry.code === leagueCode) ? leagueCode : "all";
   const selectedTime = normalizeTimeFilter(time);
-  const dateFixtures = fixtures.filter((fixture) => toDateKey(fixture.startsAt) === selectedDate);
-  const baseFiltered = applyBaseFilters(dateFixtures, {
+  const rangeFixtures = fixtures.filter((fixture) => matchesDateRange(fixture, rangeState.activeRange));
+  const baseFiltered = applyBaseFilters(rangeFixtures, {
     query,
     leagueCode: selectedLeague,
     time: selectedTime,
@@ -611,7 +1123,17 @@ export function getMatchdayFeed({
   });
 
   return {
-    selectedDate,
+    selectedDate: rangeState.selectedStartDate,
+    selectedStartDate: rangeState.selectedStartDate,
+    selectedStartTime: rangeState.selectedStartTime,
+    selectedEndDate: rangeState.selectedEndDate,
+    selectedEndTime: rangeState.selectedEndTime,
+    selectedPreset: rangeState.selectedPreset,
+    selectedPresetLabel: rangeState.selectedPresetLabel,
+    rangeStart: rangeState.activeRange.start.toISOString(),
+    rangeEnd: rangeState.activeRange.end.toISOString(),
+    rangeIsDefault: rangeState.isDefault,
+    rangeNavigation: rangeState.navigation,
     selectedStatus,
     selectedLeague,
     selectedTime,
@@ -619,6 +1141,8 @@ export function getMatchdayFeed({
     fixtures: orderedFixtures,
     groups: groupFixtures(orderedFixtures),
     summary: summarize(baseFiltered),
+    quickPresetOptions: rangeState.quickPresetOptions,
+    presetOptions: rangeState.presetOptions,
     statusOptions: ["ALL", "LIVE", "SCHEDULED", "FINISHED"].map((entry) => ({
       value: entry,
       count: entry === "ALL" ? baseFiltered.length : baseFiltered.filter((fixture) => fixture.status === entry).length,

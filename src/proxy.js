@@ -41,6 +41,7 @@ export async function proxy(request) {
   const requestLocale = getLocaleForRequest(request);
   const isAsset =
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/team-logo") ||
     pathname.startsWith("/api") ||
     pathname === "/favicon.ico" ||
     pathname.includes(".");

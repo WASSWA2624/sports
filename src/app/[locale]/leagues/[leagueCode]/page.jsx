@@ -81,13 +81,10 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           </div>
           <p className={styles.eyebrow}>League</p>
           <h1 className={styles.title}>{league.name}</h1>
-          <p className={styles.lead}>
-            Search-free competition view for live scores, upcoming fixtures, and previous results in {league.name}.
-          </p>
         </div>
         <div className={styles.sectionTools}>
           <span className={styles.badge}>{league.fixtureSummary.LIVE} live</span>
-          <span className={styles.badge}>{league.fixtureSummary.SCHEDULED} upcoming</span>
+          <span className={styles.badge}>{league.fixtureSummary.SCHEDULED} fixtures</span>
           <span className={styles.badge}>{league.fixtureSummary.FINISHED} results</span>
         </div>
       </header>
@@ -97,7 +94,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           {[
             { key: "all", label: "All" },
             { key: "live", label: "Live" },
-            { key: "scheduled", label: "Upcoming" },
+            { key: "scheduled", label: "Fixtures" },
             { key: "finished", label: "Results" },
           ].map((item) => (
             <Link
@@ -112,21 +109,23 @@ export default async function LeagueDetailPage({ params, searchParams }) {
       </section>
 
       {grouped.length ? (
-        grouped.map((group) => (
-          <section key={group.key} className={boardStyles.groupCard}>
-            <div className={boardStyles.groupHeader}>
-              <div>
-                <p className={boardStyles.groupCountry}>{league.country}</p>
-                <h2 className={boardStyles.groupTitle}>{group.label}</h2>
+        <div className={styles.fixtureGroups}>
+          {grouped.map((group) => (
+            <section key={group.key} className={boardStyles.groupCard}>
+              <div className={boardStyles.groupHeader}>
+                <div className={boardStyles.groupHeading}>
+                  <p className={boardStyles.groupCountry}>{league.country}</p>
+                  <h2 className={boardStyles.groupTitle}>{group.label}</h2>
+                </div>
               </div>
-            </div>
-            <div className={boardStyles.matchList}>
-              {group.fixtures.map((fixture) => (
-                <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
-              ))}
-            </div>
-          </section>
-        ))
+              <div className={boardStyles.matchList}>
+                {group.fixtures.map((fixture) => (
+                  <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className={styles.emptyState}>No matches match this competition view right now.</div>
       )}
