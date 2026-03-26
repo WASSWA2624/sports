@@ -5,8 +5,8 @@ Create the runnable platform baseline for a minimal matches and results web app.
 
 ## Build
 1. Align the Next.js App Router structure around the core routes only: `/`, `/matches/[matchId]`, and `/competitions/[competitionSlug]`.
-2. Configure environment templates for DB access, `SPORTS_DATA_PROVIDER`, provider-specific namespaces, generic provider overrides, polling cadence, and remote asset hosts.
-3. Add Prisma plus MySQL connection management, migration workflow, and seed bootstrap for competitions, teams, fixtures, scores, and events.
+2. Configure environment templates for `SPORTS_DATA_PROVIDER`, provider-specific namespaces, generic provider overrides, polling cadence, and remote asset hosts.
+3. Keep the initial product runnable without Prisma, MySQL, migrations, or seed bootstrap by relying on the in-repo match data layer.
 4. Set up linting, test execution, build validation, CI checks, and a health endpoint for the narrowed product.
 5. Add app-level error handling, loading states, not-found routing, and request logging for public scores pages.
 6. Create shared layout primitives for the header, date navigation, state filters, competition sections, and compact match rows.

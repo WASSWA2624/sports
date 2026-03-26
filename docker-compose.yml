@@ -1,35 +1,14 @@
 services:
-  mysql:
-    image: mysql:8.4
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: sports
-      MYSQL_USER: sports
-      MYSQL_PASSWORD: sports
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 15s
-
   app:
     build:
       context: .
       dockerfile: Dockerfile.local
-    depends_on:
-      mysql:
-        condition: service_healthy
     environment:
       NODE_ENV: development
       PORT: 3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       SITE_URL: http://localhost:3000
-      DATABASE_URL: mysql://sports:sports@mysql:3306/sports
       AUTH_SECRET: development_auth_secret_change_me
       AUTH_URL: http://localhost:3000
       SPORTS_DATA_PROVIDER: SPORTSMONKS

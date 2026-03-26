@@ -4,33 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:bootstrap": "node scripts/bootstrap-local.mjs",
     "dev:nodemon": "nodemon",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run --passWithNoTests",
-    "test:smoke": "node scripts/release-smoke.mjs",
-    "validate:release": "npm run lint && npm run test && npm run build && npm run test:smoke",
-    "maintenance:baseline": "node scripts/archive-baseline-metrics.mjs",
-    "release:preflight": "node scripts/release-preflight.mjs",
-    "release:artifact": "node scripts/build-release-artifact.mjs",
-    "release:production": "node scripts/production-release.mjs",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:status": "prisma migrate status",
-    "db:backup": "node scripts/db-backup.mjs",
-    "db:studio": "prisma studio",
-    "db:seed": "node prisma/seed.js"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.5.0",
-    "@prisma/client": "^7.5.0",
     "@reduxjs/toolkit": "^2.11.2",
-    "mysql2": "^3.20.0",
     "next": "16.2.1",
-    "prisma": "^7.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-redux": "^9.2.0",
@@ -43,8 +25,5 @@
     "eslint-config-next": "16.2.1",
     "nodemon": "^3.1.14",
     "vitest": "^4.1.0"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
   }
 }
