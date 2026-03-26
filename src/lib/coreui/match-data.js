@@ -976,7 +976,6 @@ function groupFixtures(fixtures) {
       leagueNames: [...group.leagues.values()].sort((left, right) => left.localeCompare(right)),
       fixtures: [...group.fixtures].sort(
         (left, right) =>
-          fixtureSortWeight(left) - fixtureSortWeight(right) ||
           left.league.name.localeCompare(right.league.name) ||
           left.homeTeam.name.localeCompare(right.homeTeam.name)
       ),
@@ -1020,18 +1019,6 @@ function applyBaseFilters(fixtures, { query, leagueCode, time }) {
 
     return true;
   });
-}
-
-function fixtureSortWeight(fixture) {
-  if (fixture.status === "LIVE") {
-    return 0;
-  }
-
-  if (fixture.status === "SCHEDULED") {
-    return 1;
-  }
-
-  return 2;
 }
 
 export function getShellData() {
