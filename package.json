@@ -2,10 +2,15 @@
   "name": "sports",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "dev:nodemon": "nodemon",
     "build": "next build",
+    "build:production": "node scripts/preflight-production.mjs && next build",
+    "package:cpanel": "npm run build:production && node scripts/package-cpanel.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run --passWithNoTests"

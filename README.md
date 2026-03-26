@@ -40,6 +40,18 @@ npm run test
 npm run build
 ```
 
+## Production And cPanel
+
+Create a real production bundle with:
+
+```bash
+npm run package:cpanel
+```
+
+That command expects `NEXT_PUBLIC_SITE_URL` or `SITE_URL` to be set so generated metadata, `robots.txt`, and `sitemap.xml` use the real domain. Start from `.env.production.example` for deployment values.
+
+The deployable bundle is written to `build/cpanel`. Full cPanel steps live in `docs/deploy-cpanel.md`.
+
 ## Runtime Notes
 
 - The public UI only covers football scores, fixtures, results, tables, leagues, and match detail.
@@ -50,3 +62,4 @@ npm run build
 
 - `docs/mvp-scope.md`
 - `docs/handoff-roadmap-2026-03-24.md`
+- `docs/deploy-cpanel.md`

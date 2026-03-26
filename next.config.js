@@ -79,6 +79,7 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
+  output: "standalone",
   images: {
     remotePatterns: buildRemotePatterns(),
   },
