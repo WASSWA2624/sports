@@ -199,7 +199,6 @@ function buildShellNav(locale) {
 function ShellFrame({ children, locale, dictionary, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
   const router = useRouter();
-  const currentLocaleOption = LOCALE_OPTIONS[locale] || { label: locale.toUpperCase() };
   const [theme, setTheme] = useState(() => {
     if (typeof document === "undefined") {
       return "dark";
@@ -265,12 +264,10 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
 
               <details className={styles.localePicker}>
                 <summary className={styles.localeToggle} aria-label={dictionary.locale}>
-                  <span className={styles.localeLabel}>{dictionary.locale}</span>
                   <span className={styles.localeValue}>
                     <span className={styles.localeFlag} aria-hidden="true">
                       <LocaleFlag locale={locale} />
                     </span>
-                    <span className={styles.localeText}>{currentLocaleOption.label}</span>
                   </span>
                 </summary>
 
