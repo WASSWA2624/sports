@@ -1,83 +1,8 @@
-import Link from "next/link";
-import { FavoriteToggle } from "../../../components/coreui/favorite-toggle";
-import { buildPageMetadata } from "../../../lib/coreui/metadata";
-import { getDictionary } from "../../../lib/coreui/dictionaries";
-import { formatFixtureStatus } from "../../../lib/coreui/format";
-import { getTeamDirectory } from "../../../lib/coreui/read";
-import { getPersonalizationSnapshot, sortTeamsByPersonalization } from "../../../lib/personalization";
-import styles from "../../../components/coreui/styles.module.css";
+import { redirect } from "next/navigation";
+import { buildMatchBoardHref } from "../../../lib/coreui/minimal-routes";
 
-export async function generateMetadata({ params }) {
+export default async function TeamsPage({ params, searchParams }) {
   const { locale } = await params;
-  return buildPageMetadata(
-    locale,
-    getDictionary(locale).metaTeamsTitle,
-    getDictionary(locale).metaTeamsDescription,
-    "/teams"
-  );
-}
-
-export default async function TeamsPage({ params }) {
-  const { locale } = await params;
-  const dictionary = getDictionary(locale);
-  const [teams, personalization] = await Promise.all([
-    getTeamDirectory(),
-    getPersonalizationSnapshot(),
-  ]);
-  const prioritizedTeams = sortTeamsByPersonalization(
-    teams,
-    personalization,
-    (left, right) => left.name.localeCompare(right.name)
-  );
-
-  return (
-    <section className={styles.section}>
-      <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>{dictionary.teams}</h1>
-        <div className={styles.sectionTools}>
-          <span className={styles.badge}>{prioritizedTeams.length}</span>
-        </div>
-      </header>
-      {prioritizedTeams.length ? (
-        <div className={styles.teamGrid}>
-          {prioritizedTeams.map((team) => (
-            <article key={team.id} className={styles.teamCard}>
-              <div className={styles.cardHeader}>
-                <div>
-                  <h2 className={styles.cardTitle}>
-                    <Link href={`/${locale}/teams/${team.id}`}>{team.name}</Link>
-                  </h2>
-                  <p className={styles.muted}>{team.shortName || team.code || dictionary.teamProfile}</p>
-                </div>
-                <div className={styles.inlineBadgeRow}>
-                  {team.league ? (
-                    <Link href={`/${locale}/leagues/${team.league.code}`} className={styles.badge}>
-                      {team.league.name}
-                    </Link>
-                  ) : null}
-                  <FavoriteToggle
-                    itemId={`team:${team.id}`}
-                    locale={locale}
-                    compact
-                    label={team.name}
-                    metadata={{
-                      leagueCode: team.league?.code || null,
-                    }}
-                    surface="teams-directory"
-                  />
-                </div>
-              </div>
-              <p className={styles.metaRow}>
-                {team.homeFor[0]?.status
-                  ? formatFixtureStatus(team.homeFor[0].status, locale)
-                  : dictionary.noData}
-              </p>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyState}>{dictionary.noData}</div>
-      )}
-    </section>
-  );
+  const filters = await searchParams;
+  redirect(buildMatchBoardHref(locale, filters));
 }

@@ -82,6 +82,45 @@
   gap: 0.6rem;
 }
 
+.searchForm {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) repeat(2, minmax(0, 1fr)) auto;
+  gap: 0.75rem;
+}
+
+.searchField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.searchLabel {
+  color: rgba(228, 239, 231, 0.68);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.searchInput {
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(193, 218, 201, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #f4f7f4;
+}
+
+.searchSubmit {
+  align-self: end;
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(45, 211, 111, 0.28);
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.08));
+  color: #ffffff;
+  cursor: pointer;
+}
+
 .commandButton,
 .filterChip,
 .filterChipActive,
@@ -297,6 +336,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .searchForm {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .groupHeader {
     flex-direction: column;
   }
@@ -317,6 +360,10 @@
   }
 
   .matchRow {
+    grid-template-columns: 1fr;
+  }
+
+  .searchForm {
     grid-template-columns: 1fr;
   }
 

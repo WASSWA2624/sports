@@ -1,8 +1,6 @@
-import { headers } from "next/headers";
 import { buildPageMetadata } from "../../lib/coreui/metadata";
-import { formatDictionaryText, getDictionary } from "../../lib/coreui/dictionaries";
-import { getLiveMatchdayFeed } from "../../lib/coreui/live-read";
-import { resolveViewerTerritory } from "../../lib/coreui/odds-broadcast";
+import { getDictionary } from "../../lib/coreui/dictionaries";
+import { getMatchdayFeed } from "../../lib/coreui/match-data";
 import { Scoreboard } from "../../components/coreui/scoreboard";
 
 export async function generateMetadata({ params }) {
@@ -15,31 +13,20 @@ export async function generateMetadata({ params }) {
 export default async function LocaleHomePage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
-  const dictionary = getDictionary(locale);
-  const viewerTerritory = resolveViewerTerritory({
-    headers: await headers(),
-  });
-  const feed = await getLiveMatchdayFeed({
-    locale,
-    status: filters?.status,
+  const feed = getMatchdayFeed({
     date: filters?.date,
-    viewerTerritory,
-  });
-  const lead = formatDictionaryText(dictionary.homeScoresLead, {
-    live: feed.summary.LIVE,
-    scheduled: feed.summary.SCHEDULED,
-    finished: feed.summary.FINISHED,
+    status: filters?.status,
+    query: filters?.q,
+    leagueCode: filters?.league,
+    time: filters?.time,
   });
 
   return (
     <Scoreboard
       locale={locale}
-      dictionary={dictionary}
-      title={dictionary.homeScoresTitle || "Football live scores"}
-      lead={lead}
-      selectedStatus={feed.selectedStatus}
+      title="Football match board"
+      lead="Track live scores, upcoming fixtures, and recent results. Search by league, team, or kickoff time."
       feed={feed}
-      emptyLabel="No football matches are available for this date or state."
     />
   );
 }

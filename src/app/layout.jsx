@@ -1,14 +1,11 @@
 import { Barlow_Condensed, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { StoreProvider } from "../components/coreui/store-provider";
-import StyledComponentsRegistry from "../lib/styled-components/registry";
 import {
   DEFAULT_LOCALE,
   DEFAULT_THEME,
 } from "../lib/coreui/preferences";
 import { getDictionary } from "../lib/coreui/dictionaries";
 import {
-  getPreferenceSnapshot,
   getPreferredLocale,
 } from "../lib/coreui/preferences-server";
 import { getSiteOrigin } from "../lib/coreui/site";
@@ -56,26 +53,17 @@ export const viewport = {
 };
 
 export default async function RootLayout({ children }) {
-  const preferences = await getPreferenceSnapshot().catch(() => ({
-    locale: DEFAULT_LOCALE,
-    theme: DEFAULT_THEME,
-  }));
+  const locale = await getPreferredLocale().catch(() => DEFAULT_LOCALE);
 
   return (
     <html
-      lang={preferences.locale}
+      lang={locale}
       suppressHydrationWarning
       className={`${bodyFont.variable} ${monoFont.variable} ${displayFont.variable}`}
-      data-theme={preferences.theme}
-      data-theme-preference={preferences.theme}
+      data-theme={DEFAULT_THEME}
+      data-theme-preference={DEFAULT_THEME}
     >
-      <body>
-        <StyledComponentsRegistry>
-          <StoreProvider>
-            {children}
-          </StoreProvider>
-        </StyledComponentsRegistry>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

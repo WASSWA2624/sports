@@ -1,30 +1,8 @@
-import { buildPageMetadata } from "../../../lib/coreui/metadata";
-import { getDictionary } from "../../../lib/coreui/dictionaries";
-import { getSocialAuthProviders } from "../../../lib/social-auth";
-import AuthClient from "./auth-client";
+import { redirect } from "next/navigation";
+import { buildMatchBoardHref } from "../../../lib/coreui/minimal-routes";
 
-export async function generateMetadata({ params }) {
+export default async function AuthPage({ params, searchParams }) {
   const { locale } = await params;
-  const dictionary = getDictionary(locale);
-
-  return buildPageMetadata(
-    locale,
-    dictionary.authTitle,
-    dictionary.authLead,
-    "/auth"
-  );
-}
-
-export default async function AuthPage({ params }) {
-  const { locale } = await params;
-  const dictionary = getDictionary(locale);
-  const socialProviders = getSocialAuthProviders();
-
-  return (
-    <AuthClient
-      dictionary={dictionary}
-      locale={locale}
-      socialProviders={socialProviders}
-    />
-  );
+  const filters = await searchParams;
+  redirect(buildMatchBoardHref(locale, filters));
 }

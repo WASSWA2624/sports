@@ -1,23 +1,19 @@
 import Link from "next/link";
-import { buildLiveBoardFixtureSignals } from "../../lib/coreui/live-board";
-import { formatKickoff, formatMatchday } from "../../lib/coreui/format";
+import { buildMatchStatusLabel, buildMatchTimeLabel } from "../../lib/coreui/match-data";
 import { buildCompetitionHref, buildMatchHref } from "../../lib/coreui/routes";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
 
-function isScoreAvailable(snapshot) {
-  return Number.isFinite(snapshot?.homeScore) && Number.isFinite(snapshot?.awayScore);
-}
-
-function buildBoardHref(locale, { date, status } = {}) {
+function buildBoardHref(locale, nextParams = {}, current = {}) {
   const params = new URLSearchParams();
+  const merged = { ...current, ...nextParams };
 
-  if (date) {
-    params.set("date", date);
-  }
+  for (const [key, value] of Object.entries(merged)) {
+    if (!value || value === "all" || value === "ALL") {
+      continue;
+    }
 
-  if (status && status !== "ALL") {
-    params.set("status", String(status).toLowerCase());
+    params.set(key, value);
   }
 
   const query = params.toString();
@@ -30,120 +26,74 @@ function shiftDate(dateString, amount) {
   return next.toISOString().slice(0, 10);
 }
 
-function statusLabel(value, dictionary) {
+function statusLabel(value) {
   const normalized = String(value || "").toUpperCase();
 
   if (normalized === "ALL") {
-    return dictionary?.browseAll || "All";
+    return "All";
   }
 
   if (normalized === "SCHEDULED") {
-    return dictionary?.statusScheduled || "Scheduled";
+    return "Upcoming";
   }
 
   if (normalized === "FINISHED") {
-    return dictionary?.statusFinished || "Finished";
+    return "Results";
   }
 
-  if (normalized === "LIVE") {
-    return dictionary?.live || "Live";
-  }
-
-  return normalized.charAt(0) + normalized.slice(1).toLowerCase();
+  return "Live";
 }
 
-function summaryLabel(value, dictionary) {
-  const normalized = String(value || "").toUpperCase();
-
-  if (normalized === "LIVE") {
-    return dictionary?.live || "Live";
-  }
-
-  if (normalized === "FINISHED") {
-    return dictionary?.results || "Results";
-  }
-
-  if (normalized === "SCHEDULED") {
-    return dictionary?.statusScheduled || "Scheduled";
-  }
-
-  return "Matches";
-}
-
-function rowStatusClass(status) {
-  if (status === "LIVE") {
-    return styles.statusLive;
-  }
-
-  if (status === "FINISHED") {
-    return styles.statusFinished;
-  }
-
-  return styles.statusChip;
+function isScoreVisible(fixture) {
+  return fixture.status !== "SCHEDULED" && Number.isFinite(fixture.resultSnapshot?.homeScore);
 }
 
 export function MatchRow({ fixture, locale }) {
-  const signals = buildLiveBoardFixtureSignals(fixture, locale);
-  const matchHref = buildMatchHref(locale, fixture);
-  const competitionHref = fixture.league?.code ? buildCompetitionHref(locale, fixture.league) : null;
-  const scoreAvailable = isScoreAvailable(fixture.resultSnapshot);
-  const showScore = scoreAvailable && fixture.status !== "SCHEDULED";
-  const metaLabel =
-    fixture.status === "SCHEDULED"
-      ? new Intl.DateTimeFormat(locale, {
-          hour: "2-digit",
-          minute: "2-digit",
-        }).format(new Date(fixture.startsAt))
-      : signals.keyMomentLabel || formatKickoff(fixture.startsAt, locale);
-
   return (
     <article className={styles.matchRow}>
-      <Link href={matchHref} className={styles.matchRowMain}>
+      <Link href={buildMatchHref(locale, fixture)} className={styles.matchRowMain}>
         <div className={styles.matchRowState}>
-          <span className={rowStatusClass(fixture.status)}>{signals.statusLabel}</span>
-          <span className={styles.matchRowMeta}>{metaLabel}</span>
+          <span className={fixture.status === "LIVE" ? styles.statusLive : styles.statusChip}>
+            {buildMatchStatusLabel(fixture, locale)}
+          </span>
+          <span className={styles.matchRowMeta}>{buildMatchTimeLabel(fixture, locale)}</span>
         </div>
 
         <div className={styles.matchTeams}>
           <div className={styles.teamLine}>
-            <span className={styles.teamName}>{fixture.homeTeam?.shortName || fixture.homeTeam?.name}</span>
+            <span className={styles.teamName}>{fixture.homeTeam.shortName || fixture.homeTeam.name}</span>
             <strong className={styles.teamScore}>
-              {showScore ? fixture.resultSnapshot.homeScore : fixture.status === "SCHEDULED" ? "" : "-"}
+              {isScoreVisible(fixture) ? fixture.resultSnapshot.homeScore : ""}
             </strong>
           </div>
           <div className={styles.teamLine}>
-            <span className={styles.teamName}>{fixture.awayTeam?.shortName || fixture.awayTeam?.name}</span>
+            <span className={styles.teamName}>{fixture.awayTeam.shortName || fixture.awayTeam.name}</span>
             <strong className={styles.teamScore}>
-              {showScore ? fixture.resultSnapshot.awayScore : fixture.status === "SCHEDULED" ? "" : "-"}
+              {isScoreVisible(fixture) ? fixture.resultSnapshot.awayScore : ""}
             </strong>
           </div>
         </div>
       </Link>
 
-      {competitionHref ? (
-        <Link href={competitionHref} className={styles.rowSideAction}>
-          League
-        </Link>
-      ) : null}
+      <Link href={buildCompetitionHref(locale, fixture.league)} className={styles.rowSideAction}>
+        {fixture.league.name}
+      </Link>
     </article>
   );
 }
 
-export function Scoreboard({
-  locale,
-  dictionary,
-  title,
-  lead,
-  selectedStatus = "ALL",
-  feed,
-  emptyLabel = "No matches are available for this filter yet.",
-}) {
-  const selectedDateLabel = formatMatchday(feed.selectedDate, locale);
+export function Scoreboard({ locale, title, lead, feed }) {
   const selectedDateLong = new Intl.DateTimeFormat(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
   }).format(new Date(feed.selectedDate));
+  const currentFilters = {
+    date: feed.selectedDate,
+    q: feed.query,
+    league: feed.selectedLeague,
+    time: feed.selectedTime,
+  };
 
   return (
     <section className={styles.page}>
@@ -155,16 +105,14 @@ export function Scoreboard({
 
       <header className={styles.hero}>
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Matchday</p>
+          <p className={styles.eyebrow}>Football</p>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.lead}>{lead}</p>
         </div>
 
         <div className={styles.heroMeta}>
           <span className={styles.heroBadge}>{selectedDateLong}</span>
-          <span className={styles.heroBadge}>
-            {feed.summary.total} {summaryLabel("ALL", dictionary).toLowerCase()}
-          </span>
+          <span className={styles.heroBadge}>{feed.summary.total} matches</span>
         </div>
       </header>
 
@@ -173,21 +121,21 @@ export function Scoreboard({
           <Link
             href={buildBoardHref(locale, {
               date: shiftDate(feed.selectedDate, -1),
-              status: selectedStatus,
-            })}
+              status: feed.selectedStatus,
+            }, currentFilters)}
             className={styles.commandButton}
           >
-            {dictionary?.previousDay || "Yesterday"}
+            Previous day
           </Link>
-          <span className={styles.datePill}>{selectedDateLabel}</span>
+          <span className={styles.datePill}>{selectedDateLong}</span>
           <Link
             href={buildBoardHref(locale, {
               date: shiftDate(feed.selectedDate, 1),
-              status: selectedStatus,
-            })}
+              status: feed.selectedStatus,
+            }, currentFilters)}
             className={styles.commandButton}
           >
-            {dictionary?.nextDay || "Tomorrow"}
+            Next day
           </Link>
         </div>
 
@@ -196,76 +144,104 @@ export function Scoreboard({
             <Link
               key={option.value}
               href={buildBoardHref(locale, {
-                date: feed.selectedDate,
-                status: option.value,
-              })}
-              className={option.value === selectedStatus ? styles.filterChipActive : styles.filterChip}
+                status: option.value.toLowerCase(),
+              }, currentFilters)}
+              className={option.value === feed.selectedStatus ? styles.filterChipActive : styles.filterChip}
             >
-              <span>{statusLabel(option.value, dictionary)}</span>
+              <span>{statusLabel(option.value)}</span>
               <strong>{option.count}</strong>
             </Link>
           ))}
         </div>
+
+        <form action={`/${locale}`} className={styles.searchForm}>
+          <input type="hidden" name="date" value={feed.selectedDate} />
+          {feed.selectedStatus !== "ALL" ? (
+            <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
+          ) : null}
+          <label className={styles.searchField}>
+            <span className={styles.searchLabel}>Search</span>
+            <input
+              type="search"
+              name="q"
+              defaultValue={feed.query}
+              placeholder="League, team, or kickoff time"
+              className={styles.searchInput}
+            />
+          </label>
+
+          <label className={styles.searchField}>
+            <span className={styles.searchLabel}>League</span>
+            <select name="league" defaultValue={feed.selectedLeague} className={styles.searchInput}>
+              {feed.leagueOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className={styles.searchField}>
+            <span className={styles.searchLabel}>Time</span>
+            <select name="time" defaultValue={feed.selectedTime} className={styles.searchInput}>
+              {feed.timeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button type="submit" className={styles.searchSubmit}>
+            Search matches
+          </button>
+        </form>
       </section>
 
       <section className={styles.summaryGrid}>
         {[
           { key: "ALL", count: feed.summary.total },
           { key: "LIVE", count: feed.summary.LIVE },
-          { key: "FINISHED", count: feed.summary.FINISHED },
           { key: "SCHEDULED", count: feed.summary.SCHEDULED },
+          { key: "FINISHED", count: feed.summary.FINISHED },
         ].map((entry) => (
           <article key={entry.key} className={styles.summaryCard}>
-            <span>{summaryLabel(entry.key, dictionary)}</span>
+            <span>{statusLabel(entry.key)}</span>
             <strong>{entry.count}</strong>
           </article>
         ))}
       </section>
 
-      {feed.surfaceState?.degraded ? (
-        <div className={styles.notice}>Provider data is degraded. Showing the latest stored football snapshot.</div>
-      ) : null}
-
-      {feed.surfaceState?.stale ? (
-        <div className={styles.notice}>
-          {feed.surfaceState.staleCount} live matches are waiting on a fresher sync.
-        </div>
-      ) : null}
-
       <div className={styles.groupStack}>
         {feed.groups.length ? (
-          feed.groups.map((group) => {
-            const competitionHref = group.leagueCode
-              ? buildCompetitionHref(locale, { code: group.leagueCode })
-              : null;
-
-            return (
-              <section key={group.key} className={styles.groupCard}>
-                <div className={styles.groupHeader}>
-                  <div>
-                    <p className={styles.groupCountry}>{group.country || "International"}</p>
-                    <h2 className={styles.groupTitle}>
-                      {competitionHref ? <Link href={competitionHref}>{group.leagueName}</Link> : group.leagueName}
-                    </h2>
-                  </div>
-
-                  <div className={styles.groupSummary}>
-                    <span>{group.summary?.LIVE || 0} {(dictionary?.live || "Live").toLowerCase()}</span>
-                    <span>{group.summary?.SCHEDULED || 0} {(dictionary?.statusScheduled || "Scheduled").toLowerCase()}</span>
-                    <span>{group.summary?.FINISHED || 0} {(dictionary?.statusFinished || "Finished").toLowerCase()}</span>
-                  </div>
+          feed.groups.map((group) => (
+            <section key={group.key} className={styles.groupCard}>
+              <div className={styles.groupHeader}>
+                <div>
+                  <p className={styles.groupCountry}>{group.country}</p>
+                  <h2 className={styles.groupTitle}>
+                    <Link href={`/${locale}/leagues/${group.leagueCode}`}>{group.leagueName}</Link>
+                  </h2>
                 </div>
 
-                <div className={styles.matchList}>
-                  {group.fixtures.map((fixture) => (
-                    <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
-                  ))}
+                <div className={styles.groupSummary}>
+                  <span>{group.summary.LIVE || 0} live</span>
+                  <span>{group.summary.SCHEDULED || 0} upcoming</span>
+                  <span>{group.summary.FINISHED || 0} results</span>
                 </div>
-              </section>
-            );
-          })
+              </div>
+
+              <div className={styles.matchList}>
+                {group.fixtures.map((fixture) => (
+                  <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
+                ))}
+              </div>
+            </section>
+          ))
         ) : (
-          <div className={styles.emptyState}>{emptyLabel}</div>
+          <div className={styles.emptyState}>
+            No matches match this search. Try another league, time window, or date.
+          </div>
         )}
       </div>
     </section>
