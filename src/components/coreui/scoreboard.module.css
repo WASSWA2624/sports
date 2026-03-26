@@ -1,18 +1,17 @@
 .page {
   display: grid;
-  gap: 0.85rem;
-  padding-bottom: 1.5rem;
+  gap: 0.65rem;
+  padding-bottom: 1rem;
 }
 
 .boardHeader,
 .toolbar,
-.summaryCard,
 .groupCard,
 .emptyState {
   border: 1px solid rgba(193, 218, 201, 0.1);
-  border-radius: 1.35rem;
+  border-radius: 1.15rem;
   background: rgba(8, 17, 13, 0.84);
-  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
 }
 
 .boardHeader {
@@ -55,7 +54,12 @@
 .groupSummary {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+
+.toolbarTop {
+  display: grid;
+  gap: 0.45rem;
 }
 
 .dateRail,
@@ -75,20 +79,18 @@
 .filterChip,
 .filterChipActive,
 .groupSummary span,
-.statusChip,
-.statusLive,
-.statusFinished {
+.refineToggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  gap: 0.4rem;
-  min-height: 2.55rem;
-  padding: 0.72rem 0.95rem;
+  gap: 0.35rem;
+  min-height: 2.15rem;
+  padding: 0.55rem 0.78rem;
   border: 1px solid rgba(193, 218, 201, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -117,8 +119,9 @@
 }
 
 .filterChip strong,
-.filterChipActive strong {
-  font-size: 0.8rem;
+.filterChipActive strong,
+.refineToggle strong {
+  font-size: 0.74rem;
 }
 
 .filterChipActive {
@@ -129,61 +132,63 @@
 
 .toolbar {
   display: grid;
-  gap: 0.8rem;
-  padding: 0.9rem;
+  gap: 0.55rem;
+  padding: 0.7rem;
 }
 
 .refineGrid {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+}
+
+.refinePanel {
+  min-width: 0;
+}
+
+.refinePanel[open] {
+  padding-top: 0.05rem;
+}
+
+.refineToggle {
+  width: fit-content;
+  color: rgba(235, 242, 237, 0.82);
+  cursor: pointer;
+  list-style: none;
+}
+
+.refineToggle::-webkit-details-marker {
+  display: none;
 }
 
 .searchField {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.22rem;
 }
 
 .searchInput {
-  min-height: 2.95rem;
-  padding: 0.78rem 0.95rem;
+  min-height: 2.55rem;
+  padding: 0.62rem 0.82rem;
   border: 1px solid rgba(193, 218, 201, 0.1);
-  border-radius: 1rem;
+  border-radius: 0.9rem;
   background: rgba(255, 255, 255, 0.03);
   color: #f4f7f4;
 }
 
 .searchSubmit {
-  min-height: 2.95rem;
-  padding: 0.8rem 1rem;
+  min-height: 2.55rem;
+  padding: 0.64rem 0.9rem;
   border: 1px solid rgba(45, 211, 111, 0.28);
-  border-radius: 1rem;
+  border-radius: 0.9rem;
   background: linear-gradient(135deg, rgba(45, 211, 111, 0.18), rgba(45, 211, 111, 0.08));
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
 }
 
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
-}
-
-.summaryCard {
-  display: grid;
-  gap: 0.28rem;
-  padding: 0.85rem 0.9rem;
-}
-
-.summaryCard strong {
-  font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: 1.7rem;
-  line-height: 1;
-}
-
 .groupStack {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.65rem;
 }
 
 .groupCard {
@@ -192,20 +197,20 @@
 
 .groupHeader {
   display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 0.5rem;
+  padding: 0.72rem 0.78rem;
   border-bottom: 1px solid rgba(193, 218, 201, 0.08);
 }
 
 .groupTitle {
-  font-size: 1.15rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
 .groupSummary span {
-  min-height: 2rem;
-  padding: 0.42rem 0.72rem;
-  font-size: 0.74rem;
+  min-height: 1.7rem;
+  padding: 0.35rem 0.58rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -216,8 +221,8 @@
 
 .matchList {
   display: grid;
-  gap: 0.9rem;
-  padding: 0.95rem;
+  gap: 0.4rem;
+  padding: 0.5rem;
 }
 
 .matchRow {
@@ -230,51 +235,39 @@
 
 .matchRowMain:hover .matchRowCard,
 .matchRowMain:focus-visible .matchRowCard {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 20px 44px rgba(4, 10, 7, 0.22);
+  box-shadow: 0 14px 28px rgba(4, 10, 7, 0.18);
 }
 
 .matchRowCard {
   display: grid;
-  grid-template-areas:
-    "state"
-    "home"
-    "score"
-    "away";
-  gap: 0.95rem;
-  padding: 1rem;
-  border: 1px solid rgba(223, 228, 223, 0.12);
-  border-radius: 1.55rem;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.52rem 0.62rem;
+  border: 1px solid rgba(220, 226, 221, 0.14);
+  border-radius: 0.95rem;
   background:
-    linear-gradient(180deg, rgba(253, 253, 251, 0.98), rgba(245, 247, 243, 0.95)),
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.78), transparent 60%);
+    linear-gradient(180deg, rgba(252, 252, 250, 0.985), rgba(247, 248, 244, 0.955)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.72), transparent 58%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    0 16px 36px rgba(2, 8, 5, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 7px 16px rgba(2, 8, 5, 0.1);
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .teamSide {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.8rem;
+  gap: 0.4rem;
   align-items: center;
   min-width: 0;
   color: var(--team-accent-contrast);
 }
 
-.teamSideHome {
-  grid-area: home;
-}
-
-.teamSideAway {
-  grid-area: away;
-}
-
 .teamCopy {
   display: grid;
-  gap: 0.2rem;
   min-width: 0;
 }
 
@@ -282,21 +275,23 @@
   min-width: 0;
   color: currentColor;
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(1.05rem, 5vw, 1.45rem);
+  font-size: clamp(0.78rem, 2.5vw, 1.15rem);
   font-weight: 700;
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.01em;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .teamBadge {
   position: relative;
   display: grid;
   place-items: center;
-  width: 3.15rem;
+  width: clamp(1.85rem, 5.2vw, 2.55rem);
   aspect-ratio: 1;
-  border-radius: 1.05rem;
+  border-radius: 0.7rem 0.7rem 0.9rem 0.9rem;
   background:
     radial-gradient(circle at 26% 24%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0) 38%),
     linear-gradient(150deg, rgba(255, 255, 255, 0.95), var(--team-accent-soft));
@@ -309,14 +304,14 @@
 .teamBadgeInner {
   display: grid;
   place-items: center;
-  width: 2.2rem;
+  width: clamp(1.2rem, 3.5vw, 1.7rem);
   aspect-ratio: 1;
   border-radius: 999px;
   background: linear-gradient(145deg, var(--team-accent), rgba(255, 255, 255, 0.92));
   color: var(--team-accent-contrast);
-  font-size: 0.75rem;
+  font-size: clamp(0.5rem, 1.2vw, 0.62rem);
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
@@ -324,76 +319,38 @@
 }
 
 .scoreColumn {
-  grid-area: score;
-  display: grid;
-  gap: 0.28rem;
-  justify-items: center;
-  align-content: center;
-  padding-block: 0.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
 .scoreline {
   color: #11161b;
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(2.15rem, 12vw, 4.75rem);
-  line-height: 0.9;
+  font-size: clamp(1.55rem, 7vw, 2.9rem);
+  line-height: 0.84;
   letter-spacing: -0.05em;
+  white-space: nowrap;
 }
 
-.scoreMeta,
-.matchRowMeta {
-  color: rgba(36, 47, 55, 0.6);
-  font-size: 0.74rem;
-  line-height: 1.3;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+.matchState {
+  color: #11161b;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: clamp(0.84rem, 3vw, 1.15rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-align: right;
+  white-space: nowrap;
 }
 
-.matchRowState {
-  grid-area: state;
-  display: grid;
-  gap: 0.55rem;
-}
-
-.stateStack {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.statusChip,
-.statusLive,
-.statusFinished {
-  min-height: 2rem;
-  padding: 0.45rem 0.72rem;
-  border-color: rgba(15, 23, 42, 0.08);
-  background: rgba(15, 23, 42, 0.04);
-  color: rgba(36, 47, 55, 0.7);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-}
-
-.statusLive {
-  border-color: rgba(220, 67, 86, 0.18);
-  background: rgba(220, 67, 86, 0.1);
+.matchStateLive {
   color: #c53950;
 }
 
-.statusFinished {
-  background: rgba(25, 38, 49, 0.06);
-  color: rgba(30, 41, 51, 0.78);
-}
-
-.stateValue {
-  color: #11161b;
-  font-family: var(--font-display), var(--font-sans), sans-serif;
-  font-size: clamp(1.15rem, 5vw, 1.7rem);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.03em;
+.matchStateFinished {
+  color: rgba(30, 41, 51, 0.8);
 }
 
 .emptyState {
@@ -404,13 +361,9 @@
 }
 
 @media (min-width: 700px) {
-  .boardHeader {
+  .toolbarTop {
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-  }
-
-  .summaryGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: center;
   }
 
   .groupHeader {
@@ -419,11 +372,7 @@
   }
 
   .matchList {
-    padding: 1rem;
-  }
-
-  .matchRowCard {
-    padding: 1.2rem 1.3rem;
+    padding: 0.55rem;
   }
 }
 
@@ -434,26 +383,15 @@
   }
 
   .matchRowCard {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
-    grid-template-areas: "home score away state";
-    align-items: center;
-    gap: 1.1rem;
+    gap: 0.58rem;
+    padding: 0.6rem 0.82rem;
   }
 
   .teamSideAway {
     justify-self: stretch;
   }
 
-  .matchRowState {
-    justify-items: end;
-    text-align: right;
-  }
-
-  .stateStack {
-    justify-content: flex-end;
-  }
-
-  .scoreColumn {
-    min-width: 8rem;
+  .scoreline {
+    font-size: clamp(1.8rem, 4vw, 3.1rem);
   }
 }

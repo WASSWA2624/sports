@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buildMatchStatusLabel, buildMatchTimeLabel } from "../../lib/coreui/match-data";
+import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
 import { buildMatchHref } from "../../lib/coreui/routes";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
@@ -219,18 +219,6 @@ function TeamBadge({ team }) {
   );
 }
 
-function buildStateLabel(fixture) {
-  if (fixture.status === "LIVE") {
-    return "Live";
-  }
-
-  if (fixture.status === "FINISHED") {
-    return "Final";
-  }
-
-  return "Kickoff";
-}
-
 function buildScorelineText(fixture) {
   if (isScoreVisible(fixture)) {
     return `${fixture.resultSnapshot.homeScore} - ${fixture.resultSnapshot.awayScore}`;
@@ -240,12 +228,12 @@ function buildScorelineText(fixture) {
 }
 
 export function MatchRow({ fixture, locale }) {
-  const statusClassName =
+  const matchStateClassName =
     fixture.status === "LIVE"
-      ? styles.statusLive
+      ? `${styles.matchState} ${styles.matchStateLive}`
       : fixture.status === "FINISHED"
-        ? styles.statusFinished
-        : styles.statusChip;
+        ? `${styles.matchState} ${styles.matchStateFinished}`
+        : styles.matchState;
   const homeStyle = getTeamStyle(fixture.homeTeam);
   const awayStyle = getTeamStyle(fixture.awayTeam);
 
@@ -253,7 +241,7 @@ export function MatchRow({ fixture, locale }) {
     <article className={styles.matchRow}>
       <Link href={buildMatchHref(locale, fixture)} className={styles.matchRowMain}>
         <div className={styles.matchRowCard}>
-          <div className={`${styles.teamSide} ${styles.teamSideHome}`} style={homeStyle}>
+          <div className={styles.teamSide} style={homeStyle}>
             <TeamBadge team={fixture.homeTeam} />
             <div className={styles.teamCopy}>
               <span className={styles.teamName}>{fixture.homeTeam.name}</span>
@@ -262,7 +250,6 @@ export function MatchRow({ fixture, locale }) {
 
           <div className={styles.scoreColumn}>
             <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
-            <span className={styles.scoreMeta}>{fixture.round || fixture.league.name}</span>
           </div>
 
           <div className={`${styles.teamSide} ${styles.teamSideAway}`} style={awayStyle}>
@@ -272,20 +259,14 @@ export function MatchRow({ fixture, locale }) {
             </div>
           </div>
 
-          <div className={styles.matchRowState}>
-            <div className={styles.stateStack}>
-              <span className={statusClassName}>{buildStateLabel(fixture)}</span>
-              <span className={styles.stateValue}>{buildMatchStatusLabel(fixture, locale)}</span>
-            </div>
-            <span className={styles.matchRowMeta}>{buildMatchTimeLabel(fixture, locale)}</span>
-          </div>
+          <span className={matchStateClassName}>{buildMatchStatusLabel(fixture, locale)}</span>
         </div>
       </Link>
     </article>
   );
 }
 
-export function Scoreboard({ locale, title, lead, feed }) {
+export function Scoreboard({ locale, feed }) {
   const selectedDateLabel = new Intl.DateTimeFormat(locale, {
     weekday: "short",
     month: "long",
@@ -298,12 +279,12 @@ export function Scoreboard({ locale, title, lead, feed }) {
     time: feed.selectedTime,
   };
   const refreshLabel = feed.refresh?.enabled ? "Auto-refresh on" : "Waiting for live matches";
-  const summaryCards = [
-    { key: "ALL", count: feed.summary.total },
-    { key: "LIVE", count: feed.summary.LIVE },
-    { key: "SCHEDULED", count: feed.summary.SCHEDULED },
-    { key: "FINISHED", count: feed.summary.FINISHED },
-  ];
+  const hasLeagueFilter = Boolean(
+    feed.selectedLeague && String(feed.selectedLeague).toLowerCase() !== "all"
+  );
+  const hasTimeFilter = Boolean(feed.selectedTime && String(feed.selectedTime).toLowerCase() !== "all");
+  const activeFilterCount = [Boolean(feed.query), hasLeagueFilter, hasTimeFilter].filter(Boolean).length;
+  const hasRefinements = activeFilterCount > 0;
 
   return (
     <section className={styles.page}>
@@ -313,41 +294,34 @@ export function Scoreboard({ locale, title, lead, feed }) {
         until={feed.refresh?.until}
       />
 
-      <header className={styles.boardHeader}>
-        <div className={styles.boardIntro}>
-          <p className={styles.eyebrow}>Match board</p>
-          <h1 className={styles.title}>{title}</h1>
-          {lead ? <p className={styles.lead}>{lead}</p> : null}
-        </div>
-
-        <div className={styles.headerMeta}>
-          <span className={styles.metaChip}>{selectedDateLabel}</span>
-          <span className={styles.metaChip}>{feed.summary.total} matches</span>
-          <span className={styles.metaChip}>{refreshLabel}</span>
-        </div>
-      </header>
-
       <section className={styles.toolbar}>
-        <div className={styles.dateRail}>
-          <Link
-            href={buildBoardHref(locale, {
-              date: shiftDate(feed.selectedDate, -1),
-              status: feed.selectedStatus,
-            }, currentFilters)}
-            className={styles.commandButton}
-          >
-            Previous day
-          </Link>
-          <span className={styles.datePill}>{selectedDateLabel}</span>
-          <Link
-            href={buildBoardHref(locale, {
-              date: shiftDate(feed.selectedDate, 1),
-              status: feed.selectedStatus,
-            }, currentFilters)}
-            className={styles.commandButton}
-          >
-            Next day
-          </Link>
+        <div className={styles.toolbarTop}>
+          <div className={styles.dateRail}>
+            <Link
+              href={buildBoardHref(locale, {
+                date: shiftDate(feed.selectedDate, -1),
+                status: feed.selectedStatus,
+              }, currentFilters)}
+              className={styles.commandButton}
+            >
+              Prev
+            </Link>
+            <span className={styles.datePill}>{selectedDateLabel}</span>
+            <Link
+              href={buildBoardHref(locale, {
+                date: shiftDate(feed.selectedDate, 1),
+                status: feed.selectedStatus,
+              }, currentFilters)}
+              className={styles.commandButton}
+            >
+              Next
+            </Link>
+          </div>
+
+          <div className={styles.headerMeta}>
+            <span className={styles.metaChip}>{feed.summary.total} matches</span>
+            <span className={styles.metaChip}>{refreshLabel}</span>
+          </div>
         </div>
 
         <div className={styles.filterRail}>
@@ -365,57 +339,55 @@ export function Scoreboard({ locale, title, lead, feed }) {
           ))}
         </div>
 
-        <form action={`/${locale}`} className={styles.refineGrid}>
-          <input type="hidden" name="date" value={feed.selectedDate} />
-          {feed.selectedStatus !== "ALL" ? (
-            <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
-          ) : null}
-          <label className={styles.searchField}>
-            <span className={styles.searchLabel}>Search</span>
-            <input
-              type="search"
-              name="q"
-              defaultValue={feed.query}
-              placeholder="League, team, or kickoff time"
-              className={styles.searchInput}
-            />
-          </label>
+        <details className={styles.refinePanel} open={hasRefinements}>
+          <summary className={styles.refineToggle}>
+            <span>Filters</span>
+            <strong>{hasRefinements ? `${activeFilterCount} active` : "Optional"}</strong>
+          </summary>
 
-          <label className={styles.searchField}>
-            <span className={styles.searchLabel}>League</span>
-            <select name="league" defaultValue={feed.selectedLeague} className={styles.searchInput}>
-              {feed.leagueOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <form action={`/${locale}`} className={styles.refineGrid}>
+            <input type="hidden" name="date" value={feed.selectedDate} />
+            {feed.selectedStatus !== "ALL" ? (
+              <input type="hidden" name="status" value={feed.selectedStatus.toLowerCase()} />
+            ) : null}
+            <label className={styles.searchField}>
+              <span className={styles.searchLabel}>Search</span>
+              <input
+                type="search"
+                name="q"
+                defaultValue={feed.query}
+                placeholder="League, team, or kickoff time"
+                className={styles.searchInput}
+              />
+            </label>
 
-          <label className={styles.searchField}>
-            <span className={styles.searchLabel}>Time</span>
-            <select name="time" defaultValue={feed.selectedTime} className={styles.searchInput}>
-              {feed.timeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className={styles.searchField}>
+              <span className={styles.searchLabel}>League</span>
+              <select name="league" defaultValue={feed.selectedLeague} className={styles.searchInput}>
+                {feed.leagueOptions.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <button type="submit" className={styles.searchSubmit}>
-            Search matches
-          </button>
-        </form>
-      </section>
+            <label className={styles.searchField}>
+              <span className={styles.searchLabel}>Time</span>
+              <select name="time" defaultValue={feed.selectedTime} className={styles.searchInput}>
+                {feed.timeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-      <section className={styles.summaryGrid}>
-        {summaryCards.map((entry) => (
-          <article key={entry.key} className={styles.summaryCard}>
-            <span>{statusLabel(entry.key)}</span>
-            <strong>{entry.count}</strong>
-          </article>
-        ))}
+            <button type="submit" className={styles.searchSubmit}>
+              Apply
+            </button>
+          </form>
+        </details>
       </section>
 
       <div className={styles.groupStack}>

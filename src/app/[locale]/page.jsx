@@ -22,11 +22,6 @@ export default async function LocaleHomePage({ params, searchParams }) {
   });
 
   return (
-    <Scoreboard
-      locale={locale}
-      title="Football scores"
-      lead="Live matches, fixtures, and results in one fast board."
-      feed={feed}
-    />
+    <Scoreboard locale={locale} feed={feed} />
   );
 }

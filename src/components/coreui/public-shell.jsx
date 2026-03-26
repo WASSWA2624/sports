@@ -54,9 +54,8 @@ function buildShellNav(locale) {
   ];
 }
 
-function ShellFrame({ children, locale, dictionary, shellData, pathname = "", searchParams = null }) {
+function ShellFrame({ children, locale, dictionary, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
-  const topCompetitions = (shellData?.featuredCompetitions || []).slice(0, 6);
 
   return (
     <div className={styles.shell}>
@@ -68,7 +67,6 @@ function ShellFrame({ children, locale, dictionary, shellData, pathname = "", se
             </span>
             <span className={styles.brandBlock}>
               <strong className={styles.brandTitle}>{dictionary.brand}</strong>
-              <span className={styles.brandTag}>Football only</span>
             </span>
           </Link>
 
@@ -84,35 +82,6 @@ function ShellFrame({ children, locale, dictionary, shellData, pathname = "", se
             ))}
           </nav>
         </div>
-
-        <section className={styles.leagueRail} aria-label="Top leagues">
-          <div className={styles.leagueRailHead}>
-            <div>
-              <p className={styles.leagueRailEyebrow}>Competitions</p>
-              <h2 className={styles.leagueRailTitle}>Top football leagues</h2>
-            </div>
-            <Link href={`/${locale}/leagues`} className={styles.leagueRailAction}>
-              All leagues
-            </Link>
-          </div>
-
-          <div className={styles.leagueStrip}>
-            {topCompetitions.map((competition) => (
-              <Link
-                key={competition.code}
-                href={`/${locale}/leagues/${competition.code}`}
-                className={
-                  pathname === `/${locale}/leagues/${competition.code}`
-                    ? styles.leagueChipActive
-                    : styles.leagueChip
-                }
-              >
-                <strong>{competition.name}</strong>
-                <span>{competition.country}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
       </header>
 
       <main className={styles.content}>{children}</main>
