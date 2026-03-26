@@ -1292,7 +1292,6 @@ export function getMatchdayFeed({
     }
 
     return (
-      fixtureSortWeight(left) - fixtureSortWeight(right) ||
       left.league.name.localeCompare(right.league.name) ||
       left.homeTeam.name.localeCompare(right.homeTeam.name)
     );

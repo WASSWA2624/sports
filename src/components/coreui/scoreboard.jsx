@@ -216,30 +216,6 @@ function buildRangeModeLabel(feed) {
   return hasFullDayWindow(feed) ? "Custom date range" : "Custom date-time range";
 }
 
-function rangeSpansSingleDay(feed) {
-  const start = new Date(feed.rangeStart);
-  const end = new Date(feed.rangeEnd);
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return true;
-  }
-
-  return isSameDay(start, end);
-}
-
-function buildTimeGroupLabel(group, locale, showDate) {
-  return new Intl.DateTimeFormat(locale, showDate ? {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  } : {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(group.startsAt));
-}
-
 function buildTimeGroupMeta(group) {
   const leagueLabel =
     group.leagueCount === 1 ? group.leagueNames[0] : `${group.leagueCount} leagues`;
@@ -361,57 +337,64 @@ export function MatchRow({ fixture, locale }) {
   return (
     <article className={styles.matchRow}>
       <div className={styles.matchRowCard}>
-        <div className={styles.matchStatusRail}>
+        <div className={styles.matchRowHeader}>
+          <span className={styles.matchLeague}>{fixture.league.name}</span>
           {matchStatusLabel ? (
             <Link
               href={matchHref}
-              className={matchStatusClassName}
+              className={styles.matchStatusLink}
               aria-label={`${fixture.homeTeam.name} vs ${fixture.awayTeam.name} match details`}
             >
-              {matchStatusLabel}
+              <span className={matchStatusClassName}>{matchStatusLabel}</span>
             </Link>
-          ) : (
-            <span className={styles.matchStatusSpacer} aria-hidden="true" />
-          )}
+          ) : null}
         </div>
 
-        <Link
-          href={buildTeamHref(locale, fixture.homeTeam)}
-          className={`${styles.teamSide} ${styles.teamSideHome}`}
-          aria-label={`${fixture.homeTeam.name} team details`}
-        >
-          <div className={styles.teamCopy}>
-            <span className={styles.teamName}>{fixture.homeTeam.name}</span>
-          </div>
-          <TeamBadge team={fixture.homeTeam} teamStyle={homeStyle} />
-        </Link>
+        <div className={styles.matchRowMain}>
+          <Link
+            href={buildTeamHref(locale, fixture.homeTeam)}
+            className={`${styles.teamSide} ${styles.teamSideHome}`}
+            aria-label={`${fixture.homeTeam.name} team details`}
+          >
+            <div className={styles.teamCopy}>
+              <span className={styles.teamName}>{fixture.homeTeam.name}</span>
+            </div>
+            <TeamBadge team={fixture.homeTeam} teamStyle={homeStyle} />
+          </Link>
 
-        <Link
-          href={matchHref}
-          className={styles.matchCenterLink}
-          aria-label={`${fixture.homeTeam.name} vs ${fixture.awayTeam.name} match details`}
-        >
-          {isScoreVisible(fixture) ? (
-            <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
-          ) : (
-            <span className={styles.kickoffStack}>
-              <strong className={styles.kickoffPrimary}>{kickoffLabel.primary}</strong>
-              {kickoffLabel.suffix ? <span className={styles.kickoffSuffix}>{kickoffLabel.suffix}</span> : null}
+          <Link
+            href={matchHref}
+            className={styles.matchCenterLink}
+            aria-label={`${fixture.homeTeam.name} vs ${fixture.awayTeam.name} match details`}
+          >
+            <span className={styles.matchCenterMeta}>
+              {kickoffLabel.primary ? (
+                <span className={styles.kickoffInline}>
+                  <span className={styles.kickoffPrimary}>{kickoffLabel.primary}</span>
+                  {kickoffLabel.suffix ? <span className={styles.kickoffSuffix}>{kickoffLabel.suffix}</span> : null}
+                </span>
+              ) : null}
+              {matchDateLabel ? <span className={styles.matchDate}>{matchDateLabel}</span> : null}
             </span>
-          )}
-          {matchDateLabel ? <span className={styles.matchDate}>{matchDateLabel}</span> : null}
-        </Link>
 
-        <Link
-          href={buildTeamHref(locale, fixture.awayTeam)}
-          className={`${styles.teamSide} ${styles.teamSideAway}`}
-          aria-label={`${fixture.awayTeam.name} team details`}
-        >
-          <TeamBadge team={fixture.awayTeam} teamStyle={awayStyle} />
-          <div className={styles.teamCopy}>
-            <span className={styles.teamName}>{fixture.awayTeam.name}</span>
-          </div>
-        </Link>
+            {isScoreVisible(fixture) ? (
+              <strong className={styles.scoreline}>{buildScorelineText(fixture)}</strong>
+            ) : (
+              <span className={styles.fixturePlaceholder}>vs</span>
+            )}
+          </Link>
+
+          <Link
+            href={buildTeamHref(locale, fixture.awayTeam)}
+            className={`${styles.teamSide} ${styles.teamSideAway}`}
+            aria-label={`${fixture.awayTeam.name} team details`}
+          >
+            <TeamBadge team={fixture.awayTeam} teamStyle={awayStyle} />
+            <div className={styles.teamCopy}>
+              <span className={styles.teamName}>{fixture.awayTeam.name}</span>
+            </div>
+          </Link>
+        </div>
       </div>
     </article>
   );
@@ -420,7 +403,6 @@ export function MatchRow({ fixture, locale }) {
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
   const selectedRangeModeLabel = buildRangeModeLabel(feed);
-  const singleDayRange = rangeSpansSingleDay(feed);
   const rangeQuery = buildRangeQuery(feed);
   const liveCount = feed.summary.LIVE || 0;
   const currentFilters = {
@@ -673,29 +655,14 @@ export function Scoreboard({ locale, feed }) {
       </section>
 
       <div className={styles.groupStack}>
-        {feed.groups.length ? (
-          feed.groups.map((group) => {
-            const groupLabel = buildTimeGroupLabel(group, locale, !singleDayRange);
-            const groupMeta = buildTimeGroupMeta(group).replaceAll("\u00c2", "").replaceAll("\u00b7", "·");
-
-            return (
-              <section key={group.key} className={styles.groupCard}>
-                <div className={styles.groupHeader}>
-                  <h2 className={styles.groupTitle}>{groupLabel}</h2>
-
-                  {groupMeta ? (
-                    <p className={styles.groupMeta}>{groupMeta.replaceAll("\u00c2\u00b7", META_SEPARATOR.trim())}</p>
-                  ) : null}
-                </div>
-
-                <div className={styles.matchList}>
-                  {group.fixtures.map((fixture) => (
-                    <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
-                  ))}
-                </div>
-              </section>
-            );
-          })
+        {feed.fixtures.length ? (
+          <section className={styles.groupCard}>
+            <div className={styles.matchList}>
+              {feed.fixtures.map((fixture) => (
+                <MatchRow key={fixture.id} fixture={fixture} locale={locale} />
+              ))}
+            </div>
+          </section>
         ) : (
           <div className={styles.emptyState}>
             No matches match this search. Try another date-time range, preset window, league, or kickoff bucket.
