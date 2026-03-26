@@ -131,26 +131,84 @@
   flex: 0 0 auto;
 }
 
-.headerUtilityChip {
+.headerUtilityButton,
+.localePicker {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.34rem;
   min-height: 1.72rem;
-  padding: 0.28rem 0.54rem;
+  padding: 0.22rem 0.5rem;
   border: 1px solid rgba(169, 191, 255, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.035);
   color: rgba(239, 244, 255, 0.86);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
 }
 
-.headerUtilityDot {
-  width: 0.48rem;
-  height: 0.48rem;
+.headerUtilityButton {
+  cursor: pointer;
+}
+
+.headerUtilityButton:hover,
+.headerUtilityButton:focus-visible,
+.localePicker:focus-within {
+  border-color: rgba(92, 142, 255, 0.18);
+  color: #ffffff;
+}
+
+.headerUtilityIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 0.9rem;
+  height: 0.9rem;
+  color: currentColor;
+}
+
+.headerUtilityIcon svg {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.localePicker {
+  position: relative;
+  padding-right: 0.34rem;
+}
+
+.localeLabel {
+  color: rgba(225, 234, 255, 0.6);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.localeSelect {
+  min-width: 3rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.localeSelect option {
+  color: #04101f;
+}
+
+.localePicker::after {
+  content: "";
+  width: 0.36rem;
+  height: 0.36rem;
   border-radius: 999px;
-  background: #5c8eff;
-  box-shadow: 0 0 0 0.24rem rgba(92, 142, 255, 0.16);
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  margin-top: -0.12rem;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .nav,

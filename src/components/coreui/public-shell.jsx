@@ -1,12 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { LOCALE_COOKIE_NAME, SUPPORTED_LOCALES } from "../../lib/coreui/preferences";
 import styles from "./public-shell.module.css";
 
 function getSelectedStatus(searchParams) {
   return String(searchParams?.get("status") || "all").trim().toLowerCase();
+}
+
+const THEME_STORAGE_KEY = "sports_theme";
+const THEME_COOKIE_NAME = "sports_theme";
+const LOCALE_OPTIONS = {
+  en: { label: "English", flag: "🇬🇧" },
+  fr: { label: "Français", flag: "🇫🇷" },
+  sw: { label: "Kiswahili", flag: "🇹🇿" },
+};
+
+function ThemeIcon({ theme }) {
+  const commonProps = {
+    viewBox: "0 0 16 16",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  if (theme === "light") {
+    return (
+      <svg {...commonProps}>
+        <circle cx="8" cy="8" r="2.75" />
+        <path d="M8 1.75v1.5M8 12.75v1.5M3.58 3.58l1.06 1.06M11.36 11.36l1.06 1.06M1.75 8h1.5M12.75 8h1.5M3.58 12.42l1.06-1.06M11.36 4.64l1.06-1.06" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...commonProps}>
+      <path d="M10.75 2.25a5.75 5.75 0 1 0 3 10.66A6.5 6.5 0 0 1 10.75 2.25Z" />
+    </svg>
+  );
+}
+
+function buildLocaleHref(pathname, searchParams, targetLocale) {
+  const segments = String(pathname || "").split("/").filter(Boolean);
+
+  if (segments.length) {
+    segments[0] = targetLocale;
+  } else {
+    segments.push(targetLocale);
+  }
+
+  const query = searchParams?.toString();
+  return `/${segments.join("/")}${query ? `?${query}` : ""}`;
 }
 
 function NavIcon({ name }) {
@@ -111,6 +159,40 @@ function buildShellNav(locale) {
 
 function ShellFrame({ children, locale, dictionary, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
+  const router = useRouter();
+  const [theme, setTheme] = useState(() => {
+    if (typeof document === "undefined") {
+      return "dark";
+    }
+
+    return (
+      window.localStorage.getItem(THEME_STORAGE_KEY) ||
+      document.documentElement.getAttribute("data-theme-preference") ||
+      document.documentElement.getAttribute("data-theme") ||
+      "dark"
+    );
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", theme);
+    root.setAttribute("data-theme-preference", theme);
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    document.cookie = `${THEME_COOKIE_NAME}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
+  }, [theme]);
+
+  function handleThemeToggle() {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+  }
+
+  function handleLocaleChange(event) {
+    const nextLocale = event.target.value;
+    const nextHref = buildLocaleHref(pathname, searchParams, nextLocale);
+
+    document.cookie = `${LOCALE_COOKIE_NAME}=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`;
+    router.push(nextHref);
+  }
 
   return (
     <div className={styles.shell}>
@@ -128,10 +210,34 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
             </Link>
 
             <div className={styles.headerUtility}>
-              <span className={styles.headerUtilityChip}>
-                <span className={styles.headerUtilityDot} aria-hidden="true" />
-                Matchday
-              </span>
+              <button
+                type="button"
+                className={styles.headerUtilityButton}
+                onClick={handleThemeToggle}
+                aria-label={`${dictionary.theme}: ${theme === "light" ? dictionary.themeLight : dictionary.themeDark}`}
+                title={`${dictionary.theme}: ${theme === "light" ? dictionary.themeLight : dictionary.themeDark}`}
+              >
+                <span className={styles.headerUtilityIcon} aria-hidden="true">
+                  <ThemeIcon theme={theme} />
+                </span>
+                <span>{theme === "light" ? dictionary.themeLight : dictionary.themeDark}</span>
+              </button>
+
+              <label className={styles.localePicker}>
+                <span className={styles.localeLabel}>{dictionary.locale}</span>
+                <select
+                  value={locale}
+                  onChange={handleLocaleChange}
+                  className={styles.localeSelect}
+                  aria-label={dictionary.locale}
+                >
+                  {SUPPORTED_LOCALES.map((entry) => (
+                    <option key={entry} value={entry}>
+                      {`${LOCALE_OPTIONS[entry]?.flag || "🌐"} ${LOCALE_OPTIONS[entry]?.label || entry.toUpperCase()}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 
