@@ -1,21 +1,20 @@
 # 014-scale-and-multi-sport
 
 ## Goal
-Harden the platform for real-time load, multi-sport expansion, and reliable monetization surfaces.
+Harden the minimal matches and results platform for live traffic while keeping future expansion optional.
 
 ## Build
-1. Add advanced caching and queue backpressure controls for live match windows and high-traffic odds or prediction modules.
-2. Add observability dashboards for latency, sync lag, stale data rates, cache hit rates, page errors, and affiliate or analytics pipeline health.
-3. Add provider expansion patterns for additional sports, specialized odds feeds, and backup feeds, with env-driven activation through `SPORTS_DATA_PROVIDER` and provider namespaces.
-4. Distinguish cataloged providers from implemented adapter families so release tooling and operators can block unsafe source switches early.
-5. Add asset, image, and CDN strategy for logos, competition marks, article media, bookmaker badges, and sponsored creative assets, including remote host updates through env configuration.
-6. Run failure drills for provider outage, delayed live feed, search degradation, cache invalidation issues, and broken affiliate or funnel endpoints.
-7. Document SLOs and operational playbooks for peak traffic windows, including what to disable first when a revenue surface threatens core live-score performance.
-8. Set explicit mobile performance and interaction-efficiency budgets for dense translated UI in both dark and light themes.
+1. Add caching and backpressure controls tuned for active live-match windows and high-frequency homepage refreshes.
+2. Add observability for latency, sync lag, stale-data rates, cache hit rates, and page errors on the core public routes.
+3. Keep provider expansion patterns ready for additional sports or backup feeds, but ship football first by default.
+4. Distinguish configured providers from implemented adapters so unsafe source switches are caught early.
+5. Keep asset and CDN handling focused on team and competition logos plus any other media the minimal UI truly needs.
+6. Run failure drills for provider outage, delayed live feed, stale homepage data, and cache invalidation issues.
+7. Set explicit mobile performance budgets for homepage list rendering and match-detail loading.
+8. Prevent scope creep during scaling work by protecting the minimal route set and UI model.
 
 ## Done When
-- The app can handle peak live traffic reliably.
-- Multi-sport and multi-feed expansion is technically prepared, and supported provider swaps are operationally driven by env plus release validation instead of code edits.
-- Operations have tested runbooks for the main failure modes across both product and monetization surfaces.
-- Unsupported provider selections are caught by tooling and operational visibility before promotion.
-- UX speed targets remain protected as the app scales in sports, languages, and monetization density.
+- The app can handle peak live traffic on the shipped routes reliably.
+- Provider expansion remains technically possible without widening the MVP surface area.
+- Operations have tested runbooks for the main data-freshness and availability failures.
+- Speed targets remain protected as live coverage grows.

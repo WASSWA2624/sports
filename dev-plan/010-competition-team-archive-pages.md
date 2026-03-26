@@ -1,21 +1,17 @@
 # 010-competition-team-archive-pages
 
 ## Goal
-Build country, competition, team, match-center, and archive page coverage with a responsive, low-friction UX.
+Build lightweight competition and match page coverage while deferring deeper team, country, and archive surfaces.
 
 ## Build
-1. Build country pages that list competitions for the selected sport and support deep drill-down navigation.
-2. Build competition hubs with tabs for summary, odds, news, results, fixtures, standings, archive, and prediction, affiliate, or community modules where the spec requires them.
-3. Build the full match center with `Match`, `H2H`, `Standings`, and `Video` tabs plus summary, stats, lineups, venue, referee, TV info, top-placed odds, `Best Bet`, funnel CTA entry points, and the match-scoped community slips panel.
-4. Build standings views with overall, home, away, form, and live variants when data exists.
-5. Build team pages with fixtures, results, squad or roster data, linked competitions, news modules, and supported prediction or odds content.
-6. Add season selectors, archive navigation, and internal linking between sport, country, competition, team, and match routes for SEO and navigation parity.
-7. Ensure tabs, selectors, tables, stats blocks, and archive controls are mobile-first, fully translated, responsive, and strong in both dark and light themes.
-8. Keep primary actions like tab switch, season switch, match open, and team or competition drill-down within 1 to 2 interactions wherever practical.
+1. Build competition pages with a simple header plus fixtures or results lists for the selected date, round, or matchday where provider data supports it.
+2. Build minimal match detail pages showing teams, score, status, kickoff time, essential event timeline, and venue when available.
+3. Keep navigation tight between the homepage board, competition pages, and match pages.
+4. Add lightweight round or date controls for competition browsing when the feed makes them reliable.
+5. Defer full team hubs, country drill-down trees, deep archive browsing, standings-heavy tabs, H2H tabs, and video tabs unless they become strictly necessary for the minimal product.
+6. Ensure deeper pages share the same compact, mobile-first visual model as the homepage.
 
 ## Done When
-- Users can navigate from sport to country to competition to team or match without dead ends.
-- Competition pages match the Flashscore tab structure.
-- Match center exposes the core parity, monetization, and community prediction modules defined in `app-write-up.md`.
-- Archive and season navigation work across supported competitions.
-- These deeper pages remain fast, 100% responsive, and easy to use on mobile and desktop.
+- Users can move from homepage to competition to match without dead ends.
+- Competition and match pages expose only the data needed to understand fixtures and results.
+- Deferred route families are explicitly marked as out of MVP instead of being half-planned.

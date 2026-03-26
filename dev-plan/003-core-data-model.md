@@ -1,22 +1,19 @@
 # 003-core-data-model
 
 ## Goal
-Implement the core schema for a multi-sport live scores, news, monetization, and community-prediction platform.
+Implement the core schema for a minimal matches and results platform.
 
 ## Build
-1. Model identity and preferences: User, Session, Account, UserPreference, FavoriteEntity, NotificationSubscription, RecentView.
-2. Model taxonomy: Sport, Country, Competition, Season, Stage, Round, and the relations needed to move from sport to country to competition to match.
-3. Model participants: Team, Player, Official, Venue.
-4. Model live data: Fixture, FixtureParticipant, ScoreSnapshot, Incident, Lineup, Statistic, Standing, H2HSnapshot, BroadcastChannel.
-5. Model odds and editorial data: OddsMarket, OddsSelection, NewsArticle, NewsCategory, ArticleEntityLink, and any joins required to connect articles and odds to sports entities.
-6. Model monetization and prediction data: Bookmaker, AffiliateLink, ClickEvent, ConversionEvent, FunnelEntry, PredictionRecommendation, and placement metadata for homepage, competition, and match surfaces.
-7. Model community prediction data: CommunitySlip, CommunitySlipSelection, CommunitySlipLike, per-pick reasoning, featured state, visibility, settlement state, and the relations needed for public author-history reads.
-8. Model operations and control: SourceProvider, SyncJob, SyncCheckpoint, FeatureFlag, ShellModule, AdSlot, ConsentText, AuditLog, and the operational entities needed to govern revenue and community surfaces safely.
-9. Ensure provider-linked entities persist normalized external references, source-provider codes, role or tier metadata, fallback relationships, and enough metadata to support multiple feed families without schema rewrites.
-10. Add indexes for hot read paths such as fixtures by sport and kickoff time, incidents by fixture and minute, standings by competition and season, articles by entity and publish date, public community slips by author or fixture, and click or conversion events by partner, geo, and surface.
+1. Model the taxonomy needed for the MVP: Sport, Country, Competition, Season, Stage, and Round or Matchday.
+2. Model participants required for the shipped UI: Team and Venue, with room for officials or player data only if the feed makes them trivial to carry.
+3. Model match data: Fixture, home and away participants, kickoff time, MatchStatus, ScoreSnapshot, and Event.
+4. Model provider linkage through normalized external references, source-provider codes, and enough metadata to support provider swaps without changing the core read model.
+5. Model operations support tables such as SourceProvider, SyncJob, SyncCheckpoint, and feed-health or stale-data markers.
+6. Keep standings, lineups, player stats, editorial content, odds, affiliate, and community entities out of the MVP schema unless they are already present and harmlessly isolated.
+7. Add indexes for hot reads such as fixtures by date and status, fixtures by competition and kickoff time, and events by fixture and minute.
 
 ## Done When
-- Migrations apply cleanly on an empty DB.
-- Seed data can boot a usable dev shell with sample competitions, matches, bookmakers, monetized placements, and public or draft community slips.
-- Core reads for scores, match pages, competition pages, and monetization modules are performant locally.
-- The schema can absorb additional provider families without renaming or reshaping the main domain models.
+- Migrations apply cleanly on an empty database.
+- Seed data can boot a usable dev experience with competitions, teams, fixtures, scores, and key events.
+- Core reads for homepage, match detail, and competition pages are performant locally.
+- The schema stays small and focused on data the UI actually renders in MVP.

@@ -1,21 +1,18 @@
 # 012-admin-and-editor-ops
 
 ## Goal
-Deliver editorial, monetization, community-moderation, and operational control for a live scores platform, with admin and editorial UI quality held to the same translation and responsiveness bar.
+Deliver only the minimal operational control needed to keep provider sync and public scores pages healthy.
 
 ## Build
-1. Build admin modules for users, providers, sync jobs, feature flags, ad slots, consent text, affiliate partners, bookmaker mappings, funnel destinations, and geo-targeted CTA configuration.
-2. Build editor tools for article management, article-to-entity linking, homepage news curation, sponsored labels, featured community-slip curation, and any prediction or promo copy that needs staff review.
-3. Build operations dashboards for sync lag, failed jobs, stale data, cache health, route error spikes, ad readiness, affiliate or conversion signal health, provider chain readiness, and adapter-family implementation status.
-4. Add role-based admin APIs with immutable audit trails for editorial, operational, and monetization-sensitive actions.
-5. Add emergency controls to disable a provider, hide an odds, prediction, or community-slip surface, pause an affiliate CTA, unfeature unsafe community content, or remove a broken module without redeploying.
-6. Expose enough provider metadata in control-plane views for operators to understand selected-provider code, fallback chain, supported capabilities, and when a cataloged provider is not yet implemented.
-7. Add issue-triage workflows for data disputes, wrong scores, broken article content, unsafe or misleading community slips, broken affiliate destinations, provider-switch incidents, and compliance incidents.
-8. Keep frequent operator and editor actions efficient, translated, responsive, and achievable in minimal clicks where reasonable.
+1. Scope internal operations to provider configuration visibility, sync job status, stale-data detection, and health reporting.
+2. Build or preserve lightweight operator tools for rerunning sync jobs, checking provider readiness, and reviewing failure details.
+3. Expose dashboards or endpoints for sync lag, failed jobs, stale data rates, cache health, and route error spikes.
+4. Add emergency controls to pause a broken provider path or hide a failing non-core module without redeploying, if that control already exists or is cheap to support.
+5. Keep audit logging focused on operational actions that affect data freshness or production stability.
+6. Remove editorial workflows, monetization controls, article management, and community-moderation planning from the active roadmap.
+7. If a full admin UI is too heavy for MVP, allow CLI scripts or internal endpoints to satisfy the operational need instead.
 
 ## Done When
-- Editors can manage news, prediction copy, and featured or moderated community placements safely.
-- Admins can observe live platform health and act quickly across product and revenue surfaces.
-- Critical control-plane actions are traceable.
-- Provider-switch and provider-readiness issues are visible before they become production incidents.
-- Admin and editorial surfaces remain fully translated, responsive, and efficient to operate.
+- Operators can observe feed health and react to sync failures.
+- The public scores product is not blocked on a large admin or editorial buildout.
+- Internal tools stay focused on reliability rather than removed product areas.

@@ -1,22 +1,19 @@
 # 016-production-release
 
 ## Goal
-Deploy the Flashscore-style app safely to production with rollback readiness and monetization safety.
+Deploy the minimal matches and results app safely to production with rollback readiness.
 
 ## Build
-1. Promote the release from staging to production using versioned build artifacts.
+1. Promote the release using versioned build artifacts and a repeatable deployment path.
 2. Run DB migrations with tested backup and rollback procedures.
-3. Configure production secrets, selected-provider keys, provider auth settings, asset remote hosts, odds licensing, affiliate links, bookmaker geos, rate limits, cache controls, monitoring alerts, analytics sinks, and feature flags.
-4. Run release preflight checks that validate selected-provider readiness, credential namespace alignment, and asset-host configuration before promotion.
-5. Execute smoke tests for scores home, date filtering, predictions hub, community slips on home and match pages, competition page, match center, team page, news, search, favorites, admin access, and the major odds or affiliate CTA surfaces across representative mobile and desktop layouts.
-6. Verify production dark/light theme parity, core locale rendering, and major 1 to 2 click user journeys, including community-slip creation or publish or like flows, before ending the release watch window.
-7. Monitor the first-hour stability window for sync lag, page errors, cache misses, live data correctness, community-slip API health, outbound CTA health, and core analytics-event delivery.
-8. Publish release notes with known limitations, support ownership, rollback criteria, and geo or compliance notes for regulated content.
+3. Configure production secrets for the selected provider, provider auth settings, asset remote hosts, cache controls, monitoring alerts, and any minimal analytics sinks that remain in scope.
+4. Run release preflight checks that validate selected-provider readiness and asset-host configuration before promotion.
+5. Execute smoke tests for the homepage board, date filtering, state filtering, match detail, competition page, and public health endpoint across representative mobile and desktop layouts.
+6. Monitor the first-hour stability window for sync lag, page errors, cache misses, stale data, and live-score correctness.
+7. Publish release notes with known limitations, rollback criteria, and ownership for post-launch monitoring.
 
 ## Done When
-- Production is live and stable.
+- Production is live and stable on the shipped routes.
 - Rollback is documented and verified.
 - Release ownership and post-launch monitoring are explicit.
-- Monetization and community-retention surfaces are working without destabilizing the core live product.
-- Selected-provider and asset-host configuration is validated before cutover.
-- Production UX quality is confirmed for responsiveness, translation, theme parity, and low-friction primary journeys.
+- Provider and asset-host configuration is validated before cutover.

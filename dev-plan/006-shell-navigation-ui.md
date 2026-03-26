@@ -1,19 +1,18 @@
 # 006-shell-navigation-ui
 
 ## Goal
-Replicate the shared Flashscore-style shell and navigation system, including monetization-aware layout slots, with a mobile-first and fully translated UX.
+Build the minimal FotMob-style shell and navigation system for a match-first product.
 
 ## Build
-1. Implement the global header with brand slot, `Scores`, `News`, search, login or profile, and utility actions, keeping major actions reachable in 1 to 2 taps on mobile.
-2. Build the horizontal sports strip with favorites, major sports, and a `More` overflow entry, tuned for touch-first mobile browsing.
-3. Build the responsive three-column shell: left rail, center content, and right rail that can host ads, affiliate widgets, Telegram or WhatsApp CTAs, and promo blocks without breaking the core layout.
-4. Implement left-rail modules for pinned leagues, my teams, country browsing, and quick access to major competitions.
-5. Add design tokens and layout primitives tuned for dense data rows, tabs, pills, compact cards, prediction widgets, CTA banners, and inline monetization slots in both dark and light themes.
-6. Add i18n foundations, locale-aware formatting, footer, consent shell, ad-slot placeholders, and geo-aware legal disclaimer zones for regulated content, with 100% translation coverage for shell UI.
-7. Ensure the shell stays 100% responsive, fast to render, and free of horizontal overflow across all supported breakpoints.
+1. Implement a lightweight global header with the product brand and the smallest useful set of controls for browsing matches.
+2. Build a clear date-navigation control that is easy to use on mobile and desktop.
+3. Build a primary filter row for `All`, `LIVE`, `Finished`, and `Scheduled`.
+4. Use a single primary content column centered on competition sections and match rows instead of the older three-column, rail-heavy shell.
+5. Add design tokens and layout primitives for competition headers, compact rows, state chips, score emphasis, and essential empty or error states.
+6. Support locale-aware formatting and an optional timezone indicator where it helps users interpret kickoff times.
+7. Keep the shell fast to render, free of horizontal overflow, and intentionally sparse.
 
 ## Done When
-- The shared shell feels structurally aligned with the Flashscore reference.
-- Navigation is usable on desktop and mobile.
-- Layout primitives support both parity surfaces and monetization modules without redesign.
-- The shell is fast, fully translated, theme-complete, and efficient to use in 1 to 2 interactions for primary navigation actions.
+- The shared shell feels close to the FotMob-style browsing model without extra product chrome.
+- Navigation actions are easy to reach in 1 to 2 interactions.
+- The public layout stays focused on matches and results rather than modules around them.

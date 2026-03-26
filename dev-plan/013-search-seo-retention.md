@@ -1,19 +1,17 @@
 # 013-search-seo-retention
 
 ## Goal
-Add discovery, SEO, retention, and conversion loops that strengthen Flashscore-style usage while preserving a fast and efficient UX.
+Keep discovery and SEO lightweight for the core routes while deferring search and retention systems.
 
 ## Build
-1. Implement global search for teams, competitions, matches, players where available, and news articles.
-2. Add structured SEO templates and metadata for sport, country, competition, standings, team, match, and article pages, plus compliant handling for monetized or predicted content blocks.
-3. Add onboarding to choose favorite sports, competitions, teams, and region-sensitive preferences for better first-run personalization.
-4. Add internal discovery modules such as top competitions, related matches, related news, recent items, top picks, best odds, community slips, predictor history, and other high-intent cross-links defined in `app-write-up.md`.
-5. Add notification, reminder, channel-entry prompts, and community-prediction return surfaces for favorite-driven or slip-driven revisit loops without degrading the base Flashscore-style layout.
-6. Add product and conversion analytics for search success, return sessions, favorites depth, news engagement, community-slip creation or publish or like behavior, CTA clicks, channel joins, and affiliate conversions.
-7. Make search, onboarding, and retention prompts mobile-first, 100% responsive, fully translated, and achievable in 1 to 2 interactions for common discovery flows.
+1. Add clean metadata, titles, and descriptions for the homepage, competition pages, and match pages.
+2. Ensure internal linking between homepage, competition, and match routes is clear and predictable.
+3. Add sitemap or crawl support only for the routes that ship in MVP.
+4. Treat global search as deferred work unless a minimal implementation already exists and can remain isolated from release risk.
+5. Remove onboarding, reminder prompts, recent-view systems, and conversion-style retention loops from active planning.
+6. Keep analytics limited to core product understanding such as page load health, filter usage, and route reach, rather than funnel tracking.
 
 ## Done When
-- Search is useful across the core entities.
-- SEO coverage is systematic and measurable.
-- The app has strong repeat-visit and conversion loops through favorites, channels, and community prediction content without abandoning the base reference layout.
-- Discovery flows stay fast, responsive, and easy to use in both dark and light themes.
+- The shipped routes have basic discoverability and SEO hygiene.
+- Search is not on the MVP critical path.
+- The roadmap no longer mixes match discovery with retention or conversion systems.

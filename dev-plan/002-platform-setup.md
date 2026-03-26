@@ -1,20 +1,20 @@
 # 002-platform-setup
 
 ## Goal
-Create the runnable platform baseline for a Flashscore-style, mobile-first, conversion-ready sports web app.
+Create the runnable platform baseline for a minimal matches and results web app.
 
 ## Build
-1. Bootstrap or align the Next.js App Router project structure for scores, competitions, matches, teams, news, favorites, search, odds, predictions, affiliates, funnels, ads, settings, and admin.
-2. Configure environment templates for DB access, `SPORTS_DATA_PROVIDER`, provider-specific namespaces, generic provider overrides, odds feeds, affiliate partners, bookmaker geos, search, analytics, notifications, ads, consent, auth secrets, and Telegram/WhatsApp CTA destinations.
-3. Add Prisma plus MySQL connection management, migration workflow, and seed bootstrap for both core sports data and monetization-aware sample content.
-4. Set up linting, build validation, test runner execution, and CI checks that cover app runtime plus baseline analytics/event bootstrapping.
-5. Add app-level error handling, not-found routing, request logging, health endpoint, feature-flag bootstrap, and event-capture scaffolding for product and conversion analytics.
-6. Create locale-safe and geo-safe routing primitives plus shared shell layout slots for left rail, center content, and monetization rail modules.
-7. Set up app-wide i18n architecture, translation inventory, theme tokens, dark/light theme switching, and responsive design primitives for both public and admin surfaces.
-8. Make remote asset host allowlists and CDN settings env-driven so provider-related image domains can change without additional app code edits.
+1. Align the Next.js App Router structure around the core routes only: `/`, `/matches/[matchId]`, and `/competitions/[competitionSlug]`.
+2. Configure environment templates for DB access, `SPORTS_DATA_PROVIDER`, provider-specific namespaces, generic provider overrides, polling cadence, and remote asset hosts.
+3. Add Prisma plus MySQL connection management, migration workflow, and seed bootstrap for competitions, teams, fixtures, scores, and events.
+4. Set up linting, test execution, build validation, CI checks, and a health endpoint for the narrowed product.
+5. Add app-level error handling, loading states, not-found routing, and request logging for public scores pages.
+6. Create shared layout primitives for the header, date navigation, state filters, competition sections, and compact match rows.
+7. Set up locale-aware date and time formatting plus a minimal visual token system for score-first public pages.
+8. Make remote asset host allowlists env-driven so provider-related logos can change without extra code edits.
 
 ## Done When
-- Fresh clone runs locally with one command.
-- CI validates lint, test, and build health.
-- Baseline app shell, DB connection, event/feature-flag foundations, theme system, and translation foundations are working.
+- A fresh clone can run the minimal app locally without depending on removed features.
+- CI validates lint, test, and build health for the core pages.
+- The platform foundation supports homepage, match detail, and competition results work without auth, news, or monetization dependencies.
 - The selected provider and its asset hosts can be configured from env before first run.
