@@ -13,9 +13,9 @@ function getSelectedStatus(searchParams) {
 const THEME_STORAGE_KEY = "sports_theme";
 const THEME_COOKIE_NAME = "sports_theme";
 const LOCALE_OPTIONS = {
-  en: { label: "English", flag: "🇬🇧" },
-  fr: { label: "Français", flag: "🇫🇷" },
-  sw: { label: "Kiswahili", flag: "🇹🇿" },
+  en: { label: "English" },
+  fr: { label: "Français" },
+  sw: { label: "Kiswahili" },
 };
 
 function ThemeIcon({ theme }) {
@@ -55,6 +55,45 @@ function buildLocaleHref(pathname, searchParams, targetLocale) {
 
   const query = searchParams?.toString();
   return `/${segments.join("/")}${query ? `?${query}` : ""}`;
+}
+
+function LocaleFlag({ locale }) {
+  if (locale === "en") {
+    return (
+      <svg viewBox="0 0 20 14" aria-hidden="true">
+        <rect width="20" height="14" rx="2" fill="#1F4AA8" />
+        <path d="M0 1.5V0h2.1L20 10.5V14h-2.1L0 3.5V1.5Z" fill="#fff" />
+        <path d="M17.9 0H20v1.5L2.1 14H0v-1.5L17.9 0Z" fill="#fff" />
+        <path d="M0 2.3V0h1.2L20 11.7V14h-1.2L0 2.3Z" fill="#D92D2D" />
+        <path d="M18.8 0H20v2.3L1.2 14H0v-2.3L18.8 0Z" fill="#D92D2D" />
+        <path d="M8 0h4v14H8Z" fill="#fff" />
+        <path d="M0 5h20v4H0Z" fill="#fff" />
+        <path d="M8.8 0h2.4v14H8.8Z" fill="#D92D2D" />
+        <path d="M0 5.8h20v2.4H0Z" fill="#D92D2D" />
+      </svg>
+    );
+  }
+
+  if (locale === "fr") {
+    return (
+      <svg viewBox="0 0 20 14" aria-hidden="true">
+        <rect width="20" height="14" rx="2" fill="#fff" />
+        <path d="M0 0h6.67v14H0Z" fill="#1F4AA8" />
+        <path d="M13.33 0H20v14h-6.67Z" fill="#D92D2D" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 20 14" aria-hidden="true">
+      <rect width="20" height="14" rx="2" fill="#1D1D1D" />
+      <path d="M0 0h20v4.67H0Z" fill="#3BAA3B" />
+      <path d="M0 9.33h20V14H0Z" fill="#3BAA3B" />
+      <path d="M0 4.67h20v4.66H0Z" fill="#111" />
+      <path d="M8.5 0h3L20 14h-3Z" fill="#F6D34E" />
+      <path d="M9.15 0h1.7L19.35 14h-1.7Z" fill="#58A9FF" />
+    </svg>
+  );
 }
 
 function NavIcon({ name }) {
@@ -160,7 +199,7 @@ function buildShellNav(locale) {
 function ShellFrame({ children, locale, dictionary, pathname = "", searchParams = null }) {
   const navItems = buildShellNav(locale);
   const router = useRouter();
-  const currentLocaleOption = LOCALE_OPTIONS[locale] || { label: locale.toUpperCase(), flag: "🌐" };
+  const currentLocaleOption = LOCALE_OPTIONS[locale] || { label: locale.toUpperCase() };
   const [theme, setTheme] = useState(() => {
     if (typeof document === "undefined") {
       return "dark";
@@ -229,7 +268,7 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
                   <span className={styles.localeLabel}>{dictionary.locale}</span>
                   <span className={styles.localeValue}>
                     <span className={styles.localeFlag} aria-hidden="true">
-                      {currentLocaleOption.flag}
+                      <LocaleFlag locale={locale} />
                     </span>
                     <span className={styles.localeText}>{currentLocaleOption.label}</span>
                   </span>
@@ -237,7 +276,7 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
 
                 <div className={styles.localeMenu} role="listbox" aria-label={dictionary.locale}>
                   {SUPPORTED_LOCALES.map((entry) => {
-                    const option = LOCALE_OPTIONS[entry] || { label: entry.toUpperCase(), flag: "🌐" };
+                    const option = LOCALE_OPTIONS[entry] || { label: entry.toUpperCase() };
                     return (
                       <button
                         key={entry}
@@ -248,7 +287,7 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
                         aria-selected={entry === locale}
                       >
                         <span className={styles.localeFlag} aria-hidden="true">
-                          {option.flag}
+                          <LocaleFlag locale={entry} />
                         </span>
                         <span className={styles.localeText}>{option.label}</span>
                       </button>
