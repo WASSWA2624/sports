@@ -1,5 +1,5 @@
 const sw = {
-  brand: "Sports Pulse",
+  brand: "RealScored",
   brandTag: "Matokeo ya moja kwa moja na misimamo",
   heroTitle: "Matokeo, ratiba na mabadiliko ya jedwali katika kituo kimoja cha siku ya mechi.",
   heroBody:

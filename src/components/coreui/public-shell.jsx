@@ -14,6 +14,7 @@ function buildShellNav(locale) {
     {
       key: "matches",
       label: "All",
+      icon: "A",
       href: `/${locale}`,
       isActive(pathname, searchParams) {
         return pathname === `/${locale}` && !["live", "scheduled", "finished"].includes(getSelectedStatus(searchParams));
@@ -22,6 +23,7 @@ function buildShellNav(locale) {
     {
       key: "live",
       label: "Live",
+      icon: "L",
       href: `/${locale}?status=live`,
       isActive(pathname, searchParams) {
         return pathname === `/${locale}` && String(searchParams?.get("status") || "").toLowerCase() === "live";
@@ -30,6 +32,7 @@ function buildShellNav(locale) {
     {
       key: "upcoming",
       label: "Fixtures",
+      icon: "F",
       href: `/${locale}?status=scheduled`,
       isActive(pathname, searchParams) {
         return pathname === `/${locale}` && String(searchParams?.get("status") || "").toLowerCase() === "scheduled";
@@ -38,6 +41,7 @@ function buildShellNav(locale) {
     {
       key: "results",
       label: "Results",
+      icon: "R",
       href: `/${locale}?status=finished`,
       isActive(pathname, searchParams) {
         return pathname === `/${locale}` && String(searchParams?.get("status") || "").toLowerCase() === "finished";
@@ -46,6 +50,7 @@ function buildShellNav(locale) {
     {
       key: "leagues",
       label: "Leagues",
+      icon: "G",
       href: `/${locale}/leagues`,
       isActive(pathname) {
         return pathname === `/${locale}/leagues` || pathname.startsWith(`/${locale}/leagues/`);
@@ -65,11 +70,11 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
           <div className={styles.headerTop}>
             <Link href={`/${locale}`} className={styles.brandLink}>
               <span className={styles.brandMark} aria-hidden="true">
-                SP
+                RS
               </span>
               <span className={styles.brandBlock}>
-                <span className={styles.brandTag}>{dictionary.brandTag || "Live match center"}</span>
                 <strong className={styles.brandTitle}>{dictionary.brand}</strong>
+                <span className={styles.brandTag}>{dictionary.brandTag || "Live match center"}</span>
               </span>
             </Link>
 
@@ -78,27 +83,6 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
                 <span className={styles.headerUtilityDot} aria-hidden="true" />
                 Matchday
               </span>
-
-              <details className={styles.mobileNavMenu}>
-                <summary className={styles.mobileNavToggle}>
-                  <span className={styles.mobileNavLabel}>Browse</span>
-                  <strong>{activeNavItem.label}</strong>
-                </summary>
-
-                <nav className={styles.mobileNavPanel} aria-label="Primary menu">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      className={
-                        item.isActive(pathname, searchParams) ? styles.mobileNavLinkActive : styles.mobileNavLink
-                      }
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-              </details>
             </div>
           </div>
 
@@ -109,7 +93,10 @@ function ShellFrame({ children, locale, dictionary, pathname = "", searchParams 
                 href={item.href}
                 className={item.isActive(pathname, searchParams) ? styles.navLinkActive : styles.navLink}
               >
-                {item.label}
+                <span className={styles.navIcon} aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span className={styles.navText}>{item.label}</span>
               </Link>
             ))}
           </nav>

@@ -1,5 +1,5 @@
 const fr = {
-  brand: "Sports Pulse",
+  brand: "RealScored",
   brandTag: "Scores en direct et classements",
   heroTitle: "Scores, calendrier et mouvements au classement dans un hub matchday unique.",
   heroBody:

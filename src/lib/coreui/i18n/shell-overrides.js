@@ -11,7 +11,7 @@ export const SHELL_LOCALE_OVERRIDES = {
     affiliatesPartnerPending: "Aucun partenaire affilié n'est encore assigné à ce marché.",
     affiliatesPartnerTitle: "Carte partenaires",
     affiliatesTitle: "Espace affiliés",
-    brand: "Sports Pulse",
+    brand: "RealScored",
     brandTag: "Scores en direct et classements",
     browse: "Parcourir",
     browseAll: "Tout",
