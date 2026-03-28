@@ -232,6 +232,10 @@
   min-width: 0;
 }
 
+.mobileToolbarRow {
+  display: none;
+}
+
 .toolbarActions {
   display: grid;
   gap: 0.28rem;
@@ -262,11 +266,34 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.leagueSelectTriggerCompactMobile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.34rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.14rem 0.24rem;
+  border: 1px solid rgba(169, 191, 255, 0.1);
+  border-radius: 0.82rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
+    rgba(8, 18, 35, 0.76);
+  color: #f5f8f5;
+  text-align: left;
+  cursor: pointer;
+}
+
 .leagueSelectTrigger:hover,
 .leagueSelectTrigger:focus-visible {
   border-color: rgba(92, 142, 255, 0.24);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
   transform: translateY(-1px);
+}
+
+.leagueSelectTriggerCompactMobile:hover,
+.leagueSelectTriggerCompactMobile:focus-visible {
+  border-color: rgba(92, 142, 255, 0.24);
 }
 
 .leagueSelectTriggerMain,
@@ -815,6 +842,10 @@
   min-width: 0;
 }
 
+.dateRangeControlsInline {
+  display: contents;
+}
+
 .dateRangeChip {
   display: none;
 }
@@ -909,6 +940,74 @@
 }
 
 @media (max-width: 699px) {
+  .mobileToolbarRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 0.92fr) auto minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+    align-items: center;
+    gap: 0.12rem;
+    padding: 0.12rem;
+    border: 1px solid rgba(169, 191, 255, 0.08);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.025);
+    overflow: hidden;
+  }
+
+  .dateRail,
+  .dateRangeForm {
+    display: none;
+  }
+
+  .mobileNavButton,
+  .mobileDateSummary,
+  .mobileToolbarLeague,
+  .mobileToolbarDates {
+    min-width: 0;
+  }
+
+  .mobileNavButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.95rem;
+    height: 2rem;
+    border: 1px solid rgba(169, 191, 255, 0.1);
+    border-radius: 0.82rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
+      rgba(8, 18, 35, 0.76);
+    color: rgba(235, 242, 237, 0.88);
+  }
+
+  .mobileNavButton svg {
+    width: 0.82rem;
+    height: 0.82rem;
+  }
+
+  .mobileDateSummary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 2rem;
+    padding: 0.12rem 0.36rem;
+    border: 1px solid rgba(169, 191, 255, 0.12);
+    border-radius: 0.82rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
+      rgba(255, 255, 255, 0.02);
+    color: rgba(245, 248, 245, 0.92);
+    font-size: 0.63rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobileToolbarDates {
+    display: contents;
+  }
+
   .dateRangeForm {
     grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.78fr) minmax(0, 0.78fr);
     gap: 0.14rem;
@@ -925,6 +1024,34 @@
   .leagueSelectTrigger {
     min-height: 2.18rem;
     padding: 0.18rem 0.28rem;
+  }
+
+  .leagueSelectTriggerCompactMobile .leagueSelectTriggerLabel,
+  .leagueSelectTriggerCompactMobile .leagueSelectTriggerMeta {
+    display: none;
+  }
+
+  .leagueSelectTriggerCompactMobile .leagueSelectTriggerCopy strong {
+    font-size: 0.68rem;
+  }
+
+  .leagueSelectTriggerCompactMobile .leagueSelectTriggerSummary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .leagueSelectTriggerCompactMobile .leagueSelectTriggerMain {
+    gap: 0.34rem;
+  }
+
+  .leagueSelectTriggerCompactMobile .leagueSelectLogoCompact {
+    width: 1.32rem;
+    height: 1.32rem;
+  }
+
+  .leagueSelectTriggerCompactMobile .leagueSelectLogoCompact svg {
+    width: 0.92rem;
+    height: 0.92rem;
   }
 
   .leagueSelectTriggerLabel,
@@ -944,10 +1071,6 @@
 
   .leagueSelectTriggerCopy {
     align-items: center;
-  }
-
-  .leagueSelectTriggerMain {
-    gap: 0.4rem;
   }
 
   .dateRangeFieldInline {
@@ -981,7 +1104,24 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .dateRangeForm .searchInput.dateRangeInput {
+  .dateRangeControlsInline .dateRangeChip {
+    min-height: 2rem;
+    padding: 0.08rem 0.28rem;
+    border-radius: 0.82rem;
+    font-size: 0.58rem;
+  }
+
+  .dateRangeControlsInline .dateRangeChipIcon {
+    width: 0.74rem;
+    height: 0.74rem;
+  }
+
+  .dateRangeControlsInline .dateRangeFieldInline {
+    min-width: 0;
+  }
+
+  .dateRangeForm .searchInput.dateRangeInput,
+  .dateRangeControlsInline .searchInput.dateRangeInput {
     position: absolute;
     inset: 0;
     min-height: 100%;
@@ -993,7 +1133,9 @@
   }
 
   .dateRangeForm .searchInput.dateRangeInput::-webkit-datetime-edit,
-  .dateRangeForm .searchInput.dateRangeInput::-webkit-calendar-picker-indicator {
+  .dateRangeForm .searchInput.dateRangeInput::-webkit-calendar-picker-indicator,
+  .dateRangeControlsInline .searchInput.dateRangeInput::-webkit-datetime-edit,
+  .dateRangeControlsInline .searchInput.dateRangeInput::-webkit-calendar-picker-indicator {
     opacity: 0;
   }
 }

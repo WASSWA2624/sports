@@ -5,6 +5,7 @@ import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../lib/c
 import { DateRangeControls } from "./date-range-controls";
 import { LeagueFilterDropdown } from "./league-filter-dropdown";
 import { LiveRefresh } from "./live-refresh";
+import { MobileMatchdayToolbar } from "./mobile-matchday-toolbar";
 import styles from "./scoreboard.module.css";
 import { TeamBadge } from "./team-badge";
 
@@ -203,6 +204,20 @@ function buildCompactDateChipLabel(value, locale) {
     weekday: "short",
     day: "numeric",
   }).format(date);
+}
+
+function buildMobileRangeLabel(feed, locale) {
+  const start = new Date(feed.rangeStart);
+
+  if (Number.isNaN(start.getTime())) {
+    return feed.selectedPresetLabel;
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(start);
 }
 
 function buildTimeGroupMeta(group) {
@@ -434,6 +449,7 @@ export function MatchRow({ fixture, locale }) {
 
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
+  const mobileRangeLabel = buildMobileRangeLabel(feed, locale);
   const startDateChipLabel = buildCompactDateChipLabel(feed.selectedStartDate, locale);
   const endDateChipLabel = buildCompactDateChipLabel(feed.selectedEndDate, locale);
   const rangeQuery = buildRangeQuery(feed);
@@ -482,6 +498,20 @@ export function Scoreboard({ locale, feed }) {
 
       <section className={styles.toolbar}>
         <div className={styles.toolbarBar}>
+          <MobileMatchdayToolbar
+            locale={locale}
+            currentFilters={currentFilters}
+            rangeNavigation={feed.rangeNavigation}
+            selectedRangeLabel={mobileRangeLabel}
+            selectedStartDate={feed.selectedStartDate}
+            selectedEndDate={feed.selectedEndDate}
+            startDateChipLabel={startDateChipLabel}
+            endDateChipLabel={endDateChipLabel}
+            totalMatches={feed.summary.total}
+            leagueOptions={feed.leagueOptions}
+            selectedLeague={feed.selectedLeague}
+          />
+
           <div className={styles.dateRail}>
             <Link
               href={buildMatchBoardHref(locale, currentFilters, feed.rangeNavigation.previous)}

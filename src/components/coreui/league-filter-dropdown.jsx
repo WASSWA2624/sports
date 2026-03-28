@@ -128,7 +128,13 @@ function LeagueMark({ option, compact = false }) {
   );
 }
 
-export function LeagueFilterDropdown({ locale, currentFilters, options = [], selectedLeague = "all" }) {
+export function LeagueFilterDropdown({
+  locale,
+  currentFilters,
+  options = [],
+  selectedLeague = "all",
+  compactMobile = false,
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -252,7 +258,7 @@ export function LeagueFilterDropdown({ locale, currentFilters, options = [], sel
       <button
         ref={buttonRef}
         type="button"
-        className={styles.leagueSelectTrigger}
+        className={compactMobile ? styles.leagueSelectTriggerCompactMobile : styles.leagueSelectTrigger}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={menuId}
