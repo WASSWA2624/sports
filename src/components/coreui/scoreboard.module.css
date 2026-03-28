@@ -411,8 +411,9 @@
   z-index: 35;
   display: grid;
   gap: 0.55rem;
-  min-width: max(100%, 18rem);
-  max-width: calc(100vw - 1.5rem);
+  min-width: 100%;
+  width: min(22rem, calc(100vw - 1rem));
+  max-width: calc(100vw - 1rem);
   padding: 0.65rem;
   border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 1rem;
@@ -480,6 +481,31 @@
   color: rgba(225, 234, 255, 0.62);
   font-size: 0.78rem;
   text-align: center;
+}
+
+@media (max-width: 399px) {
+  .leagueSelectMenu,
+  .leagueSelectMenuUpward {
+    width: calc(100vw - 0.7rem);
+    max-width: calc(100vw - 0.7rem);
+    padding: 0.5rem;
+    border-radius: 0.82rem;
+  }
+
+  .leagueSelectMenuHeader {
+    gap: 0.4rem;
+  }
+
+  .leagueSelectMenuHeader strong,
+  .leagueSelectMenuHeader span {
+    font-size: 0.72rem;
+  }
+
+  .leagueSelectSearchInput {
+    min-height: 2rem;
+    padding: 0.38rem 0.56rem;
+    border-radius: 0.72rem;
+  }
 }
 
 .leagueSelectOption,

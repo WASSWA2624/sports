@@ -211,7 +211,7 @@ export function LeagueFilterDropdown({
         (shouldOpenUpward ? spaceAbove : spaceBelow) - MENU_VERTICAL_MARGIN
       );
       const viewportWidth = window.innerWidth;
-      const maxViewportWidth = Math.max(260, viewportWidth - MENU_VERTICAL_MARGIN * 2);
+      const maxViewportWidth = Math.max(0, viewportWidth - MENU_VERTICAL_MARGIN * 2);
       const measuredOptionWidth = optionRefs.current.reduce((largest, element) => {
         if (!element) {
           return largest;
@@ -221,7 +221,8 @@ export function LeagueFilterDropdown({
       }, 0);
       const measuredHeaderWidth = menuRef.current?.querySelector(`.${styles.leagueSelectMenuHeader}`)?.scrollWidth || 0;
       const desiredWidth = Math.max(rect.width, measuredOptionWidth + 24, measuredHeaderWidth + 16);
-      const nextMenuWidth = Math.min(maxViewportWidth, desiredWidth);
+      const minimumUsableWidth = Math.min(maxViewportWidth, Math.max(rect.width, 180));
+      const nextMenuWidth = Math.max(minimumUsableWidth, Math.min(maxViewportWidth, desiredWidth));
       const overflowRight = rect.left + nextMenuWidth + MENU_VERTICAL_MARGIN - viewportWidth;
       const overflowLeft = rect.left - MENU_VERTICAL_MARGIN;
       let nextOffsetLeft = 0;
