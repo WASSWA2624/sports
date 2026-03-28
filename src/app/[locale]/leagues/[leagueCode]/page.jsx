@@ -4,7 +4,7 @@ import { MatchRow } from "../../../../components/coreui/scoreboard";
 import boardStyles from "../../../../components/coreui/scoreboard.module.css";
 import styles from "../../../../components/coreui/competition-pages.module.css";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
-import { getLeagueDetail } from "../../../../lib/coreui/match-data";
+import { getLeagueDetailFromProvider } from "../../../../lib/coreui/sports-data";
 
 const META_SEPARATOR = " | ";
 
@@ -170,7 +170,7 @@ function buildLeagueLead(league, table) {
 
 export async function generateMetadata({ params }) {
   const { locale, leagueCode } = await params;
-  const league = getLeagueDetail(leagueCode);
+  const league = await getLeagueDetailFromProvider(leagueCode);
 
   return buildPageMetadata(
     locale,
@@ -183,7 +183,7 @@ export async function generateMetadata({ params }) {
 export default async function LeagueDetailPage({ params, searchParams }) {
   const { locale, leagueCode } = await params;
   const filters = await searchParams;
-  const league = getLeagueDetail(leagueCode);
+  const league = await getLeagueDetailFromProvider(leagueCode);
 
   if (!league) {
     notFound();
@@ -194,7 +194,7 @@ export default async function LeagueDetailPage({ params, searchParams }) {
     : "all";
   const fixtures = filterFixtures(league.fixtures, view);
   const grouped = [...buildGroupedFixtures(fixtures).values()];
-  const table = buildLeagueTable(league.fixtures);
+  const table = league.standings?.length ? league.standings : buildLeagueTable(league.fixtures);
   const topTeams = table.slice(0, 4);
   const summaryCards = [
     {

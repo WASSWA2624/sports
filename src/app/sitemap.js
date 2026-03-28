@@ -1,4 +1,4 @@
-import { getLeagueDirectory, getShellData } from "../lib/coreui/match-data";
+import { getLeagueDirectoryFromProvider, getShellDataFromProvider } from "../lib/coreui/sports-data";
 import { SUPPORTED_LOCALES } from "../lib/coreui/preferences";
 import { getSiteOrigin } from "../lib/coreui/site";
 
@@ -16,8 +16,8 @@ function createLocalizedEntries(path, lastModified = new Date()) {
 export default async function sitemap() {
   const entries = STATIC_PUBLIC_PATHS.flatMap((path) => createLocalizedEntries(path));
   const generatedAt = new Date();
-  const leagues = getLeagueDirectory();
-  const fixtures = getShellData().fixtures;
+  const leagues = await getLeagueDirectoryFromProvider();
+  const fixtures = (await getShellDataFromProvider()).fixtures;
 
   for (const league of leagues) {
     entries.push(...createLocalizedEntries(`/leagues/${league.code}`, generatedAt));

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
+import { buildMatchStatusLabel } from "../../lib/coreui/sports-formatters";
 import { buildMatchBoardHref } from "../../lib/coreui/minimal-routes";
 import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
 import { DateRangeControls } from "./date-range-controls";

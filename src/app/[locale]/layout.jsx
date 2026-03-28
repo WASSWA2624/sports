@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { PublicShell } from "../../components/coreui/public-shell";
 import { getDictionary } from "../../lib/coreui/dictionaries";
-import { getShellData } from "../../lib/coreui/match-data";
+import { getShellDataFromProvider } from "../../lib/coreui/sports-data";
 import { SUPPORTED_LOCALES, normalizeLocale } from "../../lib/coreui/preferences";
 
 export function generateStaticParams() {
@@ -16,8 +16,10 @@ export default async function LocaleLayout({ children, params }) {
     notFound();
   }
 
+  const shellData = await getShellDataFromProvider();
+
   return (
-    <PublicShell locale={locale} dictionary={getDictionary(locale)} shellData={getShellData()}>
+    <PublicShell locale={locale} dictionary={getDictionary(locale)} shellData={shellData}>
       {children}
     </PublicShell>
   );

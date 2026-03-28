@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 import { LiveRefresh } from "../../../../components/coreui/live-refresh";
 import styles from "../../../../components/coreui/match-detail.module.css";
 import {
-  buildMatchStatusLabel,
-  buildMatchTimeLabel,
-  getMatchByReference,
-} from "../../../../lib/coreui/match-data";
+  getMatchByReferenceFromProvider,
+} from "../../../../lib/coreui/sports-data";
+import { buildMatchStatusLabel, buildMatchTimeLabel } from "../../../../lib/coreui/sports-formatters";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
 import { buildTeamHref } from "../../../../lib/coreui/routes";
 
@@ -24,7 +23,7 @@ function getRefreshUntil(fixture) {
 
 export async function generateMetadata({ params }) {
   const { locale, fixtureRef } = await params;
-  const fixture = getMatchByReference(fixtureRef);
+  const fixture = await getMatchByReferenceFromProvider(fixtureRef);
 
   return buildPageMetadata(
     locale,
@@ -38,7 +37,7 @@ export async function generateMetadata({ params }) {
 
 export default async function MatchDetailPage({ params }) {
   const { locale, fixtureRef } = await params;
-  const fixture = getMatchByReference(fixtureRef);
+  const fixture = await getMatchByReferenceFromProvider(fixtureRef);
 
   if (!fixture) {
     notFound();

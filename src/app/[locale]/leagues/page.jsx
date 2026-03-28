@@ -1,5 +1,5 @@
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
-import { getLeagueDirectory } from "../../../lib/coreui/match-data";
+import { getLeagueDirectoryFromProvider } from "../../../lib/coreui/sports-data";
 import styles from "../../../components/coreui/competition-pages.module.css";
 import { LeaguesDirectorySearch } from "../../../components/coreui/leagues-directory-search";
 
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }) {
 
 export default async function LeaguesPage({ params }) {
   const { locale } = await params;
-  const leagues = getLeagueDirectory();
+  const leagues = await getLeagueDirectoryFromProvider();
   const totalTeams = leagues.reduce((sum, league) => sum + league.teams.length, 0);
   const totalMatches = leagues.reduce((sum, league) => sum + league.fixtures.length, 0);
 

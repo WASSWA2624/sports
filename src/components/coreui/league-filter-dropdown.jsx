@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { buildAssetUrl } from "../../lib/assets";
 import styles from "./scoreboard.module.css";
 
 const MENU_VERTICAL_MARGIN = 12;
@@ -117,13 +119,28 @@ function LeagueMarkShape({ logoKey }) {
 }
 
 function LeagueMark({ option, compact = false }) {
+  const logoSrc = typeof option?.logoUrl === "string" && option.logoUrl.trim()
+    ? buildAssetUrl(option.logoUrl, { type: "competition-logo", width: 64 })
+    : null;
+
   return (
     <span
       className={compact ? styles.leagueSelectLogoCompact : styles.leagueSelectLogo}
       style={getLeagueShortcutStyle(option)}
       aria-hidden="true"
     >
-      <LeagueMarkShape logoKey={option.logoKey} />
+      {logoSrc ? (
+        <Image
+          src={logoSrc}
+          alt=""
+          width={48}
+          height={48}
+          className={styles.leagueSelectLogoImage}
+          unoptimized
+        />
+      ) : (
+        <LeagueMarkShape logoKey={option.logoKey} />
+      )}
     </span>
   );
 }

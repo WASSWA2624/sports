@@ -1,6 +1,6 @@
 import { buildPageMetadata } from "../../lib/coreui/metadata";
 import { getDictionary } from "../../lib/coreui/dictionaries";
-import { getMatchdayFeed } from "../../lib/coreui/match-data";
+import { getMatchdayFeedFromProvider } from "../../lib/coreui/sports-data";
 import { Scoreboard } from "../../components/coreui/scoreboard";
 
 export async function generateMetadata({ params }) {
@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
 export default async function LocaleHomePage({ params, searchParams }) {
   const { locale } = await params;
   const filters = await searchParams;
-  const feed = getMatchdayFeed({
+  const feed = await getMatchdayFeedFromProvider({
     locale,
     date: filters?.date,
     preset: filters?.preset,

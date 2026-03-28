@@ -4,7 +4,7 @@ import { MatchRow } from "../../../../components/coreui/scoreboard";
 import styles from "../../../../components/coreui/team-detail.module.css";
 import { getDictionary, formatDictionaryText } from "../../../../lib/coreui/dictionaries";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
-import { getTeamDetail } from "../../../../lib/coreui/match-data";
+import { getTeamDetailFromProvider } from "../../../../lib/coreui/sports-data";
 
 function buildTeamLead(team) {
   const liveCount = team.fixtureSummary.LIVE || 0;
@@ -34,7 +34,7 @@ function getFormChipClassName(result) {
 export async function generateMetadata({ params }) {
   const { locale, teamSlug } = await params;
   const dictionary = getDictionary(locale);
-  const team = getTeamDetail(teamSlug);
+  const team = await getTeamDetailFromProvider(teamSlug);
 
   return buildPageMetadata(
     locale,
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }) {
 export default async function TeamDetailPage({ params }) {
   const { locale, teamSlug } = await params;
   const dictionary = getDictionary(locale);
-  const team = getTeamDetail(teamSlug);
+  const team = await getTeamDetailFromProvider(teamSlug);
 
   if (!team) {
     notFound();
