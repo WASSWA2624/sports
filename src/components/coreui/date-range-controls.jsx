@@ -39,8 +39,8 @@ export function DateRangeControls({
   locale,
   selectedStartDate,
   selectedEndDate,
-  fromDayLabel,
-  toDayLabel,
+  startDateChipLabel,
+  endDateChipLabel,
   showReset = false,
   rangeResetHref = "",
 }) {
@@ -60,13 +60,19 @@ export function DateRangeControls({
   return (
     <div className={styles.dateRangeControls}>
       <label className={`${styles.dateRangeField} ${styles.dateRangeFieldInline}`}>
+        <span className={styles.dateRangeChip} aria-hidden="true">
+          <span className={styles.dateRangeChipIcon}>
+            <CalendarIcon />
+          </span>
+          <span className={styles.dateRangeChipText}>{startDateChipLabel}</span>
+        </span>
         <span className={styles.dateFieldHeader}>
           <span className={styles.dateFieldEyebrow}>From</span>
           <span className={styles.dateFieldMeta}>
             <span className={styles.dateFieldIcon}>
               <CalendarIcon />
             </span>
-            <span>{fromDayLabel}</span>
+            <span>{startDateChipLabel}</span>
           </span>
         </span>
         <span className={styles.srOnly}>From</span>
@@ -81,13 +87,19 @@ export function DateRangeControls({
       </label>
 
       <label className={`${styles.dateRangeField} ${styles.dateRangeFieldInline}`}>
+        <span className={styles.dateRangeChip} aria-hidden="true">
+          <span className={styles.dateRangeChipIcon}>
+            <CalendarIcon />
+          </span>
+          <span className={styles.dateRangeChipText}>{endDateChipLabel}</span>
+        </span>
         <span className={styles.dateFieldHeader}>
           <span className={styles.dateFieldEyebrow}>To</span>
           <span className={styles.dateFieldMeta}>
             <span className={styles.dateFieldIcon}>
               <CalendarIcon />
             </span>
-            <span>{toDayLabel}</span>
+            <span>{endDateChipLabel}</span>
           </span>
         </span>
         <span className={styles.srOnly}>To</span>

@@ -192,7 +192,7 @@ function buildRangeLabel(feed, locale) {
   return `${dateTimeFormatter.format(start)} - ${dateTimeFormatter.format(end)}`;
 }
 
-function buildDateFieldDayLabel(value, locale) {
+function buildCompactDateChipLabel(value, locale) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -201,6 +201,7 @@ function buildDateFieldDayLabel(value, locale) {
 
   return new Intl.DateTimeFormat(locale, {
     weekday: "short",
+    day: "numeric",
   }).format(date);
 }
 
@@ -433,8 +434,8 @@ export function MatchRow({ fixture, locale }) {
 
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
-  const fromDayLabel = buildDateFieldDayLabel(feed.selectedStartDate, locale);
-  const toDayLabel = buildDateFieldDayLabel(feed.selectedEndDate, locale);
+  const startDateChipLabel = buildCompactDateChipLabel(feed.selectedStartDate, locale);
+  const endDateChipLabel = buildCompactDateChipLabel(feed.selectedEndDate, locale);
   const rangeQuery = buildRangeQuery(feed);
   const liveCount = feed.summary.LIVE || 0;
   const currentFilters = {
@@ -514,8 +515,8 @@ export function Scoreboard({ locale, feed }) {
               locale={locale}
               selectedStartDate={feed.selectedStartDate}
               selectedEndDate={feed.selectedEndDate}
-              fromDayLabel={fromDayLabel}
-              toDayLabel={toDayLabel}
+              startDateChipLabel={startDateChipLabel}
+              endDateChipLabel={endDateChipLabel}
               showReset={!feed.rangeIsDefault}
               rangeResetHref={rangeResetHref}
             />
