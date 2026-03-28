@@ -235,6 +235,7 @@
 .toolbarActions {
   display: grid;
   gap: 0.28rem;
+  min-width: 0;
 }
 
 .leagueSelectWrap {
@@ -244,12 +245,12 @@
 
 .leagueSelectTrigger {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.48rem;
   width: 100%;
-  min-height: 2.7rem;
-  padding: 0.34rem 0.46rem;
+  min-height: 2.55rem;
+  padding: 0.32rem 0.42rem;
   border: 1px solid rgba(169, 191, 255, 0.1);
   border-radius: 1rem;
   background:
@@ -302,14 +303,26 @@
   line-height: 1.15;
 }
 
+.leagueSelectTriggerSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
 .leagueSelectTriggerLabel {
-  font-size: 0.58rem;
+  font-size: 0.55rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .leagueSelectTriggerMeta {
+  min-width: 0;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
@@ -354,8 +367,8 @@
 }
 
 .leagueSelectLogoCompact {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 1.7rem;
+  height: 1.7rem;
 }
 
 .leagueSelectLogo svg,
@@ -368,10 +381,11 @@
 .leagueSelectMenuUpward {
   position: absolute;
   left: 0;
-  right: 0;
   z-index: 35;
   display: grid;
   gap: 0.55rem;
+  min-width: max(100%, 18rem);
+  max-width: calc(100vw - 1.5rem);
   padding: 0.65rem;
   border: 1px solid rgba(169, 191, 255, 0.12);
   border-radius: 1rem;
@@ -444,9 +458,14 @@
 }
 
 .leagueSelectOptionCopy span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.leagueSelectOptionCopy strong {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .leagueSelectOptionTrail {
@@ -454,18 +473,53 @@
   font-size: 0.68rem;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.dateRangeForm,
-.toolbarUtilityRow {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.28rem;
+  align-self: center;
 }
 
 .dateRangeField {
   display: grid;
   gap: 0;
+}
+
+.dateRangeFieldInline {
+  min-width: 0;
+  gap: 0.28rem;
+}
+
+.dateFieldHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0 0.12rem;
+}
+
+.dateFieldEyebrow,
+.dateFieldMeta {
+  color: rgba(225, 234, 255, 0.64);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dateFieldMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  letter-spacing: 0.08em;
+}
+
+.dateFieldIcon {
+  display: inline-flex;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.dateFieldIcon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .dateRangeInput {
@@ -743,18 +797,33 @@
 }
 
 .dateRangeForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.24rem;
   align-items: stretch;
 }
 
+.dateRangeForm .toolbarActions {
+  grid-column: 1 / -1;
+}
+
+.dateRangeControls {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.24rem;
+  min-width: 0;
+}
+
 .dateRangeForm .searchInput.dateRangeInput {
-  min-height: 1.68rem;
-  padding: 0.12rem 0.48rem;
-  border-radius: 0.68rem;
+  min-height: 2.55rem;
+  padding: 0.18rem 0.68rem;
+  border-radius: 1rem;
   border-color: rgba(169, 191, 255, 0.12);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03)),
     rgba(255, 255, 255, 0.028);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -770,9 +839,9 @@
 
 .dateRangeForm .searchSubmit.compactActionButton,
 .dateRangeForm .rangeResetLink.compactActionButton {
-  min-height: 1.68rem;
-  padding: 0.14rem 0.5rem;
-  border-radius: 0.68rem;
+  min-height: 2.55rem;
+  padding: 0.18rem 0.66rem;
+  border-radius: 1rem;
   font-size: 0.67rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -791,6 +860,77 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
     rgba(255, 255, 255, 0.025);
+}
+
+.dateRangeResetDesktop {
+  display: none;
+}
+
+@media (max-width: 359px) {
+  .leagueSelectTriggerSummary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.08rem;
+  }
+
+  .leagueSelectTriggerMeta {
+    white-space: normal;
+  }
+
+  .dateRangeForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dateRangeControls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 699px) {
+  .leagueSelectTrigger {
+    min-height: 2.35rem;
+    padding: 0.22rem 0.34rem;
+  }
+
+  .leagueSelectTriggerLabel,
+  .leagueSelectTriggerMeta,
+  .dateFieldHeader {
+    display: none;
+  }
+
+  .leagueSelectTriggerCopy strong {
+    font-size: 0.74rem;
+  }
+
+  .leagueSelectTriggerSummary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .leagueSelectTriggerCopy {
+    align-items: center;
+  }
+
+  .dateRangeControls,
+  .dateRangeForm {
+    gap: 0.18rem;
+  }
+
+  .dateRangeFieldInline {
+    grid-column: 1 / -1;
+  }
+
+  .dateRangeForm .searchInput.dateRangeInput {
+    min-height: 2.18rem;
+    padding: 0.12rem 0.52rem;
+    border-radius: 0.82rem;
+    font-size: 0.7rem;
+  }
+}
+
+.toolbarUtilityRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.28rem;
 }
 
 .groupStack {
@@ -1166,18 +1306,44 @@
     align-items: start;
   }
 
-  .toolbarActions {
-    width: 100%;
-  }
-
   .dateRangeForm {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: end;
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(9rem, 1fr)) auto auto;
+    align-items: stretch;
   }
 
   .leagueSelectWrap {
-    justify-self: end;
-    width: min(100%, 24rem);
+    width: 100%;
+  }
+
+  .dateRangeControls {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(9rem, 1fr)) auto;
+    align-items: end;
+  }
+
+  .dateRangeForm .toolbarActions {
+    grid-column: 1;
+  }
+
+  .dateRangeFieldInline {
+    grid-column: auto;
+  }
+
+  .dateFieldHeader {
+    display: flex;
+  }
+
+  .leagueSelectTriggerLabel,
+  .leagueSelectTriggerMeta {
+    display: initial;
+  }
+
+  .dateRangeResetDesktop {
+    display: inline-flex;
+    min-height: 2.55rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
   }
 
   .toolbarUtilityRow {
@@ -1234,6 +1400,11 @@
 
   .leagueSelectTrigger {
     min-height: 2.85rem;
+  }
+
+  .leagueSelectLogoCompact {
+    width: 1.9rem;
+    height: 1.9rem;
   }
 
   .scoreline {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
 import { buildMatchBoardHref } from "../../lib/coreui/minimal-routes";
 import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
+import { DateRangeControls } from "./date-range-controls";
 import { LeagueFilterDropdown } from "./league-filter-dropdown";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
@@ -189,6 +190,18 @@ function buildRangeLabel(feed, locale) {
   });
 
   return `${dateTimeFormatter.format(start)} - ${dateTimeFormatter.format(end)}`;
+}
+
+function buildDateFieldDayLabel(value, locale) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+  }).format(date);
 }
 
 function buildTimeGroupMeta(group) {
@@ -420,6 +433,8 @@ export function MatchRow({ fixture, locale }) {
 
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
+  const fromDayLabel = buildDateFieldDayLabel(feed.selectedStartDate, locale);
+  const toDayLabel = buildDateFieldDayLabel(feed.selectedEndDate, locale);
   const rangeQuery = buildRangeQuery(feed);
   const liveCount = feed.summary.LIVE || 0;
   const currentFilters = {
@@ -485,54 +500,26 @@ export function Scoreboard({ locale, feed }) {
             </Link>
           </div>
 
-          <div className={styles.toolbarActions}>
-            <LeagueFilterDropdown
+          <div className={styles.dateRangeForm}>
+            <div className={styles.toolbarActions}>
+              <LeagueFilterDropdown
+                locale={locale}
+                currentFilters={{ ...currentFilters, totalMatches: feed.summary.total }}
+                options={feed.leagueOptions}
+                selectedLeague={feed.selectedLeague}
+              />
+            </div>
+
+            <DateRangeControls
               locale={locale}
-              currentFilters={{ ...currentFilters, totalMatches: feed.summary.total }}
-              options={feed.leagueOptions}
-              selectedLeague={feed.selectedLeague}
+              selectedStartDate={feed.selectedStartDate}
+              selectedEndDate={feed.selectedEndDate}
+              fromDayLabel={fromDayLabel}
+              toDayLabel={toDayLabel}
+              showReset={!feed.rangeIsDefault}
+              rangeResetHref={rangeResetHref}
             />
           </div>
-
-          <form action={`/${locale}`} className={styles.dateRangeForm}>
-            {currentFilters.status ? <input type="hidden" name="status" value={currentFilters.status} /> : null}
-            {hasLeagueFilter ? <input type="hidden" name="league" value={feed.selectedLeague} /> : null}
-            <input type="hidden" name="preset" value="custom" />
-            <input type="hidden" name="startTime" value="00:00" />
-            <input type="hidden" name="endTime" value="23:59" />
-
-            <label className={styles.dateRangeField}>
-              <span className={styles.srOnly}>From</span>
-              <input
-                type="date"
-                name="startDate"
-                defaultValue={feed.selectedStartDate}
-                className={`${styles.searchInput} ${styles.dateRangeInput}`}
-                aria-label="Start date"
-              />
-            </label>
-
-            <label className={styles.dateRangeField}>
-              <span className={styles.srOnly}>To</span>
-              <input
-                type="date"
-                name="endDate"
-                defaultValue={feed.selectedEndDate}
-                className={`${styles.searchInput} ${styles.dateRangeInput}`}
-                aria-label="End date"
-              />
-            </label>
-
-            <button type="submit" className={`${styles.searchSubmit} ${styles.compactActionButton} ${feed.rangeIsDefault ? styles.fullWidthAction : ""}`}>
-              Apply
-            </button>
-
-            {!feed.rangeIsDefault ? (
-              <Link href={rangeResetHref} className={`${styles.rangeResetLink} ${styles.compactActionButton}`}>
-                Reset
-              </Link>
-            ) : null}
-          </form>
         </div>
       </section>
 

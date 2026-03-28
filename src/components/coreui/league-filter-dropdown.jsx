@@ -135,8 +135,12 @@ export function LeagueFilterDropdown({ locale, currentFilters, options = [], sel
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const [menuMaxHeight, setMenuMaxHeight] = useState(320);
+  const [menuWidth, setMenuWidth] = useState(null);
+  const [menuOffsetLeft, setMenuOffsetLeft] = useState(0);
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+  const optionRefs = useRef([]);
   const menuId = useId();
 
   const selectedOption =
@@ -189,9 +193,32 @@ export function LeagueFilterDropdown({ locale, currentFilters, options = [], sel
         160,
         (shouldOpenUpward ? spaceAbove : spaceBelow) - MENU_VERTICAL_MARGIN
       );
+      const viewportWidth = window.innerWidth;
+      const maxViewportWidth = Math.max(260, viewportWidth - MENU_VERTICAL_MARGIN * 2);
+      const measuredOptionWidth = optionRefs.current.reduce((largest, element) => {
+        if (!element) {
+          return largest;
+        }
+
+        return Math.max(largest, element.scrollWidth);
+      }, 0);
+      const measuredHeaderWidth = menuRef.current?.querySelector(`.${styles.leagueSelectMenuHeader}`)?.scrollWidth || 0;
+      const desiredWidth = Math.max(rect.width, measuredOptionWidth + 24, measuredHeaderWidth + 16);
+      const nextMenuWidth = Math.min(maxViewportWidth, desiredWidth);
+      const overflowRight = rect.left + nextMenuWidth + MENU_VERTICAL_MARGIN - viewportWidth;
+      const overflowLeft = rect.left - MENU_VERTICAL_MARGIN;
+      let nextOffsetLeft = 0;
+
+      if (overflowRight > 0) {
+        nextOffsetLeft = -overflowRight;
+      } else if (overflowLeft < 0) {
+        nextOffsetLeft = Math.abs(overflowLeft);
+      }
 
       setOpenUpward(shouldOpenUpward);
       setMenuMaxHeight(availableHeight);
+      setMenuWidth(nextMenuWidth);
+      setMenuOffsetLeft(nextOffsetLeft);
     }
 
     updateMenuPlacement();
@@ -235,13 +262,15 @@ export function LeagueFilterDropdown({ locale, currentFilters, options = [], sel
           <LeagueMark option={selectedOption} compact />
           <span className={styles.leagueSelectTriggerCopy}>
             <span className={styles.leagueSelectTriggerLabel}>League</span>
-            <strong>{getOptionLabel(selectedOption)}</strong>
+            <span className={styles.leagueSelectTriggerSummary}>
+              <strong>{getOptionLabel(selectedOption)}</strong>
+              <span className={styles.leagueSelectTriggerMeta}>
+                {selectedOption.code === "all"
+                  ? `${currentFilters.totalMatches} matches`
+                  : `${selectedOption.count || 0} matches`}
+              </span>
+            </span>
           </span>
-        </span>
-        <span className={styles.leagueSelectTriggerMeta}>
-          {selectedOption.code === "all"
-            ? `${currentFilters.totalMatches} matches`
-            : `${selectedOption.count || 0} matches`}
         </span>
         <span className={open ? styles.leagueSelectChevronOpen : styles.leagueSelectChevron} aria-hidden="true">
           <svg viewBox="0 0 16 16">
@@ -259,9 +288,14 @@ export function LeagueFilterDropdown({ locale, currentFilters, options = [], sel
 
       {open ? (
         <div
+          ref={menuRef}
           id={menuId}
           className={openUpward ? styles.leagueSelectMenuUpward : styles.leagueSelectMenu}
-          style={{ maxHeight: `${menuMaxHeight}px` }}
+          style={{
+            maxHeight: `${menuMaxHeight}px`,
+            width: menuWidth ? `${menuWidth}px` : undefined,
+            left: `${menuOffsetLeft}px`,
+          }}
         >
           <div className={styles.leagueSelectMenuHeader}>
             <strong>Choose competition</strong>
@@ -269,13 +303,16 @@ export function LeagueFilterDropdown({ locale, currentFilters, options = [], sel
           </div>
 
           <div className={styles.leagueSelectList} style={{ maxHeight: `${Math.max(120, menuMaxHeight - 56)}px` }}>
-            {options.map((option) => {
+            {options.map((option, index) => {
               const active = option.code === selectedOption.code;
               const className = active ? styles.leagueSelectOptionActive : styles.leagueSelectOption;
 
               return (
                 <button
                   key={option.code}
+                  ref={(element) => {
+                    optionRefs.current[index] = element;
+                  }}
                   type="button"
                   className={className}
                   onClick={() => handleSelect(option.code)}
