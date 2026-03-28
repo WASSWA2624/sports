@@ -942,7 +942,7 @@
 @media (max-width: 699px) {
   .mobileToolbarRow {
     display: grid;
-    grid-template-columns: auto minmax(0, 0.92fr) auto minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+    grid-template-columns: auto minmax(0, 1.45fr) minmax(0, 0.92fr) minmax(0, 0.92fr) auto;
     align-items: center;
     gap: 0.12rem;
     padding: 0.12rem;
@@ -958,7 +958,6 @@
   }
 
   .mobileNavButton,
-  .mobileDateSummary,
   .mobileToolbarLeague,
   .mobileToolbarDates {
     min-width: 0;
@@ -983,38 +982,8 @@
     height: 0.82rem;
   }
 
-  .mobileDateSummary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    min-height: 2rem;
-    padding: 0.12rem 0.36rem;
-    border: 1px solid rgba(169, 191, 255, 0.12);
-    border-radius: 0.82rem;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
-      rgba(255, 255, 255, 0.02);
-    color: rgba(245, 248, 245, 0.92);
-    font-size: 0.63rem;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   .mobileToolbarDates {
     display: contents;
-  }
-
-  .dateRangeForm {
-    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.78fr) minmax(0, 0.78fr);
-    gap: 0.14rem;
-  }
-
-  .dateRangeForm .toolbarActions {
-    grid-column: 1;
   }
 
   .dateRangeControls {
@@ -1075,7 +1044,6 @@
 
   .dateRangeFieldInline {
     position: relative;
-    grid-column: auto;
     min-width: 0;
     display: grid;
     align-items: stretch;

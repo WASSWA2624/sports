@@ -6,18 +6,27 @@ import { LeagueFilterDropdown } from "./league-filter-dropdown";
 import styles from "./scoreboard.module.css";
 
 function ArrowIcon({ direction = "left" }) {
-  const transform = direction === "right" ? "scale(-1 1)" : undefined;
-
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" style={transform ? { transform } : undefined}>
-      <path
-        d="M9.8 3.2 5.2 8l4.6 4.8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      {direction === "right" ? (
+        <path
+          d="M6.2 3.2 10.8 8l-4.6 4.8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d="M9.8 3.2 5.2 8l4.6 4.8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
     </svg>
   );
 }
@@ -26,7 +35,6 @@ export function MobileMatchdayToolbar({
   locale,
   currentFilters,
   rangeNavigation,
-  selectedRangeLabel,
   selectedStartDate,
   selectedEndDate,
   startDateChipLabel,
@@ -44,10 +52,6 @@ export function MobileMatchdayToolbar({
       >
         <ArrowIcon direction="left" />
       </Link>
-
-      <span className={styles.mobileDateSummary} title={selectedRangeLabel}>
-        {selectedRangeLabel}
-      </span>
 
       <Link
         href={buildMobileNavHref(locale, currentFilters, rangeNavigation.next)}

@@ -206,20 +206,6 @@ function buildCompactDateChipLabel(value, locale) {
   }).format(date);
 }
 
-function buildMobileRangeLabel(feed, locale) {
-  const start = new Date(feed.rangeStart);
-
-  if (Number.isNaN(start.getTime())) {
-    return feed.selectedPresetLabel;
-  }
-
-  return new Intl.DateTimeFormat(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(start);
-}
-
 function buildTimeGroupMeta(group) {
   const leagueLabel =
     group.leagueCount === 1 ? group.leagueNames[0] : `${group.leagueCount} leagues`;
@@ -449,7 +435,6 @@ export function MatchRow({ fixture, locale }) {
 
 export function Scoreboard({ locale, feed }) {
   const selectedRangeLabel = buildRangeLabel(feed, locale);
-  const mobileRangeLabel = buildMobileRangeLabel(feed, locale);
   const startDateChipLabel = buildCompactDateChipLabel(feed.selectedStartDate, locale);
   const endDateChipLabel = buildCompactDateChipLabel(feed.selectedEndDate, locale);
   const rangeQuery = buildRangeQuery(feed);
@@ -502,7 +487,6 @@ export function Scoreboard({ locale, feed }) {
             locale={locale}
             currentFilters={currentFilters}
             rangeNavigation={feed.rangeNavigation}
-            selectedRangeLabel={mobileRangeLabel}
             selectedStartDate={feed.selectedStartDate}
             selectedEndDate={feed.selectedEndDate}
             startDateChipLabel={startDateChipLabel}
