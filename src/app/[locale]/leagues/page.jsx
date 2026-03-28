@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { buildPageMetadata } from "../../../lib/coreui/metadata";
 import { getLeagueDirectory } from "../../../lib/coreui/match-data";
 import styles from "../../../components/coreui/competition-pages.module.css";
+import { LeaguesDirectorySearch } from "../../../components/coreui/leagues-directory-search";
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
@@ -17,28 +17,40 @@ export async function generateMetadata({ params }) {
 export default async function LeaguesPage({ params }) {
   const { locale } = await params;
   const leagues = getLeagueDirectory();
+  const totalTeams = leagues.reduce((sum, league) => sum + league.teams.length, 0);
+  const totalMatches = leagues.reduce((sum, league) => sum + league.fixtures.length, 0);
 
   return (
-    <section className={styles.page}>
-      <header className={styles.hero}>
-        <div>
+    <section className={`${styles.page} ${styles.directoryPage}`}>
+      <header className={`${styles.hero} ${styles.directoryHero}`}>
+        <div className={styles.directoryHeroCopy}>
           <p className={styles.eyebrow}>Competitions</p>
           <h1 className={styles.title}>Football leagues</h1>
+          <p className={styles.lead}>
+            Jump between active competitions, scan coverage quickly, and open the league board that matters now.
+          </p>
         </div>
-        <div className={styles.sectionTools}>
-          <span className={styles.badge}>{leagues.length} leagues</span>
+
+        <div className={styles.directorySummaryGrid}>
+          <div className={styles.directorySummaryCard}>
+            <span>Competitions</span>
+            <strong>{leagues.length}</strong>
+            <small>Leagues live in this board</small>
+          </div>
+          <div className={styles.directorySummaryCard}>
+            <span>Clubs</span>
+            <strong>{totalTeams}</strong>
+            <small>Tracked teams across leagues</small>
+          </div>
+          <div className={styles.directorySummaryCard}>
+            <span>Matches</span>
+            <strong>{totalMatches}</strong>
+            <small>Available fixtures and results</small>
+          </div>
         </div>
       </header>
 
-      <div className={styles.directoryGrid}>
-        {leagues.map((league) => (
-          <Link key={league.code} href={`/${locale}/leagues/${league.code}`} className={styles.directoryCard}>
-            <p className={styles.eyebrow}>{league.country}</p>
-            <h2 className={styles.cardTitle}>{league.name}</h2>
-            <p className={styles.cardMeta}>{league.teams.length} teams / {league.fixtures.length} matches</p>
-          </Link>
-        ))}
-      </div>
+      <LeaguesDirectorySearch locale={locale} leagues={leagues} />
     </section>
   );
 }

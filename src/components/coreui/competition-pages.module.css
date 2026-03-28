@@ -4,6 +4,10 @@
   gap: 0.6rem;
 }
 
+.directoryPage {
+  gap: 0.8rem;
+}
+
 .hero,
 .panel,
 .seasonCard,
@@ -20,6 +24,33 @@
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0.8rem 0.9rem;
+}
+
+.directoryHero {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(92, 142, 255, 0.14), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(255, 196, 110, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(9, 18, 34, 0.94), rgba(5, 12, 25, 0.98));
+}
+
+.directoryHeroCopy {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .eyebrow {
@@ -99,6 +130,105 @@
   gap: 0.5rem;
 }
 
+.directorySummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.directorySummaryCard {
+  display: grid;
+  gap: 0.16rem;
+  padding: 0.8rem 0.82rem;
+  border: 1px solid rgba(169, 191, 255, 0.08);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    rgba(8, 18, 35, 0.56);
+}
+
+.directorySummaryCard span {
+  color: rgba(225, 234, 255, 0.62);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.directorySummaryCard strong {
+  font-size: clamp(1.1rem, 4vw, 1.45rem);
+  line-height: 0.95;
+}
+
+.directorySummaryCard small {
+  color: rgba(219, 228, 252, 0.62);
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.directorySearchSection {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.directorySearchHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.directorySearchField {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: 0.28rem 0.35rem 0.28rem 3rem;
+  border: 1px solid rgba(169, 191, 255, 0.12);
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(circle at left center, rgba(92, 142, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(14, 25, 45, 0.94), rgba(7, 14, 28, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.directorySearchIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: rgba(218, 228, 255, 0.5);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.directorySearchIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.directorySearchInput {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f7fbff;
+  font: inherit;
+  font-size: 0.96rem;
+}
+
+.directorySearchInput::placeholder {
+  color: rgba(219, 228, 252, 0.46);
+}
+
+.directorySearchInput::-webkit-search-cancel-button {
+  filter: invert(1) opacity(0.7);
+}
+
 .fixtureGroups {
   display: grid;
   gap: 0.5rem;
@@ -107,6 +237,77 @@
 .directoryCard,
 .seasonCard {
   padding: 0.75rem 0.8rem;
+}
+
+.directoryCard {
+  display: grid;
+  gap: 0.8rem;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(92, 142, 255, 0.1), transparent 38%),
+    linear-gradient(180deg, rgba(9, 18, 34, 0.9), rgba(5, 12, 25, 0.98));
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.directoryCard:hover,
+.directoryCard:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(92, 142, 255, 0.22);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.2);
+}
+
+.directoryCardTop,
+.directoryCardBody,
+.directoryCardStats {
+  display: flex;
+  align-items: center;
+}
+
+.directoryCardTop {
+  gap: 0.7rem;
+}
+
+.directoryCardBody {
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.directoryCardLead {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.directoryCardMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  border-radius: 0.9rem;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.22), transparent 55%),
+    linear-gradient(145deg, rgba(92, 142, 255, 0.34), rgba(255, 255, 255, 0.08));
+  color: #dce9ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.directoryCardArrow {
+  color: rgba(225, 234, 255, 0.48);
+  font-size: 1rem;
+}
+
+.directoryCardStats {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
 }
 
 .cardTitle {
@@ -133,6 +334,15 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .directorySearchHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .directorySummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 560px) {
@@ -141,6 +351,46 @@
   .directoryCard,
   .seasonCard {
     padding: 0.7rem;
+  }
+
+  .directoryHero {
+    padding: 0.9rem;
+  }
+
+  .directorySearchField {
+    min-height: 3rem;
+    padding-left: 2.8rem;
+    border-radius: 0.95rem;
+  }
+
+  .directorySearchIcon {
+    left: 0.92rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .directorySummaryGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .directoryCardTop {
+    gap: 0.58rem;
+  }
+
+  .directoryCardMark {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  .directoryCardBody {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .directoryCardStats {
+    justify-content: flex-start;
   }
 }
 
