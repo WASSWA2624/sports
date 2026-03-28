@@ -44,6 +44,7 @@ export function DateRangeControls({
   showReset = false,
   rangeResetHref = "",
   mobileInline = false,
+  stackedMobile = false,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -59,7 +60,15 @@ export function DateRangeControls({
   }
 
   return (
-    <div className={mobileInline ? styles.dateRangeControlsInline : styles.dateRangeControls}>
+    <div
+      className={
+        mobileInline
+          ? stackedMobile
+            ? styles.dateRangeControlsInlineStacked
+            : styles.dateRangeControlsInline
+          : styles.dateRangeControls
+      }
+    >
       <label className={`${styles.dateRangeField} ${styles.dateRangeFieldInline}`}>
         <span className={styles.dateRangeChip} aria-hidden="true">
           <span className={styles.dateRangeChipIcon}>

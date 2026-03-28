@@ -71,6 +71,7 @@ export function MobileMatchdayToolbar({
           startDateChipLabel={startDateChipLabel}
           endDateChipLabel={endDateChipLabel}
           mobileInline
+          stackedMobile
         />
       </div>
 
