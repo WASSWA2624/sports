@@ -237,96 +237,230 @@
   gap: 0.28rem;
 }
 
+.leagueSelectWrap {
+  position: relative;
+  min-width: 0;
+}
+
+.leagueSelectTrigger {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.7rem;
+  padding: 0.34rem 0.46rem;
+  border: 1px solid rgba(169, 191, 255, 0.1);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
+    rgba(8, 18, 35, 0.76);
+  color: #f5f8f5;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.leagueSelectTrigger:hover,
+.leagueSelectTrigger:focus-visible {
+  border-color: rgba(92, 142, 255, 0.24);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
+}
+
+.leagueSelectTriggerMain,
+.leagueSelectOptionLead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.leagueSelectTriggerCopy,
+.leagueSelectOptionCopy {
+  display: grid;
+  min-width: 0;
+}
+
+.leagueSelectTriggerLabel,
+.leagueSelectMenuHeader span,
+.leagueSelectOptionCopy span,
+.leagueSelectTriggerMeta {
+  color: rgba(225, 234, 255, 0.62);
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.leagueSelectTriggerCopy strong,
+.leagueSelectOptionCopy strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  line-height: 1.15;
+}
+
+.leagueSelectTriggerLabel {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.leagueSelectTriggerMeta {
+  white-space: nowrap;
+}
+
+.leagueSelectChevron,
+.leagueSelectChevronOpen {
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+  color: rgba(233, 241, 255, 0.72);
+  transition: transform 0.2s ease;
+}
+
+.leagueSelectChevronOpen {
+  transform: rotate(180deg);
+}
+
+.leagueSelectChevron svg,
+.leagueSelectChevronOpen svg {
+  width: 100%;
+  height: 100%;
+}
+
+.leagueSelectLogo,
+.leagueSelectLogoCompact {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  color: var(--league-accent);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.22), transparent 56%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), var(--league-accent-soft));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
+.leagueSelectLogo {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.leagueSelectLogoCompact {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.leagueSelectLogo svg,
+.leagueSelectLogoCompact svg {
+  width: 1.28rem;
+  height: 1.28rem;
+}
+
+.leagueSelectMenu,
+.leagueSelectMenuUpward {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 35;
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(169, 191, 255, 0.12);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(10, 18, 36, 0.985), rgba(6, 13, 27, 0.965)),
+    rgba(6, 13, 27, 0.96);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.3);
+}
+
+.leagueSelectMenu {
+  top: calc(100% + 0.45rem);
+}
+
+.leagueSelectMenuUpward {
+  bottom: calc(100% + 0.45rem);
+}
+
+.leagueSelectMenuHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0 0.1rem;
+}
+
+.leagueSelectMenuHeader strong {
+  font-size: 0.78rem;
+}
+
+.leagueSelectList {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow: auto;
+  padding-right: 0.1rem;
+}
+
+.leagueSelectOption,
+.leagueSelectOptionActive {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.46rem 0.5rem;
+  border: 1px solid rgba(169, 191, 255, 0.08);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(245, 248, 245, 0.9);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.leagueSelectOption:hover,
+.leagueSelectOption:focus-visible,
+.leagueSelectOptionActive:hover,
+.leagueSelectOptionActive:focus-visible {
+  border-color: rgba(92, 142, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.leagueSelectOptionActive {
+  border-color: rgba(169, 191, 255, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.14), transparent 58%),
+    linear-gradient(135deg, rgba(92, 142, 255, 0.16), rgba(255, 255, 255, 0.03));
+}
+
+.leagueSelectOptionCopy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leagueSelectOptionTrail {
+  color: rgba(225, 234, 255, 0.7);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .dateRangeForm,
 .toolbarUtilityRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.28rem;
-}
-
-.featuredLeagueRail {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: 0.24rem;
-  padding: 0.12rem;
-  border: 1px solid rgba(169, 191, 255, 0.08);
-  border-radius: 0.78rem;
-  background: rgba(255, 255, 255, 0.025);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.featuredLeagueRail::-webkit-scrollbar {
-  display: none;
-}
-
-.leagueShortcut,
-.leagueShortcutActive {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.32rem;
-  min-width: 0;
-  min-height: 2rem;
-  padding: 0.24rem 0.34rem;
-  border: 1px solid rgba(169, 191, 255, 0.1);
-  border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
-    rgba(8, 18, 35, 0.72);
-  color: rgba(245, 248, 245, 0.88);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.leagueShortcut:hover,
-.leagueShortcut:focus-visible,
-.leagueShortcutActive:hover,
-.leagueShortcutActive:focus-visible {
-  transform: translateY(-1px);
-  border-color: rgba(92, 142, 255, 0.24);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
-}
-
-.leagueShortcutActive {
-  border-color: rgba(169, 191, 255, 0.22);
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 58%),
-    linear-gradient(135deg, var(--league-accent-soft), rgba(255, 255, 255, 0.03));
-  color: #ffffff;
-}
-
-.leagueShortcutIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.28rem;
-  height: 1.28rem;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), transparent 56%),
-    var(--league-accent-soft);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--league-accent);
-  font-size: 0.44rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.leagueShortcutCopy {
-  display: block;
-  min-width: 0;
-}
-
-.leagueShortcutLabel {
-  overflow: hidden;
-  color: inherit;
-  display: block;
-  font-size: 0.56rem;
-  font-weight: 700;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .dateRangeField {
@@ -1041,6 +1175,11 @@
     align-items: end;
   }
 
+  .leagueSelectWrap {
+    justify-self: end;
+    width: min(100%, 24rem);
+  }
+
   .toolbarUtilityRow {
     width: min(100%, 26rem);
     justify-self: end;
@@ -1091,6 +1230,10 @@
 
   .matchRowCard {
     padding: 0.3rem 0.14rem 0.32rem;
+  }
+
+  .leagueSelectTrigger {
+    min-height: 2.85rem;
   }
 
   .scoreline {

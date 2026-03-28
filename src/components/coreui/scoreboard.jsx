@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buildMatchStatusLabel } from "../../lib/coreui/match-data";
 import { buildMatchBoardHref } from "../../lib/coreui/minimal-routes";
 import { buildCompetitionHref, buildMatchHref, buildTeamHref } from "../../lib/coreui/routes";
+import { LeagueFilterDropdown } from "./league-filter-dropdown";
 import { LiveRefresh } from "./live-refresh";
 import styles from "./scoreboard.module.css";
 import { TeamBadge } from "./team-badge";
@@ -254,28 +255,6 @@ function getTeamStyle(team) {
   };
 }
 
-function getLeagueShortcutStyle(league) {
-  return {
-    "--league-accent": league.accent || "#9dc6ff",
-    "--league-accent-soft": league.accentSoft || "rgba(90, 137, 255, 0.18)",
-  };
-}
-
-function buildLeagueChipLabel(league) {
-  const labels = {
-    EPL: "Premier",
-    UCL: "UCL",
-    LL: "LaLiga",
-    SA: "Serie A",
-    BL1: "Bundes",
-    MLS: "MLS",
-    L1: "Ligue 1",
-    TPL: "Bara",
-  };
-
-  return labels[league.code] || league.name;
-}
-
 function buildScorelineText(fixture) {
   if (isScoreVisible(fixture)) {
     return `${fixture.resultSnapshot.homeScore} - ${fixture.resultSnapshot.awayScore}`;
@@ -461,7 +440,6 @@ export function Scoreboard({ locale, feed }) {
     .filter(Boolean)
     .join(" · ");
   const compactToolbarSummary = toolbarSummary.replaceAll("\u00c2\u00b7", META_SEPARATOR.trim());
-  const featuredLeagueOptions = Array.isArray(feed.featuredLeagueOptions) ? feed.featuredLeagueOptions : [];
   const rangeResetHref = buildMatchBoardHref(
     locale,
     {
@@ -508,27 +486,12 @@ export function Scoreboard({ locale, feed }) {
           </div>
 
           <div className={styles.toolbarActions}>
-            <div className={styles.featuredLeagueRail} aria-label="Featured leagues">
-              {featuredLeagueOptions.map((league) => (
-                <Link
-                  key={league.code}
-                  href={buildMatchBoardHref(locale, currentFilters, { league: league.code })}
-                  className={
-                    league.code === feed.selectedLeague ? styles.leagueShortcutActive : styles.leagueShortcut
-                  }
-                  style={getLeagueShortcutStyle(league)}
-                  aria-label={`${league.name}${league.isLocaleLeague ? " local league" : ""}, ${league.count} matches`}
-                  title={league.name}
-                >
-                  <span className={styles.leagueShortcutIcon} aria-hidden="true">
-                    {league.iconText}
-                  </span>
-                  <span className={styles.leagueShortcutCopy}>
-                    <span className={styles.leagueShortcutLabel}>{buildLeagueChipLabel(league)}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
+            <LeagueFilterDropdown
+              locale={locale}
+              currentFilters={{ ...currentFilters, totalMatches: feed.summary.total }}
+              options={feed.leagueOptions}
+              selectedLeague={feed.selectedLeague}
+            />
           </div>
 
           <form action={`/${locale}`} className={styles.dateRangeForm}>
