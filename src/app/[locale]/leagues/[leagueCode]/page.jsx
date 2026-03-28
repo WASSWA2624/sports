@@ -6,7 +6,7 @@ import styles from "../../../../components/coreui/competition-pages.module.css";
 import { buildPageMetadata } from "../../../../lib/coreui/metadata";
 import { getLeagueDetail } from "../../../../lib/coreui/match-data";
 
-const META_SEPARATOR = " · ";
+const META_SEPARATOR = " | ";
 
 function buildGroupedFixtures(fixtures) {
   return fixtures.reduce((groups, fixture) => {
@@ -201,7 +201,9 @@ export default async function LeagueDetailPage({ params, searchParams }) {
       key: "leader",
       label: "Leader",
       value: table[0]?.name || "Pending",
-      meta: table[0] ? `${table[0].points} pts · ${table[0].goalDifference >= 0 ? "+" : ""}${table[0].goalDifference} GD` : "Standings will settle after finished matches",
+      meta: table[0]
+        ? `${table[0].points} pts | ${table[0].goalDifference >= 0 ? "+" : ""}${table[0].goalDifference} GD`
+        : "Standings will settle after finished matches",
     },
     {
       key: "matches",
@@ -236,11 +238,6 @@ export default async function LeagueDetailPage({ params, searchParams }) {
           <p className={styles.eyebrow}>League</p>
           <h1 className={styles.title}>{league.name}</h1>
           <p className={styles.lead}>{buildLeagueLead(league, table)}</p>
-        </div>
-        <div className={styles.sectionTools}>
-          <span className={styles.badge}>{league.fixtureSummary.LIVE} live</span>
-          <span className={styles.badge}>{league.fixtureSummary.SCHEDULED} fixtures</span>
-          <span className={styles.badge}>{league.fixtureSummary.FINISHED} results</span>
         </div>
       </header>
 

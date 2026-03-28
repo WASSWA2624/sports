@@ -61,20 +61,19 @@ export function LeaguesDirectorySearch({ locale, leagues = [] }) {
                 <div className={styles.directoryCardLead}>
                   <p className={styles.eyebrow}>{league.country}</p>
                   <h2 className={styles.cardTitle}>{league.name}</h2>
+                  <div className={styles.directoryCardInlineMeta}>
+                    <p className={styles.cardMeta}>
+                      {league.teams.length} teams / {league.fixtures.length} matches
+                    </p>
+                    <div className={styles.directoryCardStats}>
+                      <span className={styles.badge}>{league.season}</span>
+                      <span className={styles.badge}>{league.code}</span>
+                    </div>
+                  </div>
                 </div>
                 <span className={styles.directoryCardArrow} aria-hidden="true">
                   &rarr;
                 </span>
-              </div>
-
-              <div className={styles.directoryCardBody}>
-                <p className={styles.cardMeta}>
-                  {league.teams.length} teams / {league.fixtures.length} matches
-                </p>
-                <div className={styles.directoryCardStats}>
-                  <span className={styles.badge}>{league.season}</span>
-                  <span className={styles.badge}>{league.code}</span>
-                </div>
               </div>
             </Link>
           ))}
