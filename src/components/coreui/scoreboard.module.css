@@ -942,14 +942,14 @@
 @media (max-width: 699px) {
   .mobileToolbarRow {
     display: grid;
-    grid-template-columns: auto minmax(0, 1.45fr) minmax(0, 0.92fr) minmax(0, 0.92fr) auto;
+    grid-template-columns: minmax(0, 1.45fr) auto minmax(0, 0.92fr) minmax(0, 0.92fr) auto;
     align-items: center;
     gap: 0.12rem;
     padding: 0.12rem;
     border: 1px solid rgba(169, 191, 255, 0.08);
     border-radius: 1rem;
     background: rgba(255, 255, 255, 0.025);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .dateRail,
@@ -961,6 +961,11 @@
   .mobileToolbarLeague,
   .mobileToolbarDates {
     min-width: 0;
+  }
+
+  .mobileToolbarLeague {
+    position: relative;
+    z-index: 6;
   }
 
   .mobileNavButton {
@@ -984,6 +989,11 @@
 
   .mobileToolbarDates {
     display: contents;
+  }
+
+  .mobileToolbarLeague .leagueSelectMenu,
+  .mobileToolbarLeague .leagueSelectMenuUpward {
+    z-index: 60;
   }
 
   .dateRangeControls {

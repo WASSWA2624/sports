@@ -45,22 +45,6 @@ export function MobileMatchdayToolbar({
 }) {
   return (
     <div className={styles.mobileToolbarRow}>
-      <Link
-        href={buildMobileNavHref(locale, currentFilters, rangeNavigation.previous)}
-        className={styles.mobileNavButton}
-        aria-label="Previous range"
-      >
-        <ArrowIcon direction="left" />
-      </Link>
-
-      <Link
-        href={buildMobileNavHref(locale, currentFilters, rangeNavigation.next)}
-        className={styles.mobileNavButton}
-        aria-label="Next range"
-      >
-        <ArrowIcon direction="right" />
-      </Link>
-
       <div className={styles.mobileToolbarLeague}>
         <LeagueFilterDropdown
           locale={locale}
@@ -70,6 +54,14 @@ export function MobileMatchdayToolbar({
           compactMobile
         />
       </div>
+
+      <Link
+        href={buildMobileNavHref(locale, currentFilters, rangeNavigation.previous)}
+        className={styles.mobileNavButton}
+        aria-label="Previous range"
+      >
+        <ArrowIcon direction="left" />
+      </Link>
 
       <div className={styles.mobileToolbarDates}>
         <DateRangeControls
@@ -81,6 +73,14 @@ export function MobileMatchdayToolbar({
           mobileInline
         />
       </div>
+
+      <Link
+        href={buildMobileNavHref(locale, currentFilters, rangeNavigation.next)}
+        className={styles.mobileNavButton}
+        aria-label="Next range"
+      >
+        <ArrowIcon direction="right" />
+      </Link>
     </div>
   );
 }
