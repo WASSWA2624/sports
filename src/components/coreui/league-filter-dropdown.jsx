@@ -143,6 +143,7 @@ export function LeagueFilterDropdown({
   const [menuMaxHeight, setMenuMaxHeight] = useState(320);
   const [menuWidth, setMenuWidth] = useState(null);
   const [menuOffsetLeft, setMenuOffsetLeft] = useState(0);
+  const [searchValue, setSearchValue] = useState("");
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
@@ -153,6 +154,16 @@ export function LeagueFilterDropdown({
     options.find((option) => option.code === selectedLeague) ||
     options.find((option) => option.code === "all") ||
     { code: "all", name: "All leagues" };
+  const normalizedSearch = searchValue.trim().toLowerCase();
+  const visibleOptions = normalizedSearch
+    ? options.filter((option) => {
+        const haystack = [option.name, option.country, option.code]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(normalizedSearch);
+      })
+    : options;
 
   useEffect(() => {
     if (!open) {
@@ -262,7 +273,10 @@ export function LeagueFilterDropdown({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={menuId}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setSearchValue("");
+          setOpen((current) => !current);
+        }}
       >
         <span className={styles.leagueSelectTriggerMain}>
           <LeagueMark option={selectedOption} compact />
@@ -305,11 +319,23 @@ export function LeagueFilterDropdown({
         >
           <div className={styles.leagueSelectMenuHeader}>
             <strong>Choose competition</strong>
-            <span>{options.length} options</span>
+            <span>{visibleOptions.length} options</span>
           </div>
 
-          <div className={styles.leagueSelectList} style={{ maxHeight: `${Math.max(120, menuMaxHeight - 56)}px` }}>
-            {options.map((option, index) => {
+          <label className={styles.leagueSelectSearch}>
+            <span className={styles.srOnly}>Search leagues</span>
+            <input
+              type="search"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+              className={styles.leagueSelectSearchInput}
+              placeholder="Search leagues"
+              autoComplete="off"
+            />
+          </label>
+
+          <div className={styles.leagueSelectList} style={{ maxHeight: `${Math.max(120, menuMaxHeight - 118)}px` }}>
+            {visibleOptions.length ? visibleOptions.map((option, index) => {
               const active = option.code === selectedOption.code;
               const className = active ? styles.leagueSelectOptionActive : styles.leagueSelectOption;
 
@@ -335,7 +361,9 @@ export function LeagueFilterDropdown({
                   </span>
                 </button>
               );
-            })}
+            }) : (
+              <div className={styles.leagueSelectEmpty}>No leagues match that search.</div>
+            )}
           </div>
         </div>
       ) : null}
